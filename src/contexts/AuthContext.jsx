@@ -99,7 +99,9 @@ export const AuthProvider = ({ children }) => {
           data: {
             full_name: additionalData.full_name,
             role: additionalData.role,
-            rut: additionalData.rut
+            rut: additionalData.rut,
+            origin_app: 'dentalspot',
+            origin_domain: window.location.origin
           },
           emailRedirectTo: `${window.location.origin}/dashboard`
         }
