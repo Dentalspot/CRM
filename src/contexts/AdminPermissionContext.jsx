@@ -1,14 +1,13 @@
 /**
  * @file src/contexts/AdminPermissionContext.jsx
- * 
+ *
  * Contexto global de permisos admin.
- * Consulta admin_permissions y expone helpers para verificar acceso por módulo.
- * 
- * Lógica de acceso:
- * - is_super_admin = true → bypass total (reservado para emergencias)
- * - role = 'admin' → permisos vienen de admin_permissions
- * - módulo 'all' en admin_permissions → acceso total (debug admin)
- * - Cualquier otro rol → sin permisos admin
+ * Consulta admin_permissions y expone helpers para verificar acceso por modulo.
+ *
+ * SEGURIDAD (DentalSpot):
+ * - NO existe super_admin — cada admin solo accede a sus modulos asignados
+ * - Modulo 'all' en admin_permissions = acceso a todos los modulos (pero sigue filtrando por app)
+ * - Los datos se filtran por origin_app='dentalspot' para no mezclar con FonoKit/otros
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
@@ -18,6 +17,12 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export const AdminPermissionContext = createContext(undefined);
 
+/**
+ * Identificador de esta app — se usa para filtrar datos en queries admin.
+ * Cada clon de Comunicare tiene el suyo.
+ */
+export const CURRENT_APP_ID = 'dentalspot';
+
 export const AdminPermissionProvider = ({ children }) => {
   const { user, profile, loading: authLoading } = useAuth();
   const [permissions, setPermissions] = useState(null);
@@ -25,29 +30,15 @@ export const AdminPermissionProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // is_super_admin es solo para emergencias (no debería estar activo en producción)
-  const isSuperAdmin = useMemo(() => profile?.is_super_admin === true, [profile]);
-
   const isAdmin = useMemo(() => profile?.role === 'admin', [profile]);
 
   const fetchAdminPermissions = useCallback(async () => {
-    // Esperar a que auth termine de cargar
     if (authLoading) return;
 
-    // Si no es admin, limpiar y salir
     if (!user || !profile || !isAdmin) {
       setPermissions(null);
       setLoading(false);
       setError(null);
-      return;
-    }
-
-    // Super admin bypass (emergencias)
-    if (isSuperAdmin) {
-      setPermissions({ _superAdmin: true });
-      setLoading(false);
-      setError(null);
-      setLastUpdated(new Date());
       return;
     }
 
@@ -62,7 +53,6 @@ export const AdminPermissionProvider = ({ children }) => {
 
       if (dbError) throw dbError;
 
-      // Transformar array a objeto indexado por módulo
       const permsObject = data.reduce((acc, perm) => {
         acc[perm.module] = {
           can_read: perm.can_read,
@@ -81,22 +71,19 @@ export const AdminPermissionProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [user, profile, isAdmin, isSuperAdmin, authLoading]);
+  }, [user, profile, isAdmin, authLoading]);
 
   useEffect(() => {
     fetchAdminPermissions();
   }, [fetchAdminPermissions]);
 
   /**
-   * Verifica si tiene permiso en un módulo
-   * @param {string} permissionKey - Key del módulo
-   * @param {'read' | 'write' | 'any'} check - Tipo de verificación
+   * Verifica si tiene permiso en un modulo
    */
   const hasPermission = useCallback((permissionKey, check = 'any') => {
-    if (isSuperAdmin) return true;
     if (!permissions || !permissionKey) return false;
 
-    // Módulo 'all' = acceso total (debug admin)
+    // Modulo 'all' = acceso a todos los modulos
     if (permissions['all']) {
       const allPerm = permissions['all'];
       if (check === 'read') return allPerm.can_read || allPerm.can_write;
@@ -110,35 +97,26 @@ export const AdminPermissionProvider = ({ children }) => {
     if (check === 'read') return perm.can_read || perm.can_write;
     if (check === 'write') return perm.can_write;
     return perm.can_read || perm.can_write;
-  }, [permissions, isSuperAdmin]);
+  }, [permissions]);
 
   const hasAnyPermission = useCallback((permissionKeys = []) => {
-    if (isSuperAdmin) return true;
     if (!permissions) return false;
     return permissionKeys.some(key => hasPermission(key));
-  }, [permissions, isSuperAdmin, hasPermission]);
+  }, [permissions, hasPermission]);
 
   const hasAllPermissions = useCallback((permissionKeys = []) => {
-    if (isSuperAdmin) return true;
     if (!permissions) return false;
     return permissionKeys.every(key => hasPermission(key));
-  }, [permissions, isSuperAdmin, hasPermission]);
+  }, [permissions, hasPermission]);
 
-  /**
-   * Retorna los módulos accesibles para construir sidebar dinámico
-   */
   const getAccessibleModules = useCallback(() => {
-    if (isSuperAdmin) return ['all'];
     if (!permissions) return [];
-
-    // Si tiene 'all', acceso total
     if (permissions['all']) return ['all'];
-
     return Object.keys(permissions).filter(key => {
       const perm = permissions[key];
       return perm && (perm.can_read || perm.can_write);
     });
-  }, [permissions, isSuperAdmin]);
+  }, [permissions]);
 
   const value = useMemo(() => ({
     permissions,
@@ -146,7 +124,7 @@ export const AdminPermissionProvider = ({ children }) => {
     error,
     lastUpdated,
     isAdmin,
-    isSuperAdmin,
+    isSuperAdmin: false, // Eliminado por seguridad — siempre false
     hasPermission,
     hasAnyPermission,
     hasAllPermissions,
@@ -155,7 +133,7 @@ export const AdminPermissionProvider = ({ children }) => {
     refreshPermissions: fetchAdminPermissions,
   }), [
     permissions, loading, error, lastUpdated,
-    isAdmin, isSuperAdmin,
+    isAdmin,
     hasPermission, hasAnyPermission, hasAllPermissions,
     getAccessibleModules, fetchAdminPermissions,
   ]);
@@ -167,9 +145,6 @@ export const AdminPermissionProvider = ({ children }) => {
   );
 };
 
-/**
- * Hook para acceder al contexto de permisos admin
- */
 export const useAdminPermissions = () => {
   const context = useContext(AdminPermissionContext);
   if (context === undefined) {
