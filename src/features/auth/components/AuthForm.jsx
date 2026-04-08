@@ -128,7 +128,9 @@ const AuthForm = ({ isLogin }) => {
         variant: "destructive",
         title: "Error al iniciar sesión",
         description: error.message === "Invalid login credentials"
-          ? "Credenciales incorrectas. Verifica tu email y contraseña."
+          ? "La contraseña es incorrecta o el email no está registrado. Intenta de nuevo o usa 'Recupérala aquí' para restablecer tu contraseña."
+          : error.message === "Email not confirmed"
+          ? "Tu email aún no está confirmado. Revisa tu bandeja de entrada o spam."
           : error.message
       });
       return;
