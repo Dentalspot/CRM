@@ -71,6 +71,11 @@ export const useMetaTracking = () => {
         return;
       }
 
+      // CAPI disabled until edge functions are deployed to new Supabase project
+      // Browser pixel tracking still works via trackMetaEvent above
+      const CAPI_ENABLED = false;
+      if (!CAPI_ENABLED) return;
+
       const { data, error: apiError } = await supabase.functions.invoke('new-meta-capi', {
         body: {
           event_name: eventName,
