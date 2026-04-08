@@ -576,11 +576,7 @@ const PricingPage = () => {
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground mb-8">
-              O prueba la{' '}
-              <Link to={isLoggedIn ? '/dashboard/membership?plan=gratis' : '/auth/register?plan=gratis'} className="text-primary font-semibold hover:underline">
-                versión gratuita
-              </Link>
-              .
+              Todos los planes incluyen 14 dias de prueba.
             </p>
 
             {/* Billing Toggle */}
@@ -611,7 +607,7 @@ const PricingPage = () => {
       {/* ============================================ */}
       <section className="pb-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {dynamicPlans.map((plan, index) => (
               <PlanCard
                 key={plan.id}
