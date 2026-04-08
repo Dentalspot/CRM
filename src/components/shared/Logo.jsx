@@ -1,28 +1,35 @@
 // src/components/shared/Logo.jsx
 import React from 'react';
 
-const ToothIcon = ({ className }) => (
+const ToothLogo = ({ className }) => (
   <svg
-    viewBox="0 0 64 64"
+    viewBox="0 0 200 220"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
   >
+    {/* Diente con corazon/lazo - colores de marca DentalSpot */}
     <path
-      d="M32 4C24 4 18 8 16 14C14 20 12 28 14 36C16 44 18 52 22 58C24 60 26 60 28 56C30 52 30 46 32 46C34 46 34 52 36 56C38 60 40 60 42 58C46 52 48 44 50 36C52 28 50 20 48 14C46 8 40 4 32 4Z"
-      fill="currentColor"
-      opacity="0.15"
+      d="M100 200C85 175 60 155 50 130C38 100 42 70 60 50C75 33 95 28 100 55C105 28 125 33 140 50C158 70 162 100 150 130C140 155 115 175 100 200Z"
       stroke="currentColor"
-      strokeWidth="2.5"
+      strokeWidth="16"
       strokeLinecap="round"
       strokeLinejoin="round"
+      fill="none"
     />
     <path
-      d="M24 20C26 18 30 17 32 17C34 17 38 18 40 20"
+      d="M100 120C90 100 70 90 60 70C55 58 60 45 72 38"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="16"
       strokeLinecap="round"
-      opacity="0.5"
+      fill="none"
+    />
+    <path
+      d="M100 120C110 100 130 90 140 70C145 58 140 45 128 38"
+      stroke="currentColor"
+      strokeWidth="16"
+      strokeLinecap="round"
+      fill="none"
     />
   </svg>
 );
@@ -38,7 +45,7 @@ const Logo = ({ variant = 'default', className }) => {
 
   return (
     <div className={`flex items-center space-x-2 group ${className || ''}`}>
-      <ToothIcon className={`${iconClass} group-hover:scale-110 transition-transform`} />
+      <ToothLogo className={`${iconClass} group-hover:scale-110 transition-transform`} />
       <span className={`text-2xl font-bold ${textClass} group-hover:opacity-80 transition-opacity`}>
         Dental<span className="font-light">Spot</span>
       </span>

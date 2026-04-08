@@ -185,7 +185,8 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>DentalSpot | Resuelve tu problema dental en minutos</title>
+        <title>DentalSpot | Resuelve tu problema dental 
+          en minutos</title>
         <meta
           name="description"
           content="Conectamos pacientes con dentistas cercanos usando IA. Describe tu sintoma, obtiene un diagnostico preliminar y agenda con el profesional ideal. Odontologia inteligente en Chile."
@@ -213,10 +214,10 @@ const HomePage = () => {
             1. HERO
         ══════════════════════════════════════════════════════════════════ */}
         <section className="relative py-16 md:py-24 overflow-hidden" aria-labelledby="hero-heading">
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
-            <div className="absolute top-60 -left-32 w-[400px] h-[400px] rounded-full bg-secondary/5 blur-3xl" />
-          </div>
+          {/* 🫧 Floating animated orbs */}
+          <motion.div animate={{ y: [0, 30, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} className="absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+          <motion.div animate={{ y: [0, -25, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }} className="absolute top-60 -left-32 w-[400px] h-[400px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
+          <motion.div animate={{ y: [0, 20, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} className="absolute bottom-0 right-1/4 w-[300px] h-[300px] rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
 
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center mb-12">
@@ -225,7 +226,7 @@ const HomePage = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-xl border border-primary/20 text-primary text-sm font-medium mb-6 shadow-sm"
               >
                 <Sparkles className="w-4 h-4" />
                 Odontologia inteligente con IA
@@ -254,14 +255,17 @@ const HomePage = () => {
                 <strong className="text-slate-800">agenda con el dentista ideal cerca de ti.</strong>
               </motion.p>
 
-              <motion.p
+              {/* 💊 Feature pills */}
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.25 }}
-                className="text-sm text-slate-500 max-w-xl mx-auto mb-10"
+                className="flex flex-wrap justify-center gap-2 mb-10"
               >
-                Orientacion con IA · Orden de radiografia automatica · Analisis de imagen · Match con dentistas · Precios transparentes
-              </motion.p>
+                {['Orientacion IA', 'Orden radiografia', 'Analisis imagen', 'Match dentistas', 'Precios claros'].map((t, i) => (
+                  <span key={i} className="px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-slate-200 text-xs font-medium text-slate-600 shadow-sm">{t}</span>
+                ))}
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
@@ -296,10 +300,28 @@ const HomePage = () => {
                   { icon: <Clock className="w-5 h-5 text-primary" />,  value: '5 min',  label: 'Orientacion con IA' },
                   { icon: <Star  className="w-5 h-5 text-amber-400 fill-amber-400" />, value: '100%', label: 'Precios transparentes' },
                 ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 text-slate-700">
+                  <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur border border-slate-100 shadow-sm">
                     {s.icon}
-                    <span className="font-bold text-lg">{s.value}</span>
+                    <span className="font-bold text-slate-900">{s.value}</span>
                     <span className="text-slate-500 text-sm">{s.label}</span>
+                  </div>
+                ))}
+              </motion.div>
+
+              {/* 🛡️ Trust badges */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-wrap justify-center gap-6 mb-12"
+              >
+                {[
+                  { icon: <Shield className="w-4 h-4" />, label: 'Datos encriptados' },
+                  { icon: <Brain className="w-4 h-4" />, label: 'IA avanzada' },
+                  { icon: <CheckCircle className="w-4 h-4" />, label: 'Profesionales verificados' },
+                ].map((b, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span className="text-primary">{b.icon}</span>{b.label}
                   </div>
                 ))}
               </motion.div>
@@ -308,7 +330,7 @@ const HomePage = () => {
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+              transition={{ duration: 0.6, delay: 0.55 }}
             >
               <p className="text-center text-sm font-semibold text-slate-400 uppercase tracking-widest mb-5">
                 Encuentra un dentista DentalSpot cerca de ti
@@ -321,7 +343,8 @@ const HomePage = () => {
         {/* ══════════════════════════════════════════════════════════════════
             2. COMO FUNCIONA (FLUJO)
         ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 bg-white border-y border-slate-100" aria-labelledby="flow-heading">
+        {/* 🔵 Dot grid background */}
+        <section className="py-20 border-y border-slate-100" aria-labelledby="flow-heading" style={{ backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
           <div className="container mx-auto px-4">
             <div className="text-center mb-14">
               <motion.p
@@ -366,7 +389,7 @@ const HomePage = () => {
                 <motion.div
                   key={i}
                   variants={itemVariants}
-                  className="relative bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-shadow"
+                  className="relative bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm hover:shadow-[0_0_30px_rgba(69,181,196,0.15)] hover:-translate-y-1 transition-all"
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.color}`}>
@@ -424,7 +447,7 @@ const HomePage = () => {
                 <motion.div
                   key={i}
                   variants={itemVariants}
-                  className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all group"
+                  className="bg-white/80 backdrop-blur-xl border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-[0_0_30px_rgba(69,181,196,0.15)] hover:-translate-y-1 transition-all group"
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${b.gradient} text-white mb-4 group-hover:scale-110 transition-transform`}>
                     {b.icon}
@@ -581,8 +604,12 @@ const HomePage = () => {
         {/* ══════════════════════════════════════════════════════════════════
             7. CTA FINAL
         ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 bg-gradient-to-r from-primary to-accent">
-          <div className="container mx-auto px-4 text-center">
+        <section className="py-20 bg-gradient-to-r from-primary to-accent relative overflow-hidden">
+          {/* ⭕ Circulos decorativos */}
+          <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white/10 border border-white/20 pointer-events-none" />
+          <div className="absolute bottom-10 right-16 w-48 h-48 rounded-full bg-white/5 border border-white/10 pointer-events-none" />
+          <div className="absolute top-1/2 left-1/3 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
+          <div className="container mx-auto px-4 text-center relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
