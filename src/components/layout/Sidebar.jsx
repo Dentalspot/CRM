@@ -156,18 +156,15 @@ const Sidebar = ({ isOpen, onClose }) => {
           {
             section: 'Evaluaciones Clínicas',
             items: [
-              { name: 'Módulo PIE', icon: GraduationCap, path: '/dashboard/therapist/pie' },
-              { name: 'Módulo TEA', icon: Brain, path: '/dashboard/therapist/tea' },
+              { name: 'Odontograma', icon: ClipboardCheck, path: '/dashboard/patients' },
             ],
           },
           {
             section: 'Herramientas IA',
             items: [
               { name: 'Notiz - Notas Auto.', icon: Mic, path: '/dashboard/therapist/notiz' },
-              { name: 'Visualizador de Voz', icon: Activity, path: '/dashboard/therapist/voice-visualizer' },
               { name: 'Crear Plantilla', icon: Sparkles, path: '/dashboard/therapist/create-template' },
               { name: 'Evidencia Científica', icon: BookOpen, path: '/dashboard/therapist/evidence-search' },
-              { name: 'Mis Cursos', icon: GraduationCap, path: '/dashboard/therapist/educator' },
               { name: 'Asistente Virtual', icon: MessageSquare, path: '/dashboard/chatbot' },
             ],
           },

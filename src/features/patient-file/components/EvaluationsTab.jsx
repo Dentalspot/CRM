@@ -11,6 +11,7 @@ import { es } from 'date-fns/locale';
 import { generateAdos2Report, generateAdirReport, generateSensorialReport } from '@/features/tea/utils/reportGenerator';
 import logger from '@/lib/utils/logger';
 import { SENSORIAL_SECTIONS } from '@/features/sensorial-profile/constants/sensorialItems';
+import Odontogram from '@/features/odontogram/components/Odontogram';
 
 const EVAL_TYPES = [
   {
@@ -141,6 +142,23 @@ const EvaluationsTab = ({ patientId, patientName }) => {
           <p className="text-sm text-muted-foreground">Tests diagnósticos aplicados a este paciente</p>
         </div>
       </div>
+
+      {/* Odontograma — Evaluacion dental principal */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                🦷 Odontograma
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">Diagrama dental interactivo — registro de estado por diente y superficie</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Odontogram patientId={patientId} />
+        </CardContent>
+      </Card>
 
       {EVAL_TYPES.map((type) => {
         const evals = evaluations[type.key] || [];
