@@ -48,11 +48,9 @@ CREATE POLICY "patient_odontograms_read"
   TO authenticated
   USING (
     patient_id IN (
-      SELECT id FROM patients WHERE id IN (
-        SELECT id FROM patients p
-        JOIN profiles pr ON pr.id = p.id
-        WHERE pr.id = auth.uid()
-      )
+      SELECT p.id FROM patients p
+      JOIN profiles pr ON pr.id = p.id
+      WHERE pr.id = auth.uid()
     )
   );
 

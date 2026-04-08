@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 --
 -- PostgreSQL database dump
 --
@@ -22,7 +23,7 @@ SET row_security = off;
 -- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
 
-CREATE SCHEMA public;
+CREATE SCHEMA IF NOT EXISTS public;
 
 
 --
@@ -27322,5 +27323,4 @@ ALTER TABLE public.word_searches ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict rXk1dtvAX1yRJVk5SQuxzk9sHS6VaRQRYobc7cV4QoJqG3WGig01nIcPWXZPeMg
 
