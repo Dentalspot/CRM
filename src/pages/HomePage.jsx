@@ -237,36 +237,21 @@ const HomePage = () => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight"
+                className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight whitespace-nowrap"
               >
-                Resuelve tu problema dental{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                  en minutos
-                </span>
+                Resuelve tu problema dental <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">en minutos</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-4 leading-relaxed"
+                className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-8 leading-relaxed"
               >
-                Describe tu sintoma, obtiene un diagnostico preliminar con IA y{' '}
-                <strong className="text-slate-800">agenda con el dentista ideal cerca de ti.</strong>
+                Describe tu sintoma, obtiene un diagnostico preliminar con IA y agenda con el dentista ideal cerca de ti.
               </motion.p>
 
-              {/* 💊 Feature pills */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.25 }}
-                className="flex flex-wrap justify-center gap-2 mb-10"
-              >
-                {['Orientacion IA', 'Orden radiografia', 'Analisis imagen', 'Match dentistas', 'Precios claros'].map((t, i) => (
-                  <span key={i} className="px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-slate-200 text-xs font-medium text-slate-600 shadow-sm">{t}</span>
-                ))}
-              </motion.div>
-
+              {/* CTAs */}
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -289,40 +274,44 @@ const HomePage = () => {
                 </Button>
               </motion.div>
 
+              {/* Stats + Trust — tarjetas en fila */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="flex flex-wrap justify-center gap-8 mb-14"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-12"
               >
                 {[
-                  { icon: <Users className="w-5 h-5 text-primary" />, value: '+200', label: 'Dentistas verificados' },
-                  { icon: <Clock className="w-5 h-5 text-primary" />,  value: '5 min',  label: 'Orientacion con IA' },
-                  { icon: <Star  className="w-5 h-5 text-amber-400 fill-amber-400" />, value: '100%', label: 'Precios transparentes' },
+                  { icon: <Users className="w-6 h-6 text-primary" />, value: '+200', label: 'Dentistas verificados', sub: 'Profesionales con perfil completo' },
+                  { icon: <Clock className="w-6 h-6 text-primary" />, value: '5 min', label: 'Orientacion con IA', sub: 'Diagnostico preliminar inmediato' },
+                  { icon: <Star className="w-6 h-6 text-amber-400 fill-amber-400" />, value: '100%', label: 'Precios transparentes', sub: 'Sin sorpresas, comparas y decides' },
                 ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/80 backdrop-blur border border-slate-100 shadow-sm">
+                  <div key={i} className="flex flex-col items-center gap-1 p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-slate-100 shadow-sm hover:shadow-[0_0_30px_rgba(69,181,196,0.12)] transition-all">
                     {s.icon}
-                    <span className="font-bold text-slate-900">{s.value}</span>
-                    <span className="text-slate-500 text-sm">{s.label}</span>
+                    <span className="font-black text-xl text-slate-900">{s.value}</span>
+                    <span className="text-sm font-semibold text-slate-700">{s.label}</span>
+                    <span className="text-xs text-slate-400">{s.sub}</span>
                   </div>
                 ))}
               </motion.div>
 
-              {/* 🛡️ Trust badges */}
+              {/* Feature pills + Trust badges */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="flex flex-wrap justify-center gap-6 mb-12"
+                className="flex flex-wrap justify-center gap-2 mb-8"
               >
                 {[
-                  { icon: <Shield className="w-4 h-4" />, label: 'Datos encriptados' },
-                  { icon: <Brain className="w-4 h-4" />, label: 'IA avanzada' },
-                  { icon: <CheckCircle className="w-4 h-4" />, label: 'Profesionales verificados' },
+                  { icon: <Shield className="w-3.5 h-3.5" />, label: 'Datos encriptados' },
+                  { icon: <Brain className="w-3.5 h-3.5" />, label: 'IA avanzada' },
+                  { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Profesionales verificados' },
+                  { icon: <Sparkles className="w-3.5 h-3.5" />, label: 'Analisis de imagen' },
+                  { icon: <MapPin className="w-3.5 h-3.5" />, label: 'Match por ubicacion' },
                 ].map((b, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-slate-200 text-xs font-medium text-slate-600 shadow-sm">
                     <span className="text-primary">{b.icon}</span>{b.label}
-                  </div>
+                  </span>
                 ))}
               </motion.div>
             </div>
