@@ -1,33 +1,47 @@
 // src/components/shared/Logo.jsx
 import React from 'react';
 
-const ToothLogo = ({ className }) => (
+/**
+ * Logo DentalSpot — Dos corazones entrelazados formando un diente
+ * Replica del logo oficial dentalspot.png
+ */
+const ToothHeartIcon = ({ className }) => (
   <svg
-    viewBox="0 0 200 220"
+    viewBox="0 0 100 110"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
   >
-    {/* Diente con corazon/lazo - colores de marca DentalSpot */}
+    {/* Corazon izquierdo */}
     <path
-      d="M100 200C85 175 60 155 50 130C38 100 42 70 60 50C75 33 95 28 100 55C105 28 125 33 140 50C158 70 162 100 150 130C140 155 115 175 100 200Z"
+      d="M50 95C42 82 28 72 22 58C16 44 18 30 28 22C38 14 48 16 50 28"
       stroke="currentColor"
-      strokeWidth="16"
+      strokeWidth="9"
       strokeLinecap="round"
       strokeLinejoin="round"
       fill="none"
     />
+    {/* Corazon derecho */}
     <path
-      d="M100 120C90 100 70 90 60 70C55 58 60 45 72 38"
+      d="M50 95C58 82 72 72 78 58C84 44 82 30 72 22C62 14 52 16 50 28"
       stroke="currentColor"
-      strokeWidth="16"
+      strokeWidth="9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+    {/* Lazo central (interseccion) */}
+    <path
+      d="M50 65C44 52 36 44 32 36"
+      stroke="currentColor"
+      strokeWidth="9"
       strokeLinecap="round"
       fill="none"
     />
     <path
-      d="M100 120C110 100 130 90 140 70C145 58 140 45 128 38"
+      d="M50 65C56 52 64 44 68 36"
       stroke="currentColor"
-      strokeWidth="16"
+      strokeWidth="9"
       strokeLinecap="round"
       fill="none"
     />
@@ -45,7 +59,7 @@ const Logo = ({ variant = 'default', className }) => {
 
   return (
     <div className={`flex items-center space-x-2 group ${className || ''}`}>
-      <ToothLogo className={`${iconClass} group-hover:scale-110 transition-transform`} />
+      <ToothHeartIcon className={`${iconClass} group-hover:scale-110 transition-transform`} />
       <span className={`text-2xl font-bold ${textClass} group-hover:opacity-80 transition-opacity`}>
         Dental<span className="font-light">Spot</span>
       </span>
