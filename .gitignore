@@ -44,3 +44,5 @@ dist/
 .claire/
 .claude/
 dist/
+
+supabase/.temp/
