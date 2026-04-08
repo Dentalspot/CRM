@@ -11,7 +11,7 @@ const Logo = ({ variant = 'default', className }) => {
       <img
         src="/logo-dentalspot.svg"
         alt="DentalSpot"
-        className="h-8 w-8 group-hover:scale-110 transition-transform"
+        className="h-10 w-10 group-hover:scale-110 transition-transform"
       />
       <span className={`text-2xl font-bold ${textClass} group-hover:opacity-80 transition-opacity`}>
         Dental<span className="font-light">Spot</span>
