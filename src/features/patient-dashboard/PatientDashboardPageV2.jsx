@@ -434,22 +434,31 @@ const PatientDashboardPageV2 = () => {
           <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">
             Tu panel se activara cuando un dentista te agregue como paciente o cuando agendes tu primera cita.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-            <div className="bg-white rounded-xl border border-gray-100 p-5 text-center shadow-sm">
-              <span className="text-2xl mb-2 block">🔍</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            <button
+              onClick={() => navigate('/dentistas')}
+              className="bg-white rounded-xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md hover:border-primary/30 transition-all group cursor-pointer"
+            >
+              <span className="text-2xl mb-3 block group-hover:scale-110 transition-transform">🔍</span>
               <h3 className="font-semibold text-gray-800 text-sm">Busca un dentista</h3>
               <p className="text-xs text-gray-500 mt-1">Encuentra profesionales cerca de ti</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-5 text-center shadow-sm">
-              <span className="text-2xl mb-2 block">📅</span>
-              <h3 className="font-semibold text-gray-800 text-sm">Agenda tu cita</h3>
-              <p className="text-xs text-gray-500 mt-1">Reserva directa con confirmacion</p>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-100 p-5 text-center shadow-sm">
-              <span className="text-2xl mb-2 block">📋</span>
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/patient/clinical-file')}
+              className="bg-white rounded-xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md hover:border-primary/30 transition-all group cursor-pointer"
+            >
+              <span className="text-2xl mb-3 block group-hover:scale-110 transition-transform">📋</span>
               <h3 className="font-semibold text-gray-800 text-sm">Tu ficha clinica</h3>
-              <p className="text-xs text-gray-500 mt-1">Historial y odontograma digital</p>
-            </div>
+              <p className="text-xs text-gray-500 mt-1">Completa tu informacion de salud</p>
+            </button>
+            <button
+              onClick={() => navigate('/dashboard/questions')}
+              className="bg-white rounded-xl border border-gray-100 p-6 text-center shadow-sm hover:shadow-md hover:border-primary/30 transition-all group cursor-pointer"
+            >
+              <span className="text-2xl mb-3 block group-hover:scale-110 transition-transform">💬</span>
+              <h3 className="font-semibold text-gray-800 text-sm">Realiza preguntas</h3>
+              <p className="text-xs text-gray-500 mt-1">Dentistas especialistas responden tus dudas</p>
+            </button>
           </div>
         </motion.div>
         <FloatingAssistant />
