@@ -23,24 +23,23 @@ const COLUMNS = [
 
 const FUNNELS = [
   { id: 'all', label: 'Todos', icon: '📊' },
-  { id: 'ados-2', label: 'ADOS-2', icon: '🧩' },
-  { id: 'adir', label: 'ADI-R', icon: '📋' },
-  { id: 'tea', label: 'TEA', icon: '🧠' },
-  { id: 'sensorial', label: 'Sensorial', icon: '👐' },
+  { id: 'pacientes', label: 'Pacientes', icon: '👤' },
+  { id: 'dentistas', label: 'Dentistas', icon: '🦷' },
+  { id: 'clinicas', label: 'Clínicas', icon: '🏥' },
+  { id: 'laboratorios', label: 'Laboratorios', icon: '🔬' },
   { id: 'marketplace', label: 'Marketplace', icon: '🛒' },
-  { id: 'membership', label: 'Membresia', icon: '⭐' },
+  { id: 'membership', label: 'Membresía', icon: '⭐' },
 ];
 
 const EMAIL_FUNNELS = [
-  { id: 'ados-2', label: 'Embudo ADOS-2', icon: '🧩' },
-  { id: 'adir', label: 'Embudo ADI-R', icon: '📋' },
-  { id: 'tea', label: 'Embudo TEA', icon: '🧠' },
-  { id: 'sensorial', label: 'Embudo Sensorial', icon: '👐' },
-  { id: 'marketplace', label: 'Embudo Marketplace', icon: '🛒' },
-  { id: 'membership', label: 'Embudo Membresia', icon: '⭐' },
+  { id: 'bienvenida', label: 'Bienvenida', icon: '👋' },
+  { id: 'carillas', label: 'Carillas 3D', icon: '✨' },
+  { id: 'alta', label: 'Alta Paciente', icon: '🎉' },
+  { id: 'inactivo', label: 'Reactivación', icon: '🔄' },
+  { id: 'marketplace', label: 'Marketplace', icon: '🛒' },
+  { id: 'membership', label: 'Membresía', icon: '⭐' },
   { id: 'newsletter', label: 'Newsletter', icon: '📰' },
   { id: 'onboarding', label: 'Onboarding', icon: '🚀' },
-  { id: 'reactivacion', label: 'Reactivacion', icon: '🔄' },
 ];
 
 const SOURCE_COLORS = {
