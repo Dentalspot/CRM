@@ -413,6 +413,57 @@ const PatientDashboardPageV2 = () => {
     );
   }
 
+  // No patient record yet — show welcome state
+  if (!patientId) {
+    return (
+      <div className="container mx-auto py-6 px-4 max-w-4xl">
+        <Helmet>
+          <title>Mi Panel | DentalSpot</title>
+        </Helmet>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16"
+        >
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <span className="text-4xl">🦷</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-3">
+            Bienvenido a <span className="text-primary">DentalSpot</span>, {firstName}
+          </h1>
+          <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">
+            Tu panel se activara cuando un dentista te agregue como paciente o cuando agendes tu primera cita.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-100 p-5 text-center shadow-sm">
+              <span className="text-2xl mb-2 block">🔍</span>
+              <h3 className="font-semibold text-gray-800 text-sm">Busca un dentista</h3>
+              <p className="text-xs text-gray-500 mt-1">Encuentra profesionales cerca de ti</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 p-5 text-center shadow-sm">
+              <span className="text-2xl mb-2 block">📅</span>
+              <h3 className="font-semibold text-gray-800 text-sm">Agenda tu cita</h3>
+              <p className="text-xs text-gray-500 mt-1">Reserva directa con confirmacion</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 p-5 text-center shadow-sm">
+              <span className="text-2xl mb-2 block">📋</span>
+              <h3 className="font-semibold text-gray-800 text-sm">Tu ficha clinica</h3>
+              <p className="text-xs text-gray-500 mt-1">Historial y odontograma digital</p>
+            </div>
+          </div>
+        </motion.div>
+        <FloatingAssistant />
+        {showWelcome && (
+          <WelcomeModal
+            isOpen={showWelcome}
+            onClose={() => setShowWelcome(false)}
+            userName={firstName}
+          />
+        )}
+      </div>
+    );
+  }
+
   // =====================================================
   // DERIVED DATA
   // =====================================================
