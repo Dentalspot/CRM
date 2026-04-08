@@ -9,11 +9,17 @@
 // PLAN IDENTIFIERS
 // ============================================
 export const PLAN_NAMES = {
-  FREE: 'free',
+  FREE: 'free', // DEPRECADO en DentalSpot — no se muestra en UI pero se mantiene para compatibilidad
   INDIVIDUAL: 'individual',
   PROFESSIONAL: 'profesional',
   CENTER: 'centro',
 };
+
+/**
+ * Planes visibles en la UI (excluye FREE)
+ * Usar esto en PricingPage, MembershipPlansPage, etc.
+ */
+export const VISIBLE_PLAN_NAMES = ['individual', 'profesional', 'centro'];
 
 // ============================================
 // ADD-ONS

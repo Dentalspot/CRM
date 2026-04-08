@@ -48,6 +48,11 @@ const AuthForm = ({ isLogin }) => {
   const [inviteStatus, setInviteStatus] = useState('none'); // none, loading, valid, invalid, expired
   const [inviterName, setInviterName] = useState(null);
 
+  // Discount code state
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountStatus, setDiscountStatus] = useState('none'); // none, loading, valid, invalid
+  const [discountInfo, setDiscountInfo] = useState(null);
+
   const availableRoles = getPublicRoles();
 
   useEffect(() => {
@@ -169,6 +174,10 @@ const AuthForm = ({ isLogin }) => {
 
     if (inviteCode && inviteStatus === 'valid') {
       metadata.invite_code = inviteCode;
+    }
+
+    if (discountCode) {
+      metadata.discount_code = discountCode;
     }
 
     const { error, needsEmailConfirmation, data } = await signUp(
@@ -304,8 +313,9 @@ const AuthForm = ({ isLogin }) => {
   };
 
   const isRutFieldValid = !formData.rut || (formData.rut && !rutError);
-  const needsInvitation = !isLogin && formData.role === 'therapist' && !isPaidPlan && inviteStatus !== 'valid';
-  const isSubmitDisabled = isLoading || !isRutFieldValid || inviteStatus === 'invalid' || inviteStatus === 'expired' || needsInvitation;
+  // DentalSpot: registro abierto para dentistas, sin invitacion obligatoria
+  const needsInvitation = false;
+  const isSubmitDisabled = isLoading || !isRutFieldValid;
 
   if (showForgotPassword) {
     return (
@@ -400,69 +410,29 @@ const AuthForm = ({ isLogin }) => {
                 )}
               </AlertDescription>
             </Alert>
-          ) : formData.role === 'therapist' ? (
-            <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-2 text-amber-800">
-                <Gift className="h-4 w-4" />
-                <span className="text-sm font-medium">Código de invitación requerido <span className="text-red-500">*</span></span>
-              </div>
-              <Input
-                placeholder="Ingresa tu código de 8 caracteres"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                disabled={isLoading}
-                maxLength={8}
-                className="font-mono tracking-widest uppercase bg-white"
-              />
-              {inviteCode && inviteStatus !== 'none' && inviteStatus !== 'loading' && (
-                <Badge variant={inviteStatus === 'valid' ? 'default' : 'destructive'} className={inviteStatus === 'valid' ? 'bg-teal-600 hover:bg-teal-700' : ''}>
-                  {inviteStatus === 'valid' && `✓ Invitación válida de ${inviterName}`}
-                  {inviteStatus === 'invalid' && '✗ Código inválido o usado'}
-                  {inviteStatus === 'expired' && '✗ Código expirado'}
-                </Badge>
-              )}
-              {inviteStatus !== 'valid' && (
-                <div className="text-xs text-amber-700 space-y-1">
-                  <p>Para registrarte como dentista necesitas una invitación de un colega miembro de DentalSpot.</p>
-                  <p>
-                    ¿No tienes invitación?{' '}
-                    <a
-                      href="https://influencer.comunicare.cl"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline font-medium hover:text-amber-900"
-                    >
-                      Solicítala aquí
-                    </a>
-                  </p>
-                </div>
-              )}
-            </div>
           ) : (
-            <Collapsible className="mb-4 bg-muted/30 p-3 rounded-lg border border-muted">
+            <Collapsible className="mb-4 bg-primary/5 p-3 rounded-lg border border-primary/10">
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground font-normal hover:bg-transparent p-0 h-auto">
-                  <Gift className="mr-2 h-4 w-4" />
-                  ¿Tienes un código de invitación?
+                <Button variant="ghost" size="sm" className="w-full justify-start text-slate-600 font-normal hover:bg-transparent p-0 h-auto">
+                  <Gift className="mr-2 h-4 w-4 text-primary" />
+                  ¿Tienes un codigo de descuento?
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-3 space-y-2">
                 <div className="relative">
                   <Input
-                    placeholder="Ingresa tu código de 8 caracteres"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    placeholder="Ej: DENTAL20"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
                     disabled={isLoading}
-                    maxLength={8}
+                    maxLength={20}
                     className="font-mono tracking-widest uppercase"
                   />
                 </div>
-                {inviteCode && inviteStatus !== 'none' && inviteStatus !== 'loading' && (
-                  <Badge variant={inviteStatus === 'valid' ? 'default' : 'destructive'} className={inviteStatus === 'valid' ? 'bg-teal-600 hover:bg-teal-700' : ''}>
-                    {inviteStatus === 'valid' && `✓ Invitación válida de ${inviterName}`}
-                    {inviteStatus === 'invalid' && '✗ Código inválido o usado'}
-                    {inviteStatus === 'expired' && '✗ Código expirado'}
-                  </Badge>
+                {discountCode && (
+                  <p className="text-xs text-slate-500">
+                    El descuento se aplicara al momento de elegir tu plan.
+                  </p>
                 )}
               </CollapsibleContent>
             </Collapsible>

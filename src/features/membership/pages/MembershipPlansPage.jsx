@@ -363,7 +363,7 @@ const MembershipPlansPage = () => {
           </div>
 
           <p className="text-center text-sm text-gray-500">
-            ¿Prefieres el plan gratuito? Incluye hasta 5 pacientes y funciones básicas.
+            Todos los planes incluyen 14 dias de prueba. Cancela cuando quieras.
           </p>
         </TabsContent>
 

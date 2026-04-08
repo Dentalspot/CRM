@@ -38,30 +38,6 @@ import { useMetaTracking } from '@/hooks/useMetaTracking';
 
 const pricingPlans = [
   {
-    id: 'gratis',
-    name: 'Gratis',
-    subtitle: 'Empieza',
-    icon: <Gift />,
-    priceMonthly: 0,
-    priceYearly: 0,
-    priceCLPMonthly: 0,
-    priceCLPYearly: 0,
-    description: 'Para quienes recién comienzan o quieren probar DentalSpot.',
-    features: [
-      { text: 'Hasta 5 pacientes activos', included: true },
-      { text: 'Agendamiento básico', included: true },
-      { text: 'Historial clínico digital', included: true },
-      { text: 'Informes con plantillas básicas', included: true },
-      { text: 'Asistente virtual IA (limitado)', included: true },
-      { text: 'Soporte por email', included: true },
-      { text: 'Recordatorios automáticos', included: false },
-      { text: 'Panel de métricas', included: false },
-    ],
-    cta: 'Comenzar Gratis',
-    popular: false,
-    iconColor: 'text-gray-400',
-  },
-  {
     id: 'individual',
     name: 'Individual',
     subtitle: 'Organízate',
