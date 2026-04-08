@@ -1,77 +1,49 @@
 import logger from '@/lib/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { PIXEL_PATIENTS, PIXEL_PROFESSIONALS, DATASET_PATIENTS, DATASET_PROFESSIONALS } from '@/components/shared/MetaPixelProvider';
 
 /**
  * Utility to interact with Meta Pixel (Client-side)
+ * Supports dual-pixel setup: patients vs professionals
  */
-
-export const DATASET_ID = '1464610018368997';
-
-// Initialize Pixel manually if needed (mostly handled by index.html script)
-export const initializeMetaPixel = (pixelId) => {
-  if (typeof window !== 'undefined' && window.fbq) {
-    window.fbq('init', pixelId);
-  }
-};
 
 /**
- * Tracks a standard or custom event to Meta Pixel
- * @param {string} eventName - Standard event name (e.g., 'Lead', 'Purchase') or custom name
- * @param {object} params - Additional data (currency, value, content_ids, etc.)
- * @param {string} eventId - Deduplication ID (must match CAPI event_id)
- * @param {string} datasetId - Optional dataset ID override
+ * Tracks a standard or custom event to a specific Meta Pixel
+ * @param {string} eventName - Standard event name or custom name
+ * @param {object} params - Additional data
+ * @param {string} eventId - Deduplication ID
+ * @param {string} pixelId - Target pixel ID (patients or professionals)
  */
-export const trackMetaEvent = ({ eventName, params = {}, eventId, datasetId = DATASET_ID }) => {
+export const trackMetaEvent = ({ eventName, params = {}, eventId, pixelId }) => {
   if (typeof window === 'undefined' || !window.fbq) {
     logger.warn('Meta Pixel not initialized or blocked');
     return;
   }
 
-  const trackType = isStandardEvent(eventName) ? 'track' : 'trackCustom';
-  
-  // Attach deduplication ID if provided
   const payload = { ...params };
   if (eventId) {
     payload.eventID = eventId;
   }
 
-  // NOTE: Client-side Pixel usually sends to the initialized ID. 
-  // If multiple IDs are initialized, trackSingle can be used, but standard 'track' sends to all.
-  // For simplicity and standard usage, we rely on the default 'track'.
-  // If specific dataset tracking is needed client-side:
-  // window.fbq('trackSingle', datasetId, eventName, payload);
-  
-  logger.track(`[Meta Pixel] Tracking ${eventName}`, payload);
-  
-  // We prefer trackSingle if we want to be specific about the Dataset ID, 
-  // but fallback to standard track if specific targeting isn't critical client-side
-  if (datasetId && window.fbq.getState && window.fbq.getState().pixels.length > 1) {
-     window.fbq('trackSingle', datasetId, eventName, payload);
+  logger.track(`[Meta Pixel] Tracking ${eventName} → ${pixelId || 'all'}`, payload);
+
+  if (pixelId) {
+    // Fire to specific pixel
+    window.fbq('trackSingle', pixelId, eventName, payload);
   } else {
-     window.fbq(trackType, eventName, payload);
+    // Fire to all initialized pixels
+    const trackType = isStandardEvent(eventName) ? 'track' : 'trackCustom';
+    window.fbq(trackType, eventName, payload);
   }
 };
 
-// List of standard Meta Pixel events
+// Standard Meta Pixel events
 const STANDARD_EVENTS = [
-  'AddPaymentInfo',
-  'AddToCart',
-  'AddToWishlist',
-  'CompleteRegistration',
-  'Contact',
-  'CustomizeProduct',
-  'Donate',
-  'FindLocation',
-  'InitiateCheckout',
-  'Lead',
-  'Purchase',
-  'Schedule',
-  'Search',
-  'StartTrial',
-  'SubmitApplication',
-  'Subscribe',
-  'ViewContent',
-  'PageView'
+  'AddPaymentInfo', 'AddToCart', 'AddToWishlist', 'CompleteRegistration',
+  'Contact', 'CustomizeProduct', 'Donate', 'FindLocation',
+  'InitiateCheckout', 'Lead', 'Purchase', 'Schedule',
+  'Search', 'StartTrial', 'SubmitApplication', 'Subscribe',
+  'ViewContent', 'PageView'
 ];
 
 function isStandardEvent(name) {
@@ -79,3 +51,9 @@ function isStandardEvent(name) {
 }
 
 export const generateEventId = () => uuidv4();
+
+// Re-export for backward compatibility
+export { PIXEL_PATIENTS, PIXEL_PROFESSIONALS, DATASET_PATIENTS, DATASET_PROFESSIONALS };
+
+// Legacy alias — old code imports DATASET_ID, default to patients pixel
+export const DATASET_ID = DATASET_PATIENTS;

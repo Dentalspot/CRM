@@ -1,22 +1,22 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { trackMetaEvent, generateEventId, DATASET_ID } from '@/lib/metaPixel';
+import { trackMetaEvent, generateEventId } from '@/lib/metaPixel';
+import { getPixelForRole, getDatasetForRole } from '@/components/shared/MetaPixelProvider';
 import logger from '@/lib/utils/logger';
 import { useAuth } from '@/contexts/AuthContext';
 
 /**
- * Hook to handle Meta Tracking via both Pixel (Browser) and Conversions API (Edge Function)
- * ensuring deduplication via event_id.
- * 
- * UPDATED: Added robust support for "Purchase" events with value/currency validation.
+ * Hook to handle Meta Tracking via both Pixel (Browser) and Conversions API (Edge Function).
+ * Automatically routes events to the correct pixel based on user role:
+ *  - Patients → pixel 1437133438008806
+ *  - Dentists/Clinics/Labs → pixel 800230703093106
+ *  - Anonymous → fires to both
  */
 export const useMetaTracking = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { user } = useAuth(); // Get tracked user if available
+  const { user, profile } = useAuth();
 
-  // Helper to hash email client-side if needed
   const hashData = async (data) => {
     if (!data) return null;
     const msgBuffer = new TextEncoder().encode(data.trim().toLowerCase());
@@ -29,14 +29,16 @@ export const useMetaTracking = () => {
    * Tracks an event to both Pixel and CAPI
    * @param {string} eventName - e.g. 'Purchase', 'Lead'
    * @param {object} eventData - { value, currency, content_name, ... }
-   * @param {object} userData - { email, phone, etc. } - optional, falls back to auth user
-   * @param {string} datasetIdOverride - Optional ID to override default DATASET_ID
+   * @param {object} userData - { email, phone } - optional, falls back to auth user
+   * @param {string} pixelIdOverride - Optional pixel ID override (ignores role-based routing)
    */
-  const trackEvent = useCallback(async (eventName, eventData = {}, userData = {}, datasetIdOverride = null) => {
+  const trackEvent = useCallback(async (eventName, eventData = {}, userData = {}, pixelIdOverride = null) => {
     setLoading(true);
     setError(null);
 
-    const targetDatasetId = datasetIdOverride || import.meta.env.VITE_META_DATASET_ID || DATASET_ID;
+    const role = profile?.role;
+    const targetPixelId = pixelIdOverride || getPixelForRole(role);
+    const targetDatasetId = pixelIdOverride || getDatasetForRole(role);
 
     // Validation for Purchase events
     if (eventName === 'Purchase') {
@@ -50,71 +52,63 @@ export const useMetaTracking = () => {
     }
 
     try {
-      // 1. Generate Deduplication ID (UUID)
-      // This is critical for Meta to know the Pixel event and CAPI event are the same.
       const eventId = generateEventId();
-      
-      // 2. Track via Pixel (Browser Side)
-      // We pass the eventId so the browser event matches the server event
-      trackMetaEvent({ 
-        eventName, 
-        params: eventData, 
+
+      // 1. Track via Pixel (Browser Side)
+      trackMetaEvent({
+        eventName,
+        params: eventData,
         eventId,
-        datasetId: targetDatasetId
+        pixelId: targetPixelId, // null = fires to all pixels
       });
 
-      // 3. Track via CAPI (Server Side via Edge Function)
-      // Prepare user data (prioritize passed data, fallback to auth context)
+      // 2. Track via CAPI (Server Side via Edge Function)
       const email = userData.email || user?.email;
-      const phone = userData.phone || user?.phone; 
-      
+      const phone = userData.phone || user?.phone;
+
       if (!targetDatasetId) {
         logger.warn('Meta Dataset ID is missing');
         return;
       }
 
-      // Invoke Supabase Edge Function
       const { data, error: apiError } = await supabase.functions.invoke('new-meta-capi', {
         body: {
           event_name: eventName,
           event_source_url: window.location.href,
           event_id: eventId,
           action_source: 'website',
-          dataset_id: targetDatasetId, // Explicitly pass dataset_id
-          pixel_id: targetDatasetId, // Backward compatibility for function logic
+          dataset_id: targetDatasetId,
+          pixel_id: targetDatasetId,
           user_data: {
-            email: email, 
-            phone: phone,
+            email,
+            phone,
             client_user_agent: navigator.userAgent,
-            // client_ip_address will be extracted by Edge Function headers
           },
           custom_data: {
-            currency: 'CLP', // Default fallback
-            ...eventData
-          }
-        }
+            currency: 'CLP',
+            ...eventData,
+          },
+        },
       });
 
-      if (apiError) return; // Silently fail — never block UI for tracking
-      
+      if (apiError) return;
+
       if (import.meta.env.DEV) {
         logger.track('[Meta CAPI] Success:', data);
       }
-
     } catch (err) {
-      // Silently fail — Meta tracking errors should never affect user experience
       if (import.meta.env.DEV) {
         logger.warn('[Meta CAPI] Non-blocking error:', err?.message);
       }
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, profile]);
 
   return {
     trackEvent,
     loading,
     error,
-    hashData 
+    hashData,
   };
 };
