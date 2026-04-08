@@ -1,0 +1,11 @@
+export { default as ClinicContextHeader } from './ClinicContextHeader';
+export { default as ClinicOnboardingChecklist } from './ClinicOnboardingChecklist';
+export { default as DayKPIs } from './DayKPIs';
+export { default as CriticalAlerts } from './CriticalAlerts';
+export { default as TeamOccupancyGrid } from './TeamOccupancyGrid';
+export { default as PatientsAtRisk } from './PatientsAtRisk';
+export { default as QuickActions } from './QuickActions';
+export { default as CommissionsPanel } from './CommissionsPanel';
+export { default as LiquidacionPanel } from './LiquidacionPanel';
+export { default as ClinicalQualityPanel } from './ClinicalQualityPanel';
+export { default as InvoicingPanel } from './InvoicingPanel';

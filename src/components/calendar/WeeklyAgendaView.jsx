@@ -1,0 +1,497 @@
+
+/**
+ * WeeklyAgendaView.jsx
+ * 
+ * Vista semanal del calendario que usa datos de disponibilidad REALES.
+ * Implementa Drag & Drop con persistencia a base de datos.
+ * 
+ * CAMBIO: Muestra solo nombre del paciente y colores específicos para block_types.
+ */
+
+import React, { useMemo, useState } from 'react';
+import { format, addDays, startOfWeek, isToday, addMinutes, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { MapPin, Video, AlertCircle, Loader2, GripVertical } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/components/ui/use-toast';
+
+const WeeklyAgendaView = ({
+  currentWeek,
+  appointments = [],
+  blockedTimes = [],
+  availabilityData = [],
+  clinics = [],
+  selectedClinic = 'all',
+  startHour = 8,
+  endHour = 20,
+  onSlotClick,
+  onAppointmentClick,
+  onBlockedTimeClick,
+  onAppointmentMove,
+  loading = false
+}) => {
+  const { toast } = useToast();
+
+  const [draggedApt, setDraggedApt] = useState(null);
+  const [dragOverSlot, setDragOverSlot] = useState(null);
+
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
+    return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
+  }, [currentWeek]);
+
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+      slots.push(`${String(hour).padStart(2, '0')}:00`);
+      slots.push(`${String(hour).padStart(2, '0')}:30`);
+    }
+    return slots;
+  }, [startHour, endHour]);
+
+  const availabilityMap = useMemo(() => {
+    const map = {};
+    if (!availabilityData || !Array.isArray(availabilityData)) return map;
+
+    availabilityData.forEach(dayData => {
+      if (dayData?.availability_date && Array.isArray(dayData.time_slots)) {
+        const dateStr = dayData.availability_date;
+        map[dateStr] = {};
+
+        dayData.time_slots.forEach(slot => {
+          if (slot?.time) {
+            const timeKey = slot.time.substring(0, 5);
+            map[dateStr][timeKey] = {
+              available: slot.available !== false,
+              clinicId: slot.clinic_id
+            };
+          }
+        });
+      }
+    });
+
+    return map;
+  }, [availabilityData]);
+
+  const isSlotAvailable = (dateStr, timeStr) => {
+    if (!availabilityMap[dateStr]) return false;
+    return availabilityMap[dateStr][timeStr]?.available === true;
+  };
+
+  const isRangeAvailableForDrop = (dateStr, startTimeStr, durationMinutes, excludeAptId) => {
+    const slotDuration = 30;
+    const slotsNeeded = Math.ceil(durationMinutes / slotDuration);
+    const hasAvailabilityForDate = availabilityMap[dateStr] && Object.keys(availabilityMap[dateStr]).length > 0;
+
+    const [startH, startM] = startTimeStr.split(':').map(Number);
+    let currentH = startH;
+    let currentM = startM;
+
+    for (let i = 0; i < slotsNeeded; i++) {
+      const currentTimeStr = `${String(currentH).padStart(2, '0')}:${String(currentM).padStart(2, '0')}`;
+
+      if (hasAvailabilityForDate && !isSlotAvailable(dateStr, currentTimeStr)) return false;
+      if (getBlockedTimeForSlot(dateStr, currentTimeStr)) return false;
+
+      const blockingApt = getAppointmentForSlot(dateStr, currentTimeStr);
+      if (blockingApt && blockingApt.id !== excludeAptId) return false;
+
+      currentM += slotDuration;
+      if (currentM >= 60) {
+        currentM = 0;
+        currentH += 1;
+      }
+    }
+    return true;
+  };
+
+  const getAppointmentForSlot = (dateStr, timeStr) => {
+    return appointments.find(apt => {
+      if (apt.date !== dateStr) return false;
+      if (apt.status === 'cancelled' || apt.status === 'canceled') return false;
+
+      const aptStart = apt.start_time?.substring(0, 5);
+      const aptEnd = apt.end_time?.substring(0, 5);
+
+      if (!aptStart || !aptEnd) return false;
+      return timeStr >= aptStart && timeStr < aptEnd;
+    });
+  };
+
+  const getBlockedTimeForSlot = (dateStr, timeStr) => {
+    return blockedTimes.find(block => {
+      const blockStart = new Date(block.start_time);
+      const blockEnd = new Date(block.end_time);
+      const blockDateStr = format(blockStart, 'yyyy-MM-dd');
+
+      if (blockDateStr !== dateStr) return false;
+
+      const blockStartTime = format(blockStart, 'HH:mm');
+      const blockEndTime = format(blockEnd, 'HH:mm');
+
+      return timeStr >= blockStartTime && timeStr < blockEndTime;
+    });
+  };
+
+  const handleSlotClick = (day, timeStr) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+
+    // Only block if availability data exists AND slot is explicitly unavailable
+    const hasAvailabilityForDate = availabilityMap[dateStr] && Object.keys(availabilityMap[dateStr]).length > 0;
+    if (hasAvailabilityForDate && !isSlotAvailable(dateStr, timeStr)) return;
+    if (getAppointmentForSlot(dateStr, timeStr)) return;
+    if (getBlockedTimeForSlot(dateStr, timeStr)) return;
+
+    const [hour, minute] = timeStr.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(hour, minute, 0, 0);
+    const endDate = addMinutes(startDate, 60);
+    const endTimeStr = format(endDate, 'HH:mm');
+
+    onSlotClick?.({
+      date: dateStr,
+      startTime: timeStr,
+      endTime: endTimeStr,
+      clinicId: availabilityMap[dateStr]?.[timeStr]?.clinicId || (selectedClinic !== 'all' ? selectedClinic : null)
+    });
+  };
+
+  const handleDragStart = (e, apt) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(apt));
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedApt(apt);
+  };
+
+  const handleDragOver = (e, dateStr, timeStr) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverSlot?.date !== dateStr || dragOverSlot?.time !== timeStr) {
+      setDragOverSlot({ date: dateStr, time: timeStr });
+    }
+  };
+
+  const handleDragLeave = (e) => { };
+
+  const handleDrop = (e, dateStr, timeStr) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+    setDraggedApt(null);
+
+    if (!draggedApt) return;
+
+    const currentStart = draggedApt.start_time.substring(0, 5);
+    if (draggedApt.date === dateStr && currentStart === timeStr) return;
+
+    const duration = draggedApt.duration_minutes || 60;
+
+    if (!isRangeAvailableForDrop(dateStr, timeStr, duration, draggedApt.id)) {
+      toast({
+        variant: "destructive",
+        title: "No disponible",
+        description: "El horario seleccionado no está disponible o tiene conflictos."
+      });
+      return;
+    }
+
+    const [h, m] = timeStr.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(h, m, 0, 0);
+    const endDate = addMinutes(startDate, duration);
+    const endTimeStr = format(endDate, 'HH:mm');
+
+    if (onAppointmentMove) {
+      onAppointmentMove(draggedApt.id, dateStr, timeStr, endTimeStr);
+    }
+  };
+
+  const getClinicName = (clinicId) => {
+    if (!clinicId) return '';
+    const clinic = clinics.find(c => c.id === clinicId);
+    return clinic?.name || '';
+  };
+
+  const renderAppointment = (apt, dateStr, timeStr) => {
+    const aptStart = apt.start_time?.substring(0, 5);
+    if (timeStr !== aptStart) return null;
+
+    const patientName = apt.patient?.profile?.full_name
+      || apt.patient?.full_name
+      || 'Paciente';
+
+    const isOnline = apt.modality_patient === 'online';
+    const isDraggingThis = draggedApt?.id === apt.id;
+
+    const duration = apt.duration_minutes || 60;
+    const heightSlots = Math.ceil(duration / 30);
+    const style = { height: `${heightSlots * 32}px`, zIndex: 20 };
+
+    let colorClasses = "";
+    let blockLabel = "";
+
+    // Task 5: Colores específicos por block_type
+    if (apt.block_type) {
+      if (apt.block_type === 'aula_recursos') {
+        colorClasses = "bg-green-100 border-green-500 text-green-800";
+        blockLabel = "Aula Rec.";
+      } else if (apt.block_type === 'trabajo_colaborativo') {
+        colorClasses = "bg-orange-100 border-orange-500 text-orange-800";
+        blockLabel = "Trabajo Colab.";
+      } else if (apt.block_type === 'coordinacion') {
+        colorClasses = "bg-yellow-100 border-yellow-500 text-yellow-800";
+        blockLabel = "Coordinación";
+      } else if (apt.block_type === 'informe') {
+        colorClasses = "bg-yellow-100 border-yellow-500 text-yellow-800";
+        blockLabel = "Informe";
+      } else if (apt.block_type === 'preparacion_material') {
+        colorClasses = "bg-purple-100 border-purple-500 text-purple-800";
+        blockLabel = "Prep. Mat.";
+      } else {
+        colorClasses = "bg-slate-100 border-slate-400 text-slate-800";
+        blockLabel = apt.block_type.replace('_', ' ');
+      }
+    } else {
+      colorClasses = apt.status === 'completed'
+        ? "bg-emerald-100 border-emerald-500 text-emerald-800"
+        : apt.status === 'confirmed'
+          ? "bg-blue-100 border-blue-500 text-blue-800"
+          : "bg-sky-100 border-sky-400 text-sky-800";
+    }
+
+    return (
+      <TooltipProvider key={apt.id}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              draggable
+              onDragStart={(e) => handleDragStart(e, apt)}
+              style={style}
+              className={cn(
+                "absolute inset-x-1 rounded-md text-xs p-1.5 cursor-grab active:cursor-grabbing transition-all",
+                "hover:brightness-95 hover:shadow-md overflow-hidden",
+                "border-l-4 shadow-sm group",
+                isDraggingThis ? "opacity-40" : "opacity-100",
+                colorClasses
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isDraggingThis) onAppointmentClick?.(apt);
+              }}
+            >
+              <div className="flex justify-between items-start">
+                <div className="font-bold truncate leading-tight text-[11px]">
+                  {patientName}
+                </div>
+                <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
+              </div>
+              <div className="flex items-center gap-1 mt-0.5 text-[10px] opacity-80">
+                {apt.block_type ? (
+                   <span className="truncate">{blockLabel}</span>
+                ) : isOnline ? (
+                  <><Video className="h-3 w-3" /> Online</>
+                ) : (
+                  <><MapPin className="h-3 w-3" /> Presencial</>
+                )}
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-semibold">{patientName}</p>
+            <p className="text-xs">{apt.start_time?.substring(0, 5)} - {apt.end_time?.substring(0, 5)} ({apt.duration_minutes || 60} min)</p>
+            {apt.block_type && <p className="text-xs font-medium mt-1">Bloque: {blockLabel}</p>}
+            {apt.clinic_id && <p className="text-xs text-muted-foreground">{getClinicName(apt.clinic_id)}</p>}
+            <p className="text-xs text-blue-500 mt-1">Arrastra para reprogramar</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
+  const renderBlockedTime = (block, dateStr, timeStr) => {
+    const blockStart = new Date(block.start_time);
+    const blockStartTime = format(blockStart, 'HH:mm');
+    if (timeStr !== blockStartTime) return null;
+
+    const start = parseISO(block.start_time);
+    const end = parseISO(block.end_time);
+    const diffMins = (end - start) / 60000;
+    const heightSlots = Math.ceil(diffMins / 30);
+    const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
+
+    return (
+      <TooltipProvider key={block.id}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              style={style}
+              className="absolute inset-x-1 bg-red-50 border border-red-200 border-dashed rounded-md p-1 cursor-pointer hover:bg-red-100 flex items-center justify-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBlockedTimeClick?.(block);
+              }}
+            >
+              <div className="flex items-center gap-1 text-red-500 text-[10px] font-medium">
+                <AlertCircle className="h-3 w-3" />
+                <span>Bloqueado</span>
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-semibold text-red-600">Horario Bloqueado</p>
+            <p className="text-xs">{block.reason || 'Sin motivo especificado'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-200 min-h-[500px]">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Cargando agenda...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden select-none">
+      {/* Header with days */}
+      <div className="grid grid-cols-8 border-b bg-gray-50/80 sticky top-0 z-30">
+        <div className="p-2 border-r bg-gray-50" />
+        {weekDays.map((day) => {
+          const dateStr = format(day, 'yyyy-MM-dd');
+          const hasAvailability = availabilityMap[dateStr] && Object.values(availabilityMap[dateStr]).some(s => s.available);
+
+          return (
+            <div
+              key={dateStr}
+              className={cn(
+                "p-2 text-center border-r last:border-r-0",
+                isToday(day) ? "bg-blue-50" : "bg-gray-50/50"
+              )}
+            >
+              <div className="text-xs font-semibold text-gray-500 uppercase">
+                {format(day, 'EEE', { locale: es })}
+              </div>
+              <div className={cn(
+                "text-lg font-bold w-8 h-8 flex items-center justify-center mx-auto rounded-full mt-1",
+                isToday(day) ? "bg-blue-600 text-white" : "text-gray-900"
+              )}>
+                {format(day, 'd')}
+              </div>
+              {hasAvailability && (
+                <div className="w-2 h-2 bg-green-400 rounded-full mx-auto mt-1" title="Tiene disponibilidad" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Time grid */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="grid grid-cols-8">
+          <div className="border-r bg-gray-50/30">
+            {timeSlots.map((time, idx) => (
+              <div
+                key={time}
+                className={cn(
+                  "h-8 px-2 text-xs font-medium text-gray-400 text-right flex items-center justify-end",
+                  idx % 2 === 0 ? "border-t border-gray-100" : ""
+                )}
+              >
+                {idx % 2 === 0 ? time : ''}
+              </div>
+            ))}
+          </div>
+
+          {weekDays.map((day) => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+
+            return (
+              <div key={dateStr} className="border-r last:border-r-0 relative">
+                {timeSlots.map((timeStr, idx) => {
+                  const isAvailable = isSlotAvailable(dateStr, timeStr);
+                  const hasAvailabilityForDate = availabilityMap[dateStr] && Object.keys(availabilityMap[dateStr]).length > 0;
+                  const appointment = getAppointmentForSlot(dateStr, timeStr);
+                  const blockedTime = getBlockedTimeForSlot(dateStr, timeStr);
+                  const isHalfHour = idx % 2 === 1;
+                  // Slot is clickable if: has no appointment/block AND (is available OR no availability data configured)
+                  const isClickable = !appointment && !blockedTime && (isAvailable || !hasAvailabilityForDate);
+
+                  const isDragOver = dragOverSlot?.date === dateStr && dragOverSlot?.time === timeStr;
+                  const canDropHere = draggedApt
+                    ? isRangeAvailableForDrop(dateStr, timeStr, draggedApt.duration_minutes || 60, draggedApt.id)
+                    : false;
+
+                  return (
+                    <div
+                      key={`${dateStr}-${timeStr}`}
+                      className={cn(
+                        "h-8 relative transition-colors",
+                        isHalfHour ? "border-t border-dashed border-gray-100" : "border-t border-gray-200",
+                        isAvailable && !appointment && !blockedTime
+                          ? "bg-green-50/50 hover:bg-green-100/70"
+                          : isClickable
+                            ? "bg-white hover:bg-gray-50"
+                            : "bg-gray-100/50",
+                        isToday(day) && "bg-blue-50/30",
+                        isAvailable && !appointment && !blockedTime && isToday(day) && "bg-blue-50/50 hover:bg-blue-100/70",
+                        isDragOver && canDropHere && "bg-blue-200 !important ring-2 ring-inset ring-blue-400 z-30",
+                        isDragOver && !canDropHere && "bg-red-100 !important ring-2 ring-inset ring-red-400 z-30"
+                      )}
+                      onClick={() => handleSlotClick(day, timeStr)}
+                      onDragOver={(e) => handleDragOver(e, dateStr, timeStr)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, dateStr, timeStr)}
+                    >
+                      {appointment && renderAppointment(appointment, dateStr, timeStr)}
+                      {!appointment && blockedTime && renderBlockedTime(blockedTime, dateStr, timeStr)}
+                      {isClickable && !draggedApt && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                          <span className={isAvailable ? "text-green-600 text-lg font-light" : "text-gray-400 text-lg font-light"}>+</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="border-t bg-gray-50 px-4 py-2 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-green-100 border border-green-300 rounded" />
+          <span>Disponible</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-sky-100 border-l-2 border-sky-400 rounded" />
+          <span>Consulta</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-green-100 border-l-2 border-green-500 rounded" />
+          <span>Aula</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-orange-100 border-l-2 border-orange-500 rounded" />
+          <span>Colab.</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-yellow-100 border-l-2 border-yellow-500 rounded" />
+          <span>Coord.</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-red-50 border border-dashed border-red-300 rounded" />
+          <span>Bloqueado</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WeeklyAgendaView;

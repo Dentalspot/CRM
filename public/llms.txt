@@ -1,0 +1,20 @@
+## Pages
+- [— Fonoaudiólogo | Fonokit`}](/therapistpublicprofile): No description available
+- [| Ficha Clínica | FONOKIT](/patientfile): No description available
+- [| FONOKIT](/legal): No description available
+- [Administración de Pacientes | Fonokit Admin](/patientadmin): No description available
+- [Agendar con  | Fonokit](/therapistbooking): No description available
+- [Cancelar Cita | Fonokit](/cancelappointment): No description available
+- [Configuración de Administrador | Fonokit](/adminsettings): Gestiona la configuración avanzada de la plataforma Fonokit.
+- [Confirmar Asistencia | Fonokit](/publicconfirmappointment): No description available
+- [Confirmar Cita | Fonokit](/confirmappointment): No description available
+- [Dashboard | Fonokit](/therapistdashboard): No description available
+- [Evidencia Científica | Fonokit](/evidencesearch): Busca evidencia científica de PubMed para tratamientos fonoaudiológicos.
+- [Ficha Clínica | Admin](/clinicalfiledetail): No description available
+- [Fonoaudiólogos en  | Fonokit](/fonoaudiologossearch): No description available
+- [Fonokit — La plataforma #1 para fonoaudiologos en Chile](/leadcapture): Agenda, ficha clinica, IA y marketplace en un solo lugar. Registrate gratis y recibe pacientes nuevos.
+- [Gestión de Pacientes | Admin](/patientsmanagement): No description available
+- [Mi Panel | FonoKit](/patientdashboard): Panel de control del paciente - Citas, actividades y documentos.
+- [Mis Actividades | Fonokit](/patientactivities): No description available
+- [Panel de Administrador | FonoKit](/admindashboard): Panel de administración para gestionar la plataforma FonoKit.
+- [Reprogramar Cita | Fonokit](/rescheduleappointment): No description available

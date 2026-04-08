@@ -1,0 +1,1 @@
+export const useLegalTemplates = () => ({ templates: [], loading: false });

@@ -1,0 +1,1 @@
+export const useCouponForm = () => ({ formData: {}, handleChange: () => {}, submit: () => {} });

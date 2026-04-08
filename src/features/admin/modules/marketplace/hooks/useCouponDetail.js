@@ -1,0 +1,1 @@
+export const useCouponDetail = (id) => ({ coupon: null, loading: false });

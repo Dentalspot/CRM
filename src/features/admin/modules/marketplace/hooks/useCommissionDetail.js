@@ -1,0 +1,1 @@
+export const useCommissionDetail = (id) => ({ commission: null, loading: false });

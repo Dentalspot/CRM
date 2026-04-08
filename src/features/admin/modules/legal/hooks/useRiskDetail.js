@@ -1,0 +1,1 @@
+export const useRiskDetail = (id) => ({ risk: null, loading: false });

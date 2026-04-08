@@ -1,0 +1,24 @@
+# Correct MIME types
+AddType text/css .css
+AddType application/javascript .js
+AddType application/json .json
+AddType image/svg+xml .svg
+
+# SPA fallback - only for routes, not static files
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # If file or directory exists, serve it directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Social media bots → Edge Function for OG meta tags
+  RewriteCond %{HTTP_USER_AGENT} facebookexternalhit|Facebot|LinkedInBot|Twitterbot|WhatsApp|TelegramBot|Slackbot|Discordbot|Pinterest|vkShare|W3C_Validator [NC]
+  RewriteCond %{REQUEST_URI} ^/blog/(.+)$
+  RewriteRule ^blog/(.+)$ https://ungjizupgostxkemilob.supabase.co/functions/v1/og-preview?slug=$1 [P,L]
+
+  # Otherwise, serve index.html (SPA routing)
+  RewriteRule ^ index.html [L]
+</IfModule>

@@ -1,0 +1,1 @@
+export const useVendorPerformance = (vendorId) => ({ performance: {}, loading: false });
