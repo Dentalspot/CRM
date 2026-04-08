@@ -9,7 +9,7 @@ const Logo = ({ variant = 'default', className }) => {
   return (
     <div className={`flex items-center space-x-2 group ${className || ''}`}>
       <img
-        src="/logo-dentalspot.svg"
+        src={variant === 'light' ? '/logo-dentalspot.png' : '/logo-dentalspot.svg'}
         alt="DentalSpot"
         className="h-10 w-10 group-hover:scale-110 transition-transform"
       />

@@ -605,10 +605,11 @@ const HomePage = () => {
             7. CTA FINAL
         ══════════════════════════════════════════════════════════════════ */}
         <section className="py-20 bg-gradient-to-r from-primary to-accent relative overflow-hidden">
-          {/* ⭕ Circulos decorativos */}
-          <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-white/10 border border-white/20 pointer-events-none" />
-          <div className="absolute bottom-10 right-16 w-48 h-48 rounded-full bg-white/5 border border-white/10 pointer-events-none" />
-          <div className="absolute top-1/2 left-1/3 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
+          {/* 🦷 Dientes decorativos flotantes */}
+          <img src="/logo-dentalspot.png" alt="" className="absolute top-8 left-8 w-20 h-20 opacity-10 pointer-events-none" />
+          <img src="/logo-dentalspot.png" alt="" className="absolute bottom-8 right-12 w-32 h-32 opacity-5 pointer-events-none" />
+          <img src="/logo-dentalspot.png" alt="" className="absolute top-1/2 left-1/3 w-14 h-14 opacity-10 pointer-events-none" />
+          <img src="/logo-dentalspot.png" alt="" className="absolute top-1/4 right-1/4 w-16 h-16 opacity-[0.07] pointer-events-none" />
           <div className="container mx-auto px-4 text-center relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -633,7 +634,7 @@ const HomePage = () => {
                 </Button>
                 <Button
                   asChild variant="outline" size="lg"
-                  className="h-14 px-8 border-white/30 text-white hover:bg-white/10 rounded-2xl font-medium text-base"
+                  className="h-14 px-8 bg-white/20 border border-white/40 text-white hover:bg-white/30 rounded-2xl font-semibold text-base backdrop-blur"
                 >
                   <Link to="/auth/register">Soy Dentista</Link>
                 </Button>
