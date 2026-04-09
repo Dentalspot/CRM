@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { 
   FileText, 
@@ -40,58 +42,30 @@ import { format } from 'date-fns';
 import logger from '@/lib/utils/logger';
 import { es } from 'date-fns/locale';
 
-// Mock API service for demonstration
-const fetchMyArticles = async () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        {
-          id: '1',
-          title: 'La importancia de la estimulación temprana en el lenguaje',
-          slug: 'importancia-estimulacion-temprana',
-          excerpt: 'Descubre por qué los primeros años de vida son fundamentales para el desarrollo comunicativo de tu hijo y cómo puedes apoyarlo desde casa con actividades sencillas.',
-          status: 'published',
-          views: 1245,
-          publishedAt: new Date(2025, 9, 15),
-          createdAt: new Date(2025, 9, 10),
-          coverImage: null
-        },
-        {
-          id: '2',
-          title: 'Ejercicios de respiración para el tartamudez',
-          slug: 'ejercicios-respiracion-tartamudez',
-          excerpt: 'Una guía práctica con ejercicios de respiración diafragmática diseñados para ayudar a controlar los bloqueos y mejorar la fluidez del habla en situaciones cotidianas.',
-          status: 'draft',
-          views: 0,
-          publishedAt: null,
-          createdAt: new Date(2025, 10, 5),
-          coverImage: null
-        },
-        {
-          id: '3',
-          title: 'Señales de alerta en el desarrollo auditivo',
-          slug: 'senales-alerta-desarrollo-auditivo',
-          excerpt: 'Aprende a identificar las señales tempranas de problemas auditivos en niños pequeños. La detección precoz es clave para un tratamiento efectivo.',
-          status: 'published',
-          views: 856,
-          publishedAt: new Date(2025, 8, 20),
-          createdAt: new Date(2025, 8, 18),
-          coverImage: null
-        },
-        {
-          id: '4',
-          title: 'Mitos y verdades sobre la terapia odontológica online',
-          slug: 'mitos-verdades-terapia-online',
-          excerpt: 'Desmentimos los mitos más comunes sobre la telepráctica y explicamos en qué casos es igual de efectiva que la terapia presencial.',
-          status: 'archived',
-          views: 320,
-          publishedAt: new Date(2025, 5, 12),
-          createdAt: new Date(2025, 5, 10),
-          coverImage: null
-        }
-      ]);
-    }, 800);
-  });
+// Fetch real articles from Supabase
+const fetchMyArticles = async (userId) => {
+  const { data, error } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('author_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    logger.error('Error fetching articles:', error);
+    return [];
+  }
+
+  return (data || []).map(post => ({
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt,
+    status: post.status === 'published' ? 'published' : post.status === 'archived' ? 'archived' : 'draft',
+    views: post.views || 0,
+    publishedAt: post.published_at ? new Date(post.published_at) : null,
+    createdAt: new Date(post.created_at),
+    coverImage: post.cover_url,
+  }));
 };
 
 const ArticleCardSkeleton = () => (
@@ -119,6 +93,7 @@ const ArticleCardSkeleton = () => (
 const MyBlogArticlesPage = ({ statusFilter }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,7 +106,7 @@ const MyBlogArticlesPage = ({ statusFilter }) => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const data = await fetchMyArticles();
+        const data = await fetchMyArticles(user?.id);
         setArticles(data);
       } catch (error) {
         logger.error("Error loading articles:", error);
