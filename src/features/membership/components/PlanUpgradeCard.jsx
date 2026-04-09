@@ -16,7 +16,7 @@ const PlanUpgradeCard = ({ planId, currentPlan, isYearly, onSelect, isProcessing
 
   // Override with dynamic data from subscription_plans table
   const displayName = dynamicPlan?.name || pricing.name;
-  const displayPrice = dynamicPlan?.price ?? displayPrice;
+  const displayPrice = dynamicPlan?.price ?? pricing.priceCLP;
   const displayDescription = dynamicPlan?.description || pricing.subtitle;
 
   const isCurrent = currentPlan === planId;
