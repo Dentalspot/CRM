@@ -237,19 +237,48 @@ const HomePage = () => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight whitespace-nowrap"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight"
               >
-                Resuelve tu problema dental <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">en minutos</span>
+                Resuelve tu problema dental{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent inline">en minutos</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-8 leading-relaxed"
+                className="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-8 leading-relaxed"
               >
                 Describe tu sintoma, obtiene un diagnostico preliminar con IA y agenda con el dentista ideal cerca de ti.
               </motion.p>
+
+              {/* 🤖 Mini flujo visual — comunica la innovacion de un vistazo */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.25 }}
+                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-0 mb-10 max-w-3xl mx-auto"
+              >
+                {[
+                  { icon: '💬', label: 'Describe' },
+                  { icon: '📄', label: 'Orden' },
+                  { icon: '🤖', label: 'IA analiza' },
+                  { icon: '🦷', label: 'Agenda' },
+                ].map((step, i) => (
+                  <React.Fragment key={i}>
+                    <div className="flex flex-col items-center gap-1 px-3">
+                      <span className="text-2xl">{step.icon}</span>
+                      <span className="text-xs font-semibold text-slate-700">{step.label}</span>
+                    </div>
+                    {i < 3 && (
+                      <ArrowRight className="w-4 h-4 text-primary/50 hidden sm:block flex-shrink-0" />
+                    )}
+                    {i < 3 && (
+                      <div className="w-px h-4 bg-primary/30 sm:hidden" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </motion.div>
 
               {/* CTAs */}
               <motion.div
@@ -279,7 +308,7 @@ const HomePage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-12"
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-10"
               >
                 {[
                   { icon: <Users className="w-6 h-6 text-primary" />, value: '+200', label: 'Dentistas verificados', sub: 'Profesionales con perfil completo' },
