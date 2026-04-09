@@ -141,7 +141,7 @@ const AuthForm = ({ isLogin }) => {
       description: "Has iniciado sesión exitosamente.",
     });
     // Redirect to dashboard after successful login
-    navigate('/dashboard', { replace: true });
+    window.location.href = '/dashboard';
   };
 
   // ============ REGISTER ============
