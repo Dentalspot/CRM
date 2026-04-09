@@ -237,44 +237,55 @@ const HomePage = () => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight"
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-2 leading-tight tracking-tight"
               >
-                Resuelve tu problema dental{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent inline">en minutos</span>
+                Resuelve tu problema dental
+              </motion.h1>
+              <motion.h1
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15 }}
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-8 leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent"
+              >
+                en minutos
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-8 leading-relaxed"
+                className="text-base sm:text-lg md:text-xl text-slate-600 max-w-xl mx-auto mb-8 leading-relaxed"
               >
                 Describe tu sintoma, obtiene un diagnostico preliminar con IA y agenda con el dentista ideal cerca de ti.
               </motion.p>
 
-              {/* 🤖 Mini flujo visual — comunica la innovacion de un vistazo */}
+              {/* 🤖 Flujo visual horizontal — impacto inmediato */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.25 }}
-                className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-0 mb-10 max-w-3xl mx-auto"
+                className="flex items-center justify-center gap-1 sm:gap-2 mb-10 overflow-x-auto px-2"
               >
                 {[
-                  { icon: '💬', label: 'Describe' },
-                  { icon: '📄', label: 'Orden' },
-                  { icon: '🤖', label: 'IA analiza' },
-                  { icon: '🦷', label: 'Agenda' },
+                  { icon: '💬', label: 'Describe', color: 'from-primary to-primary/80' },
+                  { icon: '📄', label: 'Orden', color: 'from-violet-500 to-purple-500' },
+                  { icon: '🤖', label: 'IA analiza', color: 'from-amber-400 to-orange-400' },
+                  { icon: '🦷', label: 'Agenda', color: 'from-emerald-400 to-teal-500' },
                 ].map((step, i) => (
                   <React.Fragment key={i}>
-                    <div className="flex flex-col items-center gap-1 px-3">
-                      <span className="text-2xl">{step.icon}</span>
-                      <span className="text-xs font-semibold text-slate-700">{step.label}</span>
-                    </div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.3 + i * 0.1 }}
+                      className="flex flex-col items-center gap-1 min-w-[60px]"
+                    >
+                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-xl sm:text-2xl shadow-lg`}>
+                        {step.icon}
+                      </div>
+                      <span className="text-[10px] sm:text-xs font-semibold text-slate-700">{step.label}</span>
+                    </motion.div>
                     {i < 3 && (
-                      <ArrowRight className="w-4 h-4 text-primary/50 hidden sm:block flex-shrink-0" />
-                    )}
-                    {i < 3 && (
-                      <div className="w-px h-4 bg-primary/30 sm:hidden" />
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-primary/40 flex-shrink-0 mx-0.5" />
                     )}
                   </React.Fragment>
                 ))}
@@ -284,12 +295,12 @@ const HomePage = () => {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
                 className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10"
               >
                 <Button
                   asChild size="lg"
-                  className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl transition-all text-base"
+                  className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
                 >
                   <Link to="/auth/register" className="flex items-center gap-2">
                     Describe tu sintoma <ArrowRight className="w-5 h-5" />
@@ -297,50 +308,45 @@ const HomePage = () => {
                 </Button>
                 <Button
                   asChild variant="outline" size="lg"
-                  className="h-14 px-8 border-slate-300 text-slate-700 hover:bg-slate-50 rounded-2xl font-medium text-base"
+                  className="h-14 px-8 border-slate-300 text-slate-700 hover:bg-slate-50 hover:-translate-y-0.5 rounded-2xl font-medium text-base transition-all"
                 >
                   <Link to="/auth/register">Soy Dentista</Link>
                 </Button>
               </motion.div>
 
-              {/* Stats + Trust — tarjetas en fila */}
+              {/* Stats en fila horizontal */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-10"
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-8"
               >
                 {[
-                  { icon: <Users className="w-6 h-6 text-primary" />, value: '+200', label: 'Dentistas verificados', sub: 'Profesionales con perfil completo' },
-                  { icon: <Clock className="w-6 h-6 text-primary" />, value: '5 min', label: 'Orientacion con IA', sub: 'Diagnostico preliminar inmediato' },
-                  { icon: <Star className="w-6 h-6 text-amber-400 fill-amber-400" />, value: '100%', label: 'Precios transparentes', sub: 'Sin sorpresas, comparas y decides' },
+                  { icon: <Users className="w-4 h-4 text-primary" />, value: '+200', label: 'Dentistas' },
+                  { icon: <Clock className="w-4 h-4 text-primary" />, value: '5 min', label: 'Orientacion IA' },
+                  { icon: <Star className="w-4 h-4 text-amber-400 fill-amber-400" />, value: '100%', label: 'Transparente' },
                 ].map((s, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1 p-4 rounded-2xl bg-white/80 backdrop-blur-xl border border-slate-100 shadow-sm hover:shadow-[0_0_30px_rgba(69,181,196,0.12)] transition-all">
-                    {s.icon}
-                    <span className="font-black text-xl text-slate-900">{s.value}</span>
-                    <span className="text-sm font-semibold text-slate-700">{s.label}</span>
-                    <span className="text-xs text-slate-400">{s.sub}</span>
+                  <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 backdrop-blur border border-slate-100 shadow-sm">
+                    {s.icon}<span className="font-bold text-sm text-slate-900">{s.value}</span><span className="text-slate-500 text-xs">{s.label}</span>
                   </div>
                 ))}
               </motion.div>
 
-              {/* Feature pills + Trust badges */}
+              {/* Trust badges */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="flex flex-wrap justify-center gap-2 mb-8"
+                transition={{ delay: 0.7 }}
+                className="flex flex-wrap justify-center gap-4 mb-8"
               >
                 {[
                   { icon: <Shield className="w-3.5 h-3.5" />, label: 'Datos encriptados' },
                   { icon: <Brain className="w-3.5 h-3.5" />, label: 'IA avanzada' },
-                  { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Profesionales verificados' },
-                  { icon: <Sparkles className="w-3.5 h-3.5" />, label: 'Analisis de imagen' },
-                  { icon: <MapPin className="w-3.5 h-3.5" />, label: 'Match por ubicacion' },
+                  { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Verificados' },
                 ].map((b, i) => (
-                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur border border-slate-200 text-xs font-medium text-slate-600 shadow-sm">
+                  <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500">
                     <span className="text-primary">{b.icon}</span>{b.label}
-                  </span>
+                  </div>
                 ))}
               </motion.div>
             </div>
