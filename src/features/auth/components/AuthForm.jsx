@@ -121,7 +121,7 @@ const AuthForm = ({ isLogin }) => {
 
   // ============ LOGIN ============
   const handleLogin = async () => {
-    const { error } = await signIn(formData.email, formData.password);
+    const { error, data } = await signIn(formData.email, formData.password);
 
     if (error) {
       toast({
@@ -136,12 +136,15 @@ const AuthForm = ({ isLogin }) => {
       return;
     }
 
-    toast({
-      title: "¡Bienvenido!",
-      description: "Has iniciado sesión exitosamente.",
-    });
-    // Redirect to dashboard after successful login
-    window.location.href = '/dashboard';
+    // Wait for session to be fully established
+    if (data?.session) {
+      window.location.replace('/dashboard');
+    } else {
+      // Fallback: wait a moment for auth state to propagate
+      setTimeout(() => {
+        window.location.replace('/dashboard');
+      }, 500);
+    }
   };
 
   // ============ REGISTER ============
