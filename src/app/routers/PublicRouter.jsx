@@ -18,6 +18,7 @@ const LegalPage = lazy(() => import('@/pages/LegalPage'));
 const FonoaudiologosSearchPage = lazy(() => import('@/pages/FonoaudiologosSearchPage'));
 const LeadCapturePage = lazy(() => import('@/pages/LeadCapturePage'));
 const ConfirmEmailPage = lazy(() => import('@/features/auth/pages/ConfirmEmailPage'));
+const PublicConsultaPage = lazy(() => import('@/features/symptom-flow/pages/PublicConsultaPage'));
 
 const PageLoader = () => (
   <div className="flex justify-center items-center h-[60vh] w-full">
@@ -38,6 +39,7 @@ const PublicRouter = () => {
 
         {/* Landing Pages (No Layout — full-screen) */}
         <Route path="/registro-profesional" element={<LeadCapturePage />} />
+        <Route path="/consulta" element={<PublicConsultaPage />} />
 
         {/* Pages with Layout */}
         <Route element={<Layout />}>

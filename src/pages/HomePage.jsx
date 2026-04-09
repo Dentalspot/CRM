@@ -309,7 +309,7 @@ const HomePage = () => {
                     asChild size="lg"
                     className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
                   >
-                    <Link to="/auth/register" className="flex items-center gap-2">
+                    <Link to="/consulta" className="flex items-center gap-2">
                       Describe tu sintoma <ArrowRight className="w-5 h-5" />
                     </Link>
                   </Button>
@@ -790,7 +790,7 @@ const HomePage = () => {
                   asChild size="lg"
                   className="h-14 px-8 bg-white text-primary hover:bg-white/90 font-semibold rounded-2xl shadow-lg text-base"
                 >
-                  <Link to="/auth/register" className="flex items-center gap-2">
+                  <Link to="/consulta" className="flex items-center gap-2">
                     Empezar ahora <ArrowRight className="w-5 h-5" />
                   </Link>
                 </Button>
