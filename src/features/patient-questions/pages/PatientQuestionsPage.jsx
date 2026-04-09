@@ -18,7 +18,7 @@ const PatientQuestionsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.body.trim()) return;
+    if (!formData.title.trim() || !formData.body.trim() || formData.title.trim().length < 10) return;
     
     setIsSubmitting(true);
     await createQuestion(formData);
@@ -74,21 +74,25 @@ const PatientQuestionsPage = () => {
             <CardContent className="pt-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="title" className="text-sm font-medium text-slate-700">Título o Tema Principal</label>
+                  <label htmlFor="title" className="text-sm font-medium text-slate-700">Titulo o tema principal</label>
                   <Input
                     id="title"
-                    placeholder="Ej. Dudas sobre el último ejercicio"
+                    placeholder="Ej. ¿Es normal el dolor despues de una limpieza?"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
+                    minLength={10}
                     className="text-slate-900"
                   />
+                  {formData.title.length > 0 && formData.title.length < 10 && (
+                    <p className="text-xs text-amber-600">El titulo debe tener al menos 10 caracteres ({formData.title.length}/10)</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="body" className="text-sm font-medium text-slate-700">Detalle de la consulta</label>
+                  <label htmlFor="body" className="text-sm font-medium text-slate-700">Detalle de tu consulta</label>
                   <Textarea
                     id="body"
-                    placeholder="Describe tu duda para que el terapeuta pueda ayudarte mejor..."
+                    placeholder="Describe tu duda para que un dentista pueda ayudarte..."
                     value={formData.body}
                     onChange={(e) => setFormData({ ...formData, body: e.target.value })}
                     required
