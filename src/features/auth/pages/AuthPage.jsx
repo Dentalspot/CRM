@@ -78,8 +78,8 @@ export default function AuthPage() {
   const [exitPopupShown, setExitPopupShown] = useState(false);
 
   useEffect(() => {
-    if (user) window.location.replace('/dashboard');
-  }, [user]);
+    if (user) navigate('/dashboard', { replace: true });
+  }, [user, navigate]);
 
   useEffect(() => {
     if (user) {

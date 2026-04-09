@@ -121,7 +121,7 @@ const AuthForm = ({ isLogin }) => {
 
   // ============ LOGIN ============
   const handleLogin = async () => {
-    const { error, data } = await signIn(formData.email, formData.password);
+    const { error } = await signIn(formData.email, formData.password);
 
     if (error) {
       toast({
@@ -133,11 +133,12 @@ const AuthForm = ({ isLogin }) => {
           ? "Tu email aún no está confirmado. Revisa tu bandeja de entrada o spam."
           : error.message
       });
-      return;
+      return false;
     }
 
-    // Redirect immediately — session is already established by signIn
-    window.location.replace('/dashboard');
+    // Don't redirect here — AuthPage's useEffect handles it when user state updates.
+    // This avoids a race condition where the page reloads before the session is ready.
+    return true;
   };
 
   // ============ REGISTER ============
@@ -252,7 +253,8 @@ const AuthForm = ({ isLogin }) => {
 
     try {
       if (isLogin) {
-        await handleLogin();
+        const success = await handleLogin();
+        if (success) return; // Keep spinner — AuthPage redirects when user state updates
       } else {
         await handleRegister();
       }
@@ -263,9 +265,8 @@ const AuthForm = ({ isLogin }) => {
         title: "Error inesperado",
         description: error.message || "Por favor intenta de nuevo más tarde"
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   // ============ FORGOT PASSWORD ============
