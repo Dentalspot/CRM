@@ -136,15 +136,8 @@ const AuthForm = ({ isLogin }) => {
       return;
     }
 
-    // Wait for session to be fully established
-    if (data?.session) {
-      window.location.replace('/dashboard');
-    } else {
-      // Fallback: wait a moment for auth state to propagate
-      setTimeout(() => {
-        window.location.replace('/dashboard');
-      }, 500);
-    }
+    // Redirect immediately — session is already established by signIn
+    window.location.replace('/dashboard');
   };
 
   // ============ REGISTER ============
