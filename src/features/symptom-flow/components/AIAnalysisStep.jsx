@@ -4,55 +4,93 @@ import { ArrowRight, Loader2, AlertTriangle, Clock, CheckCircle, FileDown, FileI
 import { motion } from 'framer-motion';
 import { DENTAL_SYMPTOMS } from './SymptomStep';
 
-// Local AI classification (v1 — no API needed)
+// Local AI classification (v1 — rule-based, will be replaced by edge function)
 const classifySymptoms = (symptoms, description) => {
   const text = [...symptoms, description.toLowerCase()].join(' ');
 
   // Urgency
   let urgency = 'preventivo';
-  if (text.includes('hinchazon') || text.includes('dolor') || text.includes('roto') || text.includes('sangrado')) {
-    urgency = 'moderado';
-  }
-  if (text.includes('hinchazon') && text.includes('dolor')) {
-    urgency = 'urgente';
-  }
 
   // Category & specialties
   const categories = [];
   const specialties = [];
 
-  if (text.includes('dolor_muela') || text.includes('dolor') || text.includes('muela')) {
+  // === DOLOR ===
+  if (text.includes('dolor_muela') || text.includes('dolor') || text.includes('muela') || text.includes('duele')) {
     categories.push('Posible caries o infeccion');
     specialties.push('endodoncia', 'odontologia_general');
+    urgency = 'moderado';
   }
-  if (text.includes('diente_roto') || text.includes('roto') || text.includes('fractur')) {
+
+  // === FRACTURA ===
+  if (text.includes('diente_roto') || text.includes('roto') || text.includes('fractur') || text.includes('quebr') || text.includes('partido')) {
     categories.push('Fractura dental');
     specialties.push('rehabilitacion_oral', 'estetica_dental');
+    urgency = 'moderado';
   }
-  if (text.includes('sangrado') || text.includes('encias')) {
+
+  // === SANGRADO / ENCIAS ===
+  if (text.includes('sangrado_encias') || text.includes('sangrado') || text.includes('encias') || text.includes('encia')) {
     categories.push('Problema periodontal');
     specialties.push('periodoncia');
+    urgency = 'moderado';
   }
-  if (text.includes('sensibilidad') || text.includes('frio') || text.includes('calor')) {
+
+  // === SENSIBILIDAD ===
+  if (text.includes('sensibilidad') || text.includes('frio') || text.includes('calor') || text.includes('sensible')) {
     categories.push('Sensibilidad dental');
     specialties.push('endodoncia', 'odontologia_general');
   }
-  if (text.includes('mal_aliento') || text.includes('aliento')) {
+
+  // === MAL ALIENTO ===
+  if (text.includes('mal_aliento') || text.includes('aliento') || text.includes('halitosis')) {
     categories.push('Halitosis');
     specialties.push('periodoncia', 'odontologia_general');
   }
-  if (text.includes('mancha') || text.includes('color') || text.includes('amarill')) {
+
+  // === ESTETICA: blanqueamiento, carillas, manchas ===
+  if (text.includes('mancha_color') || text.includes('mancha') || text.includes('color') || text.includes('amarill') ||
+      text.includes('blanque') || text.includes('blanco') || text.includes('carill') || text.includes('estetica') ||
+      text.includes('sonrisa') || text.includes('diseño') || text.includes('bonit')) {
     categories.push('Estetica dental');
-    specialties.push('estetica_dental');
+    specialties.push('estetica_dental', 'blanqueamiento');
   }
-  if (text.includes('hinchazon') || text.includes('hinch')) {
+
+  // === ORTODONCIA ===
+  if (text.includes('chueco') || text.includes('torcid') || text.includes('brackets') || text.includes('ortodoncia') ||
+      text.includes('alinead') || text.includes('mordida') || text.includes('apiñ')) {
+    categories.push('Ortodoncia');
+    specialties.push('ortodoncia');
+  }
+
+  // === IMPLANTES ===
+  if (text.includes('implante') || text.includes('falta diente') || text.includes('perdi') || text.includes('protesis') || text.includes('sin diente')) {
+    categories.push('Implantologia');
+    specialties.push('rehabilitacion_oral', 'cirugia_maxilofacial');
+  }
+
+  // === HINCHAZON / URGENCIA ===
+  if (text.includes('hinchazon') || text.includes('hinch') || text.includes('inflamad') || text.includes('absceso') || text.includes('pus')) {
     categories.push('Posible infeccion/absceso');
     specialties.push('cirugia_maxilofacial', 'endodoncia');
     urgency = 'urgente';
   }
-  if (text.includes('limpieza') || text.includes('sarro') || text.includes('control')) {
+
+  // === LIMPIEZA ===
+  if (text.includes('limpieza') || text.includes('sarro') || text.includes('control') || text.includes('revision') || text.includes('chequeo')) {
     categories.push('Limpieza y prevencion');
     specialties.push('odontologia_general');
+  }
+
+  // === BRUXISMO ===
+  if (text.includes('bruxismo') || text.includes('apriet') || text.includes('rechina') || text.includes('mandibula')) {
+    categories.push('Bruxismo');
+    specialties.push('odontologia_general', 'rehabilitacion_oral');
+  }
+
+  // === URGENCIA combinada ===
+  if (text.includes('hinchazon') && (text.includes('dolor') || text.includes('fiebre'))) {
+    urgency = 'urgente';
   }
 
   if (categories.length === 0) {
