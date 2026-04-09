@@ -12,7 +12,7 @@ const HeroSearchForm = () => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (term.trim()) params.set('term', term.trim());
-    navigate(`/fonoaudiologos${params.toString() ? '?' + params.toString() : ''}`);
+    navigate(`/dentistas${params.toString() ? '?' + params.toString() : ''}`);
   };
 
   return (
