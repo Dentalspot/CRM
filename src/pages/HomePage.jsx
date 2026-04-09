@@ -213,148 +213,286 @@ const HomePage = () => {
         {/* ══════════════════════════════════════════════════════════════════
             1. HERO
         ══════════════════════════════════════════════════════════════════ */}
-        <section className="relative py-16 md:py-24 overflow-hidden" aria-labelledby="hero-heading">
-          {/* 🫧 Floating animated orbs */}
+        <section className="relative py-16 md:py-24 lg:py-28 overflow-hidden" aria-labelledby="hero-heading">
+          {/* Floating animated orbs */}
           <motion.div animate={{ y: [0, 30, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} className="absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
           <motion.div animate={{ y: [0, -25, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }} className="absolute top-60 -left-32 w-[400px] h-[400px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
           <motion.div animate={{ y: [0, 20, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} className="absolute bottom-0 right-1/4 w-[300px] h-[300px] rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
 
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto text-center mb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-7xl mx-auto">
 
+              {/* ── LEFT COLUMN: Content ── */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-xl border border-primary/20 text-primary text-sm font-medium mb-6 shadow-sm"
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7 }}
+                className="text-center lg:text-left"
               >
-                <Sparkles className="w-4 h-4" />
-                Odontologia inteligente con IA
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-xl border border-primary/20 text-primary text-sm font-medium mb-6 shadow-sm"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Odontologia inteligente con IA
+                </motion.div>
+
+                <motion.h1
+                  id="hero-heading"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 leading-tight tracking-tight"
+                >
+                  Resuelve tu problema dental
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.15 }}
+                  className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent"
+                >
+                  en minutos
+                </motion.p>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="text-base sm:text-lg md:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed"
+                >
+                  Describe tu sintoma, obtiene un diagnostico preliminar con IA y agenda con el dentista ideal cerca de ti.
+                </motion.p>
+
+                {/* Flow icons - always horizontal */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.25 }}
+                  className="flex items-center justify-center lg:justify-start gap-1 sm:gap-2 mb-8"
+                >
+                  {[
+                    { icon: '\u{1F4AC}', label: 'Describe', color: 'from-primary to-primary/80' },
+                    { icon: '\u{1F4C4}', label: 'Orden', color: 'from-violet-500 to-purple-500' },
+                    { icon: '\u{1F916}', label: 'IA analiza', color: 'from-amber-400 to-orange-400' },
+                    { icon: '\u{1F9B7}', label: 'Agenda', color: 'from-emerald-400 to-teal-500' },
+                  ].map((step, i) => (
+                    <React.Fragment key={i}>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 + i * 0.1 }}
+                        className="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[60px]"
+                      >
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-lg sm:text-xl md:text-2xl shadow-lg`}>
+                          {step.icon}
+                        </div>
+                        <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-slate-700">{step.label}</span>
+                      </motion.div>
+                      {i < 3 && (
+                        <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary/40 flex-shrink-0 mx-0.5" />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </motion.div>
+
+                {/* CTAs */}
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-8"
+                >
+                  <Button
+                    asChild size="lg"
+                    className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
+                  >
+                    <Link to="/auth/register" className="flex items-center gap-2">
+                      Describe tu sintoma <ArrowRight className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild variant="outline" size="lg"
+                    className="h-14 px-8 border-slate-300 text-slate-700 hover:bg-slate-50 hover:-translate-y-0.5 rounded-2xl font-medium text-base transition-all"
+                  >
+                    <Link to="/auth/register">Soy Dentista</Link>
+                  </Button>
+                </motion.div>
+
+                {/* Trust badges */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="flex flex-wrap justify-center lg:justify-start gap-4"
+                >
+                  {[
+                    { icon: <Shield className="w-3.5 h-3.5" />, label: 'Datos encriptados' },
+                    { icon: <Brain className="w-3.5 h-3.5" />, label: 'IA avanzada' },
+                    { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Verificados' },
+                  ].map((b, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <span className="text-primary">{b.icon}</span>{b.label}
+                    </div>
+                  ))}
+                </motion.div>
               </motion.div>
 
-              <motion.h1
-                id="hero-heading"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-2 leading-tight tracking-tight"
-              >
-                Resuelve tu problema dental
-              </motion.h1>
-              <motion.h1
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.15 }}
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-8 leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent"
-              >
-                en minutos
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-base sm:text-lg md:text-xl text-slate-600 max-w-xl mx-auto mb-8 leading-relaxed"
-              >
-                Describe tu sintoma, obtiene un diagnostico preliminar con IA y agenda con el dentista ideal cerca de ti.
-              </motion.p>
-
-              {/* 🤖 Flujo visual horizontal — impacto inmediato */}
+              {/* ── RIGHT COLUMN: Phone mockup ── */}
               <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.25 }}
-                className="flex items-center justify-center gap-1 sm:gap-2 mb-10 overflow-x-auto px-2"
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="relative flex justify-center"
               >
-                {[
-                  { icon: '💬', label: 'Describe', color: 'from-primary to-primary/80' },
-                  { icon: '📄', label: 'Orden', color: 'from-violet-500 to-purple-500' },
-                  { icon: '🤖', label: 'IA analiza', color: 'from-amber-400 to-orange-400' },
-                  { icon: '🦷', label: 'Agenda', color: 'from-emerald-400 to-teal-500' },
-                ].map((step, i) => (
-                  <React.Fragment key={i}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.3 + i * 0.1 }}
-                      className="flex flex-col items-center gap-1 min-w-[60px]"
-                    >
-                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-xl sm:text-2xl shadow-lg`}>
-                        {step.icon}
+                {/* Floating card: Rating — top right */}
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute -top-4 -right-2 md:right-2 lg:-right-6 z-20 bg-white rounded-2xl px-4 py-3 shadow-lg shadow-slate-200/60 border border-slate-100 hidden md:flex items-center gap-2"
+                >
+                  <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">4.8</p>
+                    <p className="text-[10px] text-slate-500">200+ resenas</p>
+                  </div>
+                </motion.div>
+
+                {/* Floating card: AI stats — bottom left */}
+                <motion.div
+                  animate={{ y: [0, 10, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                  className="absolute bottom-16 -left-4 md:left-0 lg:-left-10 z-20 bg-white rounded-2xl px-4 py-3 shadow-lg shadow-slate-200/60 border border-slate-100 hidden md:flex items-center gap-2"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">+5,000</p>
+                    <p className="text-[10px] text-slate-500">Analisis IA</p>
+                  </div>
+                </motion.div>
+
+                {/* Floating card: Users — mid right */}
+                <motion.div
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                  className="absolute top-1/2 -right-2 md:right-0 lg:-right-8 z-20 bg-white rounded-2xl px-4 py-3 shadow-lg shadow-slate-200/60 border border-slate-100 hidden md:flex items-center gap-2"
+                >
+                  <div className="flex -space-x-2">
+                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs">
+                      {'\u{1F468}\u{200D}\u{2695}\u{FE0F}'}
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-xs">
+                      {'\u{1F469}\u{200D}\u{2695}\u{FE0F}'}
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-secondary/40 flex items-center justify-center text-xs">
+                      {'\u{1F9D1}\u{200D}\u{2695}\u{FE0F}'}
+                    </div>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700">+200 dentistas</p>
+                </motion.div>
+
+                {/* Phone mockup */}
+                <div
+                  className="relative max-w-[280px] sm:max-w-[300px] md:max-w-[320px] w-full"
+                  style={{ transform: 'perspective(1000px) rotateY(-5deg)' }}
+                >
+                  <div className="bg-slate-900 rounded-[2.5rem] p-3 shadow-2xl">
+                    <div className="bg-white rounded-[2rem] overflow-hidden">
+                      {/* Notch bar */}
+                      <div className="bg-slate-900 h-7 flex items-center justify-center relative">
+                        <div className="w-24 h-5 bg-slate-900 rounded-b-2xl" />
+                        <div className="absolute left-4 flex gap-1">
+                          <div className="w-1 h-1 rounded-full bg-slate-600" />
+                          <div className="w-1 h-1 rounded-full bg-slate-600" />
+                          <div className="w-1 h-1 rounded-full bg-slate-600" />
+                        </div>
+                        <span className="absolute right-4 text-[9px] text-slate-500 font-medium">9:41</span>
                       </div>
-                      <span className="text-[10px] sm:text-xs font-semibold text-slate-700">{step.label}</span>
-                    </motion.div>
-                    {i < 3 && (
-                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-primary/40 flex-shrink-0 mx-0.5" />
-                    )}
-                  </React.Fragment>
-                ))}
-              </motion.div>
 
-              {/* CTAs */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10"
-              >
-                <Button
-                  asChild size="lg"
-                  className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
-                >
-                  <Link to="/auth/register" className="flex items-center gap-2">
-                    Describe tu sintoma <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild variant="outline" size="lg"
-                  className="h-14 px-8 border-slate-300 text-slate-700 hover:bg-slate-50 hover:-translate-y-0.5 rounded-2xl font-medium text-base transition-all"
-                >
-                  <Link to="/auth/register">Soy Dentista</Link>
-                </Button>
-              </motion.div>
+                      {/* Greeting header */}
+                      <div className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[11px] text-slate-500">Bienvenida</p>
+                            <p className="text-sm font-bold text-slate-900 flex items-center gap-1">
+                              <span>{'\u{1F44B}'}</span> Hola, Maria
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-emerald-600 font-medium">3 citas hoy</span>
+                            <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Stats en fila horizontal */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-8"
-              >
-                {[
-                  { icon: <Users className="w-4 h-4 text-primary" />, value: '+200', label: 'Dentistas' },
-                  { icon: <Clock className="w-4 h-4 text-primary" />, value: '5 min', label: 'Orientacion IA' },
-                  { icon: <Star className="w-4 h-4 text-amber-400 fill-amber-400" />, value: '100%', label: 'Transparente' },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 backdrop-blur border border-slate-100 shadow-sm">
-                    {s.icon}<span className="font-bold text-sm text-slate-900">{s.value}</span><span className="text-slate-500 text-xs">{s.label}</span>
+                      {/* Card: Next appointment */}
+                      <div className="px-4 pt-3 pb-2">
+                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] font-semibold text-primary uppercase tracking-wide">Proxima Cita</p>
+                            <Calendar className="w-3.5 h-3.5 text-primary/50" />
+                          </div>
+                          <p className="text-xs font-bold text-slate-900">Dr. Mendoza</p>
+                          <p className="text-[10px] text-slate-500">Ortodoncia</p>
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <Clock className="w-3 h-3 text-slate-400" />
+                            <span className="text-[10px] text-slate-600 font-medium">Hoy 15:00</span>
+                            <MapPin className="w-3 h-3 text-slate-400 ml-1" />
+                            <span className="text-[10px] text-slate-600">Santiago</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card: AI analysis */}
+                      <div className="px-4 pb-2">
+                        <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10 p-3">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                              <Brain className="w-3.5 h-3.5 text-white" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-900">IA Dental</p>
+                          </div>
+                          <p className="text-[10px] text-slate-600">Analisis listo</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <CheckCircle className="w-3 h-3 text-emerald-500" />
+                            <span className="text-[10px] text-emerald-600 font-medium">Sin urgencia</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card: Odontogram */}
+                      <div className="px-4 pb-4">
+                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-3">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-sm">{'\u{1F9B7}'}</span>
+                            <p className="text-xs font-bold text-slate-900">Odontograma</p>
+                          </div>
+                          <p className="text-[10px] text-slate-500">Ultima revision</p>
+                          <p className="text-[10px] text-slate-700 font-medium mt-0.5">15 Mar 2026</p>
+                        </div>
+                      </div>
+
+                      {/* Bottom nav bar */}
+                      <div className="px-6 py-2 border-t border-slate-100 flex justify-around">
+                        <div className="w-8 h-1 rounded-full bg-slate-900 mx-auto" />
+                      </div>
+                    </div>
                   </div>
-                ))}
+                </div>
               </motion.div>
 
-              {/* Trust badges */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className="flex flex-wrap justify-center gap-4 mb-8"
-              >
-                {[
-                  { icon: <Shield className="w-3.5 h-3.5" />, label: 'Datos encriptados' },
-                  { icon: <Brain className="w-3.5 h-3.5" />, label: 'IA avanzada' },
-                  { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Verificados' },
-                ].map((b, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <span className="text-primary">{b.icon}</span>{b.label}
-                  </div>
-                ))}
-              </motion.div>
             </div>
 
+            {/* Search form below the hero grid */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.55 }}
+              className="mt-16"
             >
               <p className="text-center text-sm font-semibold text-slate-400 uppercase tracking-widest mb-5">
                 Encuentra un dentista DentalSpot cerca de ti
