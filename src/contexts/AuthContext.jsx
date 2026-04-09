@@ -203,6 +203,12 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
+      // Redirect to reset password page on recovery event
+      if (event === 'PASSWORD_RECOVERY') {
+        window.location.href = '/auth/reset-password#' + window.location.hash.substring(1);
+        return;
+      }
+
       setSession(newSession);
 
       if (newSession?.user) {
