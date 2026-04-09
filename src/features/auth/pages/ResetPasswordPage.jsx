@@ -153,7 +153,7 @@ const ResetPasswordPage = () => {
   // Loading State for Token Check
   if (tokenChecking) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary via-accent to-primary">
         <Loader2 className="h-12 w-12 animate-spin text-white" />
       </div>
     );
@@ -162,7 +162,7 @@ const ResetPasswordPage = () => {
   // Invalid Token State
   if (!validToken) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary via-accent to-primary p-4">
         <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-xl border-0">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -186,7 +186,7 @@ const ResetPasswordPage = () => {
   // Success State
   if (success) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary via-accent to-primary p-4">
         <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-xl border-0">
           <CardContent className="pt-10 pb-10 flex flex-col items-center text-center">
             <motion.div 
@@ -202,7 +202,7 @@ const ResetPasswordPage = () => {
               Tu contraseña ha sido actualizada correctamente. <br/>
               Serás redirigido al login en unos segundos...
             </p>
-            <Loader2 className="h-5 w-5 animate-spin text-indigo-600" />
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
           </CardContent>
         </Card>
       </div>
@@ -211,20 +211,18 @@ const ResetPasswordPage = () => {
 
   // Main Form
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4 font-sans">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-primary via-accent to-primary p-4 font-sans">
       
       <div className="w-full max-w-md mb-8 text-center text-white">
-        <div className="inline-flex items-center justify-center p-3 bg-white/20 backdrop-blur-md rounded-xl mb-4">
-          <ShieldCheck className="h-8 w-8 text-white" />
-        </div>
+        <img src="/logo-dentalspot.png" alt="DentalSpot" className="h-12 w-12 mx-auto mb-3" />
         <h1 className="text-3xl font-bold tracking-tight">Restablecer Contraseña</h1>
-        <p className="text-indigo-100 mt-2">Crea una nueva clave segura para tu cuenta</p>
+        <p className="text-white/80 mt-2">Crea una nueva clave segura para tu cuenta</p>
       </div>
 
       <Card className="w-full max-w-lg bg-white/95 backdrop-blur-xl shadow-2xl border-0 overflow-hidden">
         <CardHeader className="pb-4 border-b border-gray-100 bg-gray-50/50">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Lock className="h-5 w-5 text-indigo-600" />
+            <Lock className="h-5 w-5 text-primary" />
             Nueva Credencial
           </CardTitle>
           <CardDescription>
@@ -313,7 +311,7 @@ const ResetPasswordPage = () => {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-2.5 h-auto shadow-lg shadow-indigo-200 transition-all hover:shadow-xl hover:-translate-y-0.5"
+              className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-medium py-2.5 h-auto shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
               disabled={loading || strength < 4 || password !== confirmPassword}
             >
               {loading ? (
@@ -331,7 +329,7 @@ const ResetPasswordPage = () => {
         <CardFooter className="bg-gray-50/50 py-4 flex justify-center border-t border-gray-100">
           <button 
             onClick={() => navigate('/auth/login')}
-            className="text-sm text-gray-500 hover:text-indigo-600 transition-colors flex items-center"
+            className="text-sm text-gray-500 hover:text-primary transition-colors flex items-center"
           >
             <ArrowLeft className="h-3 w-3 mr-1" /> Volver al inicio de sesión
           </button>
