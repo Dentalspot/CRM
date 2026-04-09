@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Loader2, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
+import { ArrowRight, Loader2, AlertTriangle, Clock, CheckCircle, FileDown, FileImage } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DENTAL_SYMPTOMS } from './SymptomStep';
 
@@ -60,6 +60,32 @@ const classifySymptoms = (symptoms, description) => {
     specialties.push('odontologia_general');
   }
 
+  // Determine if X-ray is recommended
+  let needsXray = false;
+  let xrayType = null;
+  let xrayReason = '';
+
+  if (text.includes('dolor_muela') || text.includes('dolor') || text.includes('muela') || text.includes('sensibilidad')) {
+    needsXray = true;
+    xrayType = 'Radiografia periapical';
+    xrayReason = 'Para evaluar la raiz del diente y detectar posibles infecciones o caries profundas.';
+  }
+  if (text.includes('diente_roto') || text.includes('roto') || text.includes('fractur')) {
+    needsXray = true;
+    xrayType = 'Radiografia periapical';
+    xrayReason = 'Para evaluar si la fractura compromete la raiz o el hueso.';
+  }
+  if (text.includes('hinchazon') || text.includes('hinch')) {
+    needsXray = true;
+    xrayType = 'Radiografia panoramica';
+    xrayReason = 'Para evaluar la extension de la infeccion y estructuras oseas.';
+  }
+  if (text.includes('sangrado') || text.includes('encias')) {
+    needsXray = true;
+    xrayType = 'Radiografia panoramica';
+    xrayReason = 'Para evaluar el nivel de hueso y descartar enfermedad periodontal avanzada.';
+  }
+
   // Advice
   const adviceMap = {
     urgente: 'Te recomendamos consultar lo antes posible. Mientras tanto, evita alimentos muy calientes o frios y no te automediques.',
@@ -72,7 +98,104 @@ const classifySymptoms = (symptoms, description) => {
     specialties: [...new Set(specialties)],
     urgency,
     advice: adviceMap[urgency],
+    needsXray,
+    xrayType,
+    xrayReason,
   };
+};
+
+// Generate X-ray order PDF
+const generateXrayOrder = async (analysis, patientData) => {
+  const { jsPDF } = await import('jspdf');
+  const doc = new jsPDF();
+  const date = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+  const symptoms = patientData.symptoms
+    .map(id => DENTAL_SYMPTOMS.find(s => s.id === id)?.label)
+    .filter(Boolean)
+    .join(', ');
+
+  // Header
+  doc.setFillColor(69, 181, 196);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('DentalSpot', 20, 15);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Orden de Radiografia Dental', 20, 23);
+  doc.text(`Fecha: ${date}`, 20, 30);
+
+  // Body
+  doc.setTextColor(30, 30, 30);
+  let y = 50;
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ORDEN DE EXAMEN RADIOGRAFICO', 20, y);
+  y += 15;
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Tipo de examen solicitado:', 20, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  doc.text(analysis.xrayType || 'Radiografia periapical', 20, y);
+  y += 15;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Motivo clinico:', 20, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  const reasonLines = doc.splitTextToSize(analysis.xrayReason || 'Evaluacion diagnostica', 170);
+  doc.text(reasonLines, 20, y);
+  y += reasonLines.length * 6 + 10;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sintomas reportados por el paciente:', 20, y);
+  y += 7;
+  doc.setFont('helvetica', 'normal');
+  const symptomsText = symptoms || patientData.description || 'No especificados';
+  const symptomLines = doc.splitTextToSize(symptomsText, 170);
+  doc.text(symptomLines, 20, y);
+  y += symptomLines.length * 6 + 10;
+
+  if (patientData.description) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('Descripcion adicional:', 20, y);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    const descLines = doc.splitTextToSize(patientData.description, 170);
+    doc.text(descLines, 20, y);
+    y += descLines.length * 6 + 10;
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Nivel de urgencia:', 20, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(analysis.urgency === 'urgente' ? 'URGENTE' : analysis.urgency === 'moderado' ? 'Moderado' : 'Preventivo', 75, y);
+  y += 20;
+
+  // Instructions box
+  doc.setFillColor(240, 253, 250);
+  doc.roundedRect(15, y, 180, 35, 3, 3, 'F');
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('INSTRUCCIONES PARA EL PACIENTE:', 20, y + 8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('1. Lleve esta orden a un centro radiologico dental.', 20, y + 16);
+  doc.text('2. Solicite el examen indicado arriba.', 20, y + 22);
+  doc.text('3. Suba la imagen a dentalspot.cl o llevela a su cita.', 20, y + 28);
+  y += 45;
+
+  // Disclaimer
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.text('Esta orden es orientativa y fue generada por DentalSpot basada en sintomas reportados por el paciente.', 20, y);
+  doc.text('No reemplaza la orden de un profesional. El dentista tratante puede solicitar examenes adicionales.', 20, y + 5);
+  doc.text('dentalspot.cl — Odontologia inteligente', 20, y + 12);
+
+  doc.save('orden-radiografia-dentalspot.pdf');
 };
 
 const URGENCY_CONFIG = {
@@ -159,6 +282,40 @@ const AIAnalysisStep = ({ data, onNext, onBack }) => {
           ⚕️ Este analisis es orientativo y no reemplaza la evaluacion de un profesional.
         </p>
       </div>
+
+      {/* X-ray recommendation */}
+      {result.needsXray && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl border border-violet-200 p-6 space-y-4"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+              <FileImage className="w-5 h-5 text-violet-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Radiografia recomendada</h3>
+              <p className="text-sm text-violet-700 font-medium">{result.xrayType}</p>
+              <p className="text-xs text-slate-600 mt-1">{result.xrayReason}</p>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => generateXrayOrder(result, data)}
+            variant="outline"
+            className="w-full border-violet-300 text-violet-700 hover:bg-violet-100 rounded-xl"
+          >
+            <FileDown className="w-4 h-4 mr-2" />
+            Descargar orden de radiografia (PDF)
+          </Button>
+
+          <p className="text-xs text-slate-400 text-center">
+            Puedes llevar esta orden a cualquier laboratorio dental o centro radiologico.
+          </p>
+        </motion.div>
+      )}
 
       {/* CTAs */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
