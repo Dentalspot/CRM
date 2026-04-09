@@ -203,9 +203,19 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Redirect to reset password page on recovery event
+      // Redirect to reset password page on recovery event (PKCE flow)
       if (event === 'PASSWORD_RECOVERY') {
-        window.location.href = '/auth/reset-password#' + window.location.hash.substring(1);
+        logger.auth('[AUTH] PASSWORD_RECOVERY detected, redirecting to reset page');
+        sessionStorage.removeItem('dentalspot_pending_recovery');
+        window.location.replace('/auth/reset-password');
+        return;
+      }
+
+      // Check for pending recovery flag (set in main.jsx for PKCE code exchange)
+      if (event === 'SIGNED_IN' && sessionStorage.getItem('dentalspot_pending_recovery')) {
+        logger.auth('[AUTH] Pending recovery detected after SIGNED_IN');
+        sessionStorage.removeItem('dentalspot_pending_recovery');
+        window.location.replace('/auth/reset-password');
         return;
       }
 
