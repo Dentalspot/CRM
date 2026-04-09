@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowRight, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabaseClient';
 
 const DENTAL_SYMPTOMS = [
   { id: 'dolor_muela', emoji: '😣', label: 'Dolor de muela' },
@@ -17,6 +19,29 @@ const DENTAL_SYMPTOMS = [
 const SymptomStep = ({ onNext }) => {
   const [selected, setSelected] = useState([]);
   const [description, setDescription] = useState('');
+  const [regions, setRegions] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+
+  // Load regions
+  useEffect(() => {
+    const fetchRegions = async () => {
+      const { data } = await supabase.from('regions').select('id, name').order('name');
+      if (data) setRegions(data);
+    };
+    fetchRegions();
+  }, []);
+
+  // Load cities when region changes
+  useEffect(() => {
+    if (!selectedRegion) { setCities([]); setSelectedCity(''); return; }
+    const fetchCities = async () => {
+      const { data } = await supabase.from('cities').select('id, name').eq('region_id', selectedRegion).order('name');
+      if (data) setCities(data);
+    };
+    fetchCities();
+  }, [selectedRegion]);
 
   const toggle = (id) => {
     setSelected(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
@@ -57,9 +82,45 @@ const SymptomStep = ({ onNext }) => {
         />
       </div>
 
+      {/* Ubicacion */}
+      <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+        <div className="flex items-center gap-2 mb-3">
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="text-sm font-semibold text-slate-700">¿Donde buscas atencion?</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Select value={selectedRegion} onValueChange={(v) => { setSelectedRegion(v); setSelectedCity(''); }}>
+            <SelectTrigger className="bg-white rounded-xl">
+              <SelectValue placeholder="Region" />
+            </SelectTrigger>
+            <SelectContent>
+              {regions.map(r => (
+                <SelectItem key={r.id} value={String(r.id)}>{r.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedRegion}>
+            <SelectTrigger className="bg-white rounded-xl">
+              <SelectValue placeholder={selectedRegion ? 'Ciudad' : 'Selecciona region primero'} />
+            </SelectTrigger>
+            <SelectContent>
+              {cities.map(c => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="flex justify-center">
         <Button
-          onClick={() => onNext({ symptoms: selected, description })}
+          onClick={() => onNext({
+            symptoms: selected,
+            description,
+            region: selectedRegion,
+            city: selectedCity,
+          })}
           disabled={!canContinue}
           size="lg"
           className="h-14 px-10 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 text-base disabled:opacity-40"
