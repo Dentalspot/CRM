@@ -8,14 +8,15 @@ import { supabase } from '@/lib/supabaseClient';
  * @param {Array} chatHistory - Previous messages in the conversation.
  * @returns {Promise<Object>} - The response from the AI including text and suggestions.
  */
-export const sendChatMessage = async (userMessage, patientContext, chatHistory) => {
+export const sendChatMessage = async (userMessage, patientContext, chatHistory, isPublic = false) => {
   try {
     const { data, error } = await supabase.functions.invoke('chat-with-ai', {
-      body: { 
-        userMessage, 
-        patientContext, 
+      body: {
+        userMessage,
+        patientContext,
         chatHistory: (chatHistory || []).slice(-10),
-        useRAG: true
+        useRAG: !isPublic,
+        isPublic
       },
     });
 

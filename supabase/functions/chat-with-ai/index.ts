@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { userMessage, patientContext, chatHistory, useRAG } = await req.json()
+    const { userMessage, patientContext, chatHistory, useRAG, isPublic } = await req.json()
     if (!userMessage) {
       return new Response(JSON.stringify({ error: 'Missing message' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
           .slice(0, 5)
 
         if (matchedFaqs.length) {
-          faqContext = '\n\nBASE DE CONOCIMIENTO (FAQs de Fonokit):\n' +
+          faqContext = '\n\nBASE DE CONOCIMIENTO (FAQs de DentalSpot):\n' +
             matchedFaqs.map((faq: any) =>
               `P: ${faq.question}\nR: ${faq.answer}${faq.link ? `\nLink: ${faq.link}` : ''}`
             ).join('\n\n')
@@ -80,11 +80,20 @@ Deno.serve(async (req) => {
 
     const isTherapist = patientContext?.role === 'therapist'
 
-    // Load prompt from DB (configurable via admin) with hardcoded fallback
-    const promptSlug = isTherapist ? 'chat-with-ai.therapist' : 'chat-with-ai.patient'
-    const fallbackSystemPrompt = isTherapist
-      ? `Actuas como "Asistente Clinico Fonokit", un asistente inteligente para fonoaudiologos en Chile.\n\nCONTEXTO: Terapeuta: {{therapist_name}}\n{{faq_context}}\n{{rag_context}}\n\nINSTRUCCIONES:\n1. Si hay informacion en la BASE DE CONOCIMIENTO (FAQs), USALA PRIMERO para responder. Incluye los links si existen.\n2. Si hay contexto clinico, USALO para responder con datos reales del terapeuta.\n3. Se profesional y conciso (maximo 3 parrafos).\n4. Puedes sugerir tratamientos, actividades y materiales basandote en la evidencia.\n5. Si no hay datos suficientes, dilo y sugiere donde encontrar la informacion en Fonokit.\n6. Cuando incluyas un link, formatealo asi: [texto](url)\n\nIMPORTANTE: Responde UNICAMENTE con JSON valido:\n{"reply":"tu respuesta aqui","suggestions":["opcion 1","opcion 2"],"sources_used":{{rag_sources}}}`
-      : `Actua como "Asistente Fonokit", un asistente virtual empatico para pacientes de fonoaudiologia en Chile.\n\nCONTEXTO: Nombre: {{patient_name}}, Rol: Paciente\n{{faq_context}}\n\nINSTRUCCIONES:\n1. Si hay informacion en la BASE DE CONOCIMIENTO (FAQs), USALA PRIMERO para responder. Incluye los links si existen.\n2. Responde concisamente (maximo 3 parrafos cortos).\n3. Se amable y motivador.\n4. Si preguntan por citas, sugiere revisar "Mi Agenda".\n5. No des diagnosticos medicos, siempre sugiere consultar al profesional.\n6. Cuando incluyas un link, formatealo asi: [texto](url)\n\nIMPORTANTE: Responde UNICAMENTE con JSON valido:\n{"reply":"tu respuesta aqui","suggestions":["opcion 1","opcion 2","opcion 3"]}`
+    // Determine prompt based on context: visitor (public), therapist, or patient
+    let promptSlug: string
+    let fallbackSystemPrompt: string
+
+    if (isPublic || !patientContext?.role) {
+      promptSlug = 'chat-with-ai.visitor'
+      fallbackSystemPrompt = `Actua como "Asistente DentalSpot", el asistente comercial de DentalSpot, una plataforma de gestion dental con IA en Chile.\n\n{{faq_context}}\n\nINSTRUCCIONES:\n1. Responde preguntas sobre DentalSpot: planes, precios, funcionalidades, registro y seguridad.\n2. Se amable, profesional y entusiasta sobre el producto.\n3. Responde concisamente (maximo 3 parrafos cortos).\n4. Si preguntan por precios, menciona que hay distintos planes y sugiere visitar la seccion de Planes.\n5. Si preguntan como registrarse, explica los pasos: Registrarse > Completar datos > Elegir plan.\n6. Si preguntan cosas clinicas o de pacientes, sugiere que inicien sesion o consulten a su dentista.\n7. Motiva a registrarse o iniciar sesion para acceder a todas las funcionalidades.\n\nIMPORTANTE: Responde UNICAMENTE con JSON valido:\n{"reply":"tu respuesta aqui","suggestions":["opcion 1","opcion 2","opcion 3"]}`
+    } else if (isTherapist) {
+      promptSlug = 'chat-with-ai.therapist'
+      fallbackSystemPrompt = `Actuas como "Asistente Clinico DentalSpot", un asistente inteligente para odontologos y dentistas en Chile.\n\nCONTEXTO: Profesional: {{therapist_name}}\n{{faq_context}}\n{{rag_context}}\n\nINSTRUCCIONES:\n1. Si hay informacion en la BASE DE CONOCIMIENTO (FAQs), USALA PRIMERO para responder. Incluye los links si existen.\n2. Si hay contexto clinico, USALO para responder con datos reales del profesional.\n3. Se profesional y conciso (maximo 3 parrafos).\n4. Puedes sugerir tratamientos, procedimientos y materiales basandote en la evidencia.\n5. Si no hay datos suficientes, dilo y sugiere donde encontrar la informacion en DentalSpot.\n6. Cuando incluyas un link, formatealo asi: [texto](url)\n\nIMPORTANTE: Responde UNICAMENTE con JSON valido:\n{"reply":"tu respuesta aqui","suggestions":["opcion 1","opcion 2"],"sources_used":{{rag_sources}}}`
+    } else {
+      promptSlug = 'chat-with-ai.patient'
+      fallbackSystemPrompt = `Actua como "Asistente DentalSpot", un asistente virtual empatico para pacientes de odontologia en Chile.\n\nCONTEXTO: Nombre: {{patient_name}}, Rol: Paciente\n{{faq_context}}\n\nINSTRUCCIONES:\n1. Si hay informacion en la BASE DE CONOCIMIENTO (FAQs), USALA PRIMERO para responder. Incluye los links si existen.\n2. Responde concisamente (maximo 3 parrafos cortos).\n3. Se amable y motivador.\n4. Si preguntan por citas, sugiere revisar "Mi Agenda".\n5. No des diagnosticos medicos, siempre sugiere consultar al profesional.\n6. Cuando incluyas un link, formatealo asi: [texto](url)\n\nIMPORTANTE: Responde UNICAMENTE con JSON valido:\n{"reply":"tu respuesta aqui","suggestions":["opcion 1","opcion 2","opcion 3"]}`
+    }
 
     const promptConfig = await loadPrompt(supabase, promptSlug, {
       system_prompt: fallbackSystemPrompt,
@@ -246,9 +255,11 @@ Deno.serve(async (req) => {
       // Model returned text but not valid JSON - wrap it
       return new Response(JSON.stringify({
         reply: responseText.replace(/```json|```/g, '').trim(),
-        suggestions: isTherapist
-          ? ['Buscar en mis pacientes', 'Sugerir tratamiento', 'Ver evaluaciones']
-          : ['Ver agenda', 'Mis documentos', 'Contactar fono'],
+        suggestions: isPublic
+          ? ['Ver planes y precios', 'Cómo registrarse', 'Qué incluye DentalSpot']
+          : isTherapist
+            ? ['Buscar en mis pacientes', 'Sugerir tratamiento', 'Ver evaluaciones']
+            : ['Ver agenda', 'Mis documentos', 'Contactar dentista'],
         sources_used: ragSources,
         model: modelUsed,
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
