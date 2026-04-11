@@ -10,18 +10,48 @@ import ConditionLegend from './ConditionLegend';
  * Componente principal del Odontograma.
  * Orquesta arcos dentales, toolbar y leyenda.
  */
-const Odontogram = ({ patientId }) => {
+/**
+ * @param {string} patientId - ID del paciente (modo standalone con persistencia DB)
+ * @param {object} externalTeethData - Datos de dientes externos (modo evaluación)
+ * @param {function} onTeethChange - Callback cuando cambian los dientes (modo evaluación)
+ * @param {boolean} evaluationMode - Si true, usa datos externos en vez de DB
+ */
+const Odontogram = ({ patientId, externalTeethData, onTeethChange, evaluationMode = false }) => {
+  const hook = useOdontogram(evaluationMode ? null : patientId);
   const {
-    teethData,
+    teethData: hookTeethData,
     toothType,
     loading,
     saving,
     lastSaved,
-    updateSurface,
+    updateSurface: hookUpdateSurface,
     changeToothType,
     save,
-    reset,
-  } = useOdontogram(patientId);
+    reset: hookReset,
+  } = hook;
+
+  // In evaluation mode, use external data; otherwise use hook data
+  const teethData = evaluationMode ? (externalTeethData || {}) : hookTeethData;
+
+  const updateSurface = evaluationMode
+    ? (toothNumber, surface, conditionId) => {
+        const updated = {
+          ...teethData,
+          [toothNumber]: { ...teethData[toothNumber], [surface]: conditionId },
+        };
+        onTeethChange?.(updated);
+      }
+    : hookUpdateSurface;
+
+  const reset = evaluationMode
+    ? () => {
+        const teeth = toothType === 'adult' ? ADULT_TEETH : CHILD_TEETH;
+        const allTeeth = [...teeth.upperRight, ...teeth.upperLeft, ...teeth.lowerLeft, ...teeth.lowerRight];
+        const data = {};
+        allTeeth.forEach((t) => { data[t] = { mesial: 'healthy', distal: 'healthy', oclusal: 'healthy', vestibular: 'healthy', lingual: 'healthy' }; });
+        onTeethChange?.(data);
+      }
+    : hookReset;
 
   const [selectedCondition, setSelectedCondition] = useState('caries');
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -29,6 +59,7 @@ const Odontogram = ({ patientId }) => {
   const teeth = toothType === 'adult' ? ADULT_TEETH : CHILD_TEETH;
 
   const handleSave = async () => {
+    if (evaluationMode) return; // Saving handled by parent
     try {
       await save();
       setSaveSuccess(true);
@@ -38,7 +69,7 @@ const Odontogram = ({ patientId }) => {
     }
   };
 
-  if (loading) {
+  if (!evaluationMode && loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -88,21 +119,23 @@ const Odontogram = ({ patientId }) => {
             <RotateCcw className="w-4 h-4 mr-1" />
             Limpiar
           </Button>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-primary hover:bg-primary/90"
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-            ) : saveSuccess ? (
-              <Check className="w-4 h-4 mr-1" />
-            ) : (
-              <Save className="w-4 h-4 mr-1" />
-            )}
-            {saving ? 'Guardando...' : saveSuccess ? 'Guardado' : 'Guardar'}
-          </Button>
+          {!evaluationMode && (
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : saveSuccess ? (
+                <Check className="w-4 h-4 mr-1" />
+              ) : (
+                <Save className="w-4 h-4 mr-1" />
+              )}
+              {saving ? 'Guardando...' : saveSuccess ? 'Guardado' : 'Guardar'}
+            </Button>
+          )}
         </div>
       </div>
 

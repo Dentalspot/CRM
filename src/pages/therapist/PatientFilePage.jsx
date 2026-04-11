@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Loader2, Lock } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -298,6 +298,17 @@ const PatientFilePage = () => {
                   </TabsContent>
 
                   <TabsContent value="odontograma" className="mt-0">
+                    <div className="mb-4 flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/dashboard/odontograma/nueva?patient=${id}`)}
+                        className="text-pink-600 border-pink-200 hover:bg-pink-50"
+                      >
+                        <ClipboardCheck className="h-4 w-4 mr-2" />
+                        Nueva Evaluación Odontológica
+                      </Button>
+                    </div>
                     <Odontogram patientId={id} />
                   </TabsContent>
                 </>

@@ -60,6 +60,8 @@ const StsgEvaluationPage = lazy(() => import('@/features/pie/pages/StsgEvaluatio
 const TeprosifEvaluationPage = lazy(() => import('@/features/pie/pages/TeprosifEvaluationPage.jsx'));
 const Ados2ListPage = lazy(() => import('@/features/ados2/pages/Ados2ListPage.jsx'));
 const Ados2EvaluationPage = lazy(() => import('@/features/ados2/pages/Ados2EvaluationPage.jsx'));
+const OdontogramListPage = lazy(() => import('@/features/odontogram/pages/OdontogramListPage.jsx'));
+const OdontogramEvaluationPage = lazy(() => import('@/features/odontogram/pages/OdontogramEvaluationPage.jsx'));
 const InvitationsPanel = lazy(() => import('@/features/invitations/components/InvitationsPanel.jsx'));
 
 // TEA Module
@@ -130,6 +132,11 @@ const DashboardRouter = () => {
             <Route path="ados2/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
             <Route path="ados2/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
             <Route path="ados2/:id/edit" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
+
+            {/* Odontograma Module */}
+            <Route path="odontograma" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><OdontogramListPage /></RoleGuard>} />
+            <Route path="odontograma/nueva" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><OdontogramEvaluationPage /></RoleGuard>} />
+            <Route path="odontograma/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><OdontogramEvaluationPage /></RoleGuard>} />
 
             {/* TEA Module */}
             <Route path="tea" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TeaDashboardPage /></RoleGuard>} />
