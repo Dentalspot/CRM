@@ -34,6 +34,17 @@ export const fromDbRow = (dbRow) => {
 
   if (!dbRow) return defaultData;
 
+  // Limpiar valores heredados de FonoKit que no aplican a dentistas
+  const FONOKIT_DEFAULTS = [
+    'fonoaudiólogo', 'fonoaudióloga', 'fonoaudiología', 'fonoaudiolog',
+    'trastornos de la comunicación',
+  ];
+  const isFonokitValue = (val) => {
+    if (!val) return false;
+    const lower = val.toLowerCase();
+    return FONOKIT_DEFAULTS.some(term => lower.includes(term));
+  };
+
   return {
     full_name: dbRow.full_name || '',
     email: dbRow.email || '',
@@ -45,9 +56,9 @@ export const fromDbRow = (dbRow) => {
     city_id: dbRow.city_id || '',
     main_address: dbRow.main_address || '',
     public_email: dbRow.public_email || '',
-    professional_title: dbRow.professional_title || '',
-    headline: dbRow.headline_statement || '',
-    about_me: dbRow.about_me || '',
+    professional_title: isFonokitValue(dbRow.professional_title) ? '' : (dbRow.professional_title || ''),
+    headline: isFonokitValue(dbRow.headline_statement) ? '' : (dbRow.headline_statement || ''),
+    about_me: isFonokitValue(dbRow.about_me) ? '' : (dbRow.about_me || ''),
     registration_supersalud: dbRow.registration_supersalud || '',
     registration_secreduc: dbRow.registration_secreduc || '',
     university: dbRow.university || '',
