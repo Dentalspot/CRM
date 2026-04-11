@@ -49,16 +49,28 @@ export const getReminderLogs = async (therapistId) => {
 };
 
 export const scheduleEmailReminder = async (appointmentId, therapistId, reminderType, scheduledTime) => {
-  // Get patient profile_id from appointment → patients → profiles
+  // 1. Get patient_id from the appointment
   const { data: appointment } = await supabase
     .from('appointments')
-    .select('patient_id, patients(profile_id)')
+    .select('patient_id')
     .eq('id', appointmentId)
     .maybeSingle();
 
-  // scheduled_reminders.patient_id references profiles(id), not patients(id)
-  const profileId = appointment?.patients?.profile_id;
-  if (!profileId) return { error: { message: 'Appointment or patient profile not found' } };
+  if (!appointment?.patient_id) return { error: { message: 'Appointment not found' } };
+
+  // 2. Resolve profile_id from patients table
+  // scheduled_reminders.patient_id FK references profiles(id), not patients(id)
+  const { data: patient } = await supabase
+    .from('patients')
+    .select('profile_id')
+    .eq('id', appointment.patient_id)
+    .maybeSingle();
+
+  const profileId = patient?.profile_id;
+  if (!profileId) {
+    // If no profile_id linked, skip reminder silently instead of crashing
+    return { data: null, error: null };
+  }
 
   const { data, error } = await supabase
     .from('scheduled_reminders')
