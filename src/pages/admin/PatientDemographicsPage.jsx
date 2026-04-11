@@ -61,7 +61,7 @@ const PatientDemographicsPage = () => {
               <Checkbox id="consent" checked={true} disabled />
               <div className="grid gap-1.5 leading-none">
                 <Label htmlFor="consent" className="font-semibold">Consentimiento Informado Firmado</Label>
-                <p className="text-sm text-muted-foreground">El paciente ha firmado digitalmente el consentimiento para tratamiento fonoaudiológico.</p>
+                <p className="text-sm text-muted-foreground">El paciente ha firmado digitalmente el consentimiento para tratamiento odontológico.</p>
               </div>
             </div>
             <div className="flex items-center space-x-2 p-4 border rounded bg-slate-50">

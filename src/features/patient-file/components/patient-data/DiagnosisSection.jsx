@@ -30,8 +30,8 @@ const DiagnosisSection = ({
       <CardHeader className="pb-4 border-b border-teal-100 bg-teal-50/30">
         <CardTitle className="text-lg text-teal-800 font-bold flex items-center gap-2">
           <Stethoscope className="h-5 w-5 text-teal-600" />
-          Diagnósticos Fonoaudiológicos
-          <Badge variant="outline" className="ml-2 text-xs">CIE-11 / DSM-5</Badge>
+          Diagnósticos Odontológicos
+          <Badge variant="outline" className="ml-2 text-xs">CIE-11</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
@@ -113,15 +113,6 @@ const DiagnosisSection = ({
               className={selectedSystem === 'CIE-11' ? 'bg-teal-600 hover:bg-teal-700' : ''}
             >
               CIE-11
-            </Button>
-            <Button
-              type="button"
-              variant={selectedSystem === 'DSM-5' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedSystem('DSM-5')}
-              className={selectedSystem === 'DSM-5' ? 'bg-teal-600 hover:bg-teal-700' : ''}
-            >
-              DSM-5
             </Button>
           </div>
 
