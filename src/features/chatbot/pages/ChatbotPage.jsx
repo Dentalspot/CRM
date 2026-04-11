@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Bot, User, Loader2, RefreshCw } from 'lucide-react';
 import { sendChatMessage } from '../api/chatbotApi';
+import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_WELCOME_MESSAGE = {
@@ -17,6 +18,7 @@ const DEFAULT_WELCOME_MESSAGE = {
 };
 
 const ChatbotPage = () => {
+  const { user, profile } = useAuth();
   const [messages, setMessages] = useState([DEFAULT_WELCOME_MESSAGE]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -55,7 +57,14 @@ const ChatbotPage = () => {
         .filter(m => m.id !== 'welcome')
         .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
 
-      const response = await sendChatMessage(userMessageText, {}, chatHistory);
+      const patientContext = {
+        id: user?.id,
+        name: profile?.full_name || user?.full_name,
+        role: profile?.role || user?.role,
+        email: user?.email
+      };
+
+      const response = await sendChatMessage(userMessageText, patientContext, chatHistory);
 
       let botResponseText;
       if (response) {
