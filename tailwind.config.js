@@ -71,12 +71,43 @@ module.exports = {
 					from: { height: "var(--radix-collapsible-content-height)" },
 					to: { height: 0 },
 				},
+				"float": {
+					"0%, 100%": { transform: "translateY(0px)" },
+					"50%": { transform: "translateY(-20px)" },
+				},
+				"float-slow": {
+					"0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
+					"50%": { transform: "translateY(-30px) rotate(3deg)" },
+				},
+				"pulse-soft": {
+					"0%, 100%": { opacity: "0.4" },
+					"50%": { opacity: "0.8" },
+				},
+				"gradient-x": {
+					"0%, 100%": { backgroundPosition: "0% 50%" },
+					"50%": { backgroundPosition: "100% 50%" },
+				},
+				"float-delayed": {
+					"0%, 100%": { transform: "translateY(0px)" },
+					"50%": { transform: "translateY(-15px)" },
+				},
+				"wiggle": {
+					"0%, 100%": { transform: "rotate(0deg)" },
+					"25%": { transform: "rotate(1deg)" },
+					"75%": { transform: "rotate(-1deg)" },
+				},
 			},
 			animation: {
 				"accordion-down": "accordion-down 0.2s ease-out",
 				"accordion-up": "accordion-up 0.2s ease-out",
 				"collapsible-down": "collapsible-down 0.2s ease-out",
 				"collapsible-up": "collapsible-up 0.2s ease-out",
+				"float": "float 6s ease-in-out infinite",
+				"float-slow": "float-slow 8s ease-in-out infinite",
+				"pulse-soft": "pulse-soft 4s ease-in-out infinite",
+				"gradient-x": "gradient-x 3s ease infinite",
+				"float-delayed": "float-delayed 5s ease-in-out infinite",
+				"wiggle": "wiggle 4s ease-in-out infinite",
 			},
 		},
 	},

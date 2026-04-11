@@ -125,7 +125,7 @@ const PatientTable = ({
           >
             {/* Top row: avatar + name + actions */}
             <div className="flex items-center gap-3">
-              {(mergeMode) && (
+              {false && (
                 <Checkbox
                   checked={selectedRows.includes(patient.id)}
                   onCheckedChange={(checked) => handleSelectRow(patient.id, checked)}

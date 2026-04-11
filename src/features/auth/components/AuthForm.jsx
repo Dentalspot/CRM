@@ -254,7 +254,7 @@ const AuthForm = ({ isLogin }) => {
     try {
       if (isLogin) {
         const success = await handleLogin();
-        if (success) return; // Keep spinner — AuthPage redirects when user state updates
+        if (success) return;
       } else {
         await handleRegister();
       }
@@ -265,8 +265,9 @@ const AuthForm = ({ isLogin }) => {
         title: "Error inesperado",
         description: error.message || "Por favor intenta de nuevo más tarde"
       });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   // ============ FORGOT PASSWORD ============

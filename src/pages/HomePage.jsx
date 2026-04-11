@@ -1,206 +1,112 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useMetaTracking } from '@/hooks/useMetaTracking';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, Sparkles, Users, Clock, Star,
   Brain, Calendar, BarChart3, Shield, Zap,
   MapPin, MessageCircle, FileImage, Search,
   Stethoscope, DollarSign, CheckCircle, Upload,
-  ScanLine, UserCheck, Building2,
+  ScanLine, UserCheck, Building2, Quote, Lock,
+  AlertTriangle, Heart,
 } from 'lucide-react';
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
+  Accordion, AccordionItem, AccordionTrigger, AccordionContent,
 } from '@/components/ui/accordion';
-
-import HeroSearchForm from '@/components/home/HeroSearchForm';
 import FeaturedProfessionalsCarousel from '@/components/home/FeaturedProfessionalsCarousel';
 
-// ─── ANIMATION VARIANTS ──────────────────────────────────────────────────────
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+// ─── ANIMATIONS ──────────────────────────────────────────────────────────────
+const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
+const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
+
+const AnimatedCounter = ({ target, suffix = '', duration = 2 }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-50px' });
+  useEffect(() => {
+    if (!inView) return;
+    const num = parseInt(target, 10);
+    if (isNaN(num)) { setCount(target); return; }
+    let start = 0;
+    const step = Math.ceil(num / (duration * 60));
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= num) { setCount(num); clearInterval(timer); } else setCount(start);
+    }, 1000 / 60);
+    return () => clearInterval(timer);
+  }, [inView, target, duration]);
+  return <span ref={ref} className="tabular-nums">{typeof count === 'number' ? count.toLocaleString('es-CL') : count}{suffix}</span>;
 };
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
+
+const PhoneMockup = ({ children, className = '', size = 'md' }) => {
+  const w = size === 'sm' ? 'w-[220px]' : size === 'lg' ? 'w-[280px]' : 'w-[260px]';
+  return (
+    <div className={`${w} ${className}`}>
+      <div className="phone-frame"><div className="phone-screen"><div className="phone-notch" />
+        <div className="bg-gradient-to-b from-slate-50 to-white p-4 min-h-[380px]">{children}</div>
+      </div></div>
+    </div>
+  );
 };
 
-// ─── STATIC DATA ─────────────────────────────────────────────────────────────
+const FloatingCard = ({ children, className = '', delay = 0 }) => (
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: delay + 0.5, duration: 0.5 }}
+    className={`float-card-base p-3.5 ${className}`} style={{ animation: `float ${4 + delay}s ease-in-out infinite`, animationDelay: `${delay}s` }}>
+    {children}
+  </motion.div>
+);
 
-const flowSteps = [
-  {
-    step: 1,
-    icon: <MessageCircle className="w-7 h-7" />,
-    title: 'Describe tu problema',
-    description: 'Escribe tu sintoma en lenguaje simple: "me duele una muela", "se me quebro un diente". Nuestra IA clasifica tu caso al instante.',
-    color: 'bg-primary/10 text-primary',
-  },
-  {
-    step: 2,
-    icon: <FileImage className="w-7 h-7" />,
-    title: 'Obtiene tu orden de radiografia',
-    description: 'Descarga un PDF con la orden medica para tu radiografia. Incluye tipo de examen recomendado y laboratorios cercanos.',
-    color: 'bg-secondary/10 text-accent',
-  },
-  {
-    step: 3,
-    icon: <ScanLine className="w-7 h-7" />,
-    title: 'La IA analiza tu radiografia',
-    description: 'El laboratorio sube tu imagen y nuestra IA entrega un diagnostico preliminar, nivel de urgencia y estimacion de costos.',
-    color: 'bg-violet-100 text-violet-600',
-  },
-  {
-    step: 4,
-    icon: <UserCheck className="w-7 h-7" />,
-    title: 'Elige tu dentista y agenda',
-    description: 'Ve dentistas cercanos con precios, disponibilidad, especialidad y resenas. Agenda directo, sin llamadas.',
-    color: 'bg-emerald-100 text-emerald-600',
-  },
-];
-
-const benefits = [
-  {
-    icon: <Brain className="w-6 h-6" />,
-    title: 'Teleorientacion con IA',
-    description: 'Describe tu sintoma y recibe orientacion inmediata. La IA clasifica tu caso y te guia al siguiente paso.',
-    gradient: 'from-primary to-accent',
-  },
-  {
-    icon: <FileImage className="w-6 h-6" />,
-    title: 'Orden de radiografia automatica',
-    description: 'PDF descargable con tipo de examen, instrucciones y mapa de laboratorios asociados. Sin filas ni esperas.',
-    gradient: 'from-violet-500 to-purple-600',
-  },
-  {
-    icon: <ScanLine className="w-6 h-6" />,
-    title: 'Analisis radiografico con IA',
-    description: 'Diagnostico preliminar automatizado, nivel de urgencia y alternativas de tratamiento con estimacion de costos.',
-    gradient: 'from-amber-400 to-orange-500',
-  },
-  {
-    icon: <MapPin className="w-6 h-6" />,
-    title: 'Match con dentistas cercanos',
-    description: 'Modelo tipo Uber: encuentra profesionales por ubicacion, especialidad, precio y disponibilidad en tiempo real.',
-    gradient: 'from-emerald-400 to-teal-500',
-  },
-  {
-    icon: <DollarSign className="w-6 h-6" />,
-    title: 'Transparencia de precios',
-    description: 'Estimaciones claras antes de agendar. Compara precios entre profesionales y elige con informacion real.',
-    gradient: 'from-primary to-secondary',
-  },
-  {
-    icon: <Calendar className="w-6 h-6" />,
-    title: 'Agenda integrada',
-    description: 'Reserva directa con confirmacion por correo y WhatsApp. Recordatorios automaticos e instrucciones previas.',
-    gradient: 'from-rose-400 to-pink-500',
-  },
-];
-
+// ─── DATA ────────────────────────────────────────────────────────────────────
 const featuredProfessionalsData = [
-  { name: 'Dr. Andres Mendoza',   specialty: 'Ortodoncia',             rating: 5, location: 'Santiago' },
-  { name: 'Dra. Camila Reyes',    specialty: 'Endodoncia',             rating: 5, location: 'Valparaiso' },
-  { name: 'Dr. Felipe Torres',    specialty: 'Implantologia',          rating: 5, location: 'Concepcion' },
-  { name: 'Dra. Sofia Navarro',   specialty: 'Odontopediatria',        rating: 4, location: 'Temuco' },
-  { name: 'Dr. Nicolas Herrera',  specialty: 'Cirugia Maxilofacial',   rating: 5, location: 'Antofagasta' },
-  { name: 'Dra. Valentina Diaz',  specialty: 'Periodoncia',            rating: 5, location: 'Santiago' },
+  { name: 'Dr. Andres Mendoza', specialty: 'Ortodoncia', rating: 5, location: 'Santiago' },
+  { name: 'Dra. Camila Reyes', specialty: 'Endodoncia', rating: 5, location: 'Valparaiso' },
+  { name: 'Dr. Felipe Torres', specialty: 'Implantologia', rating: 5, location: 'Concepcion' },
+  { name: 'Dra. Sofia Navarro', specialty: 'Odontopediatria', rating: 4, location: 'Temuco' },
+  { name: 'Dr. Nicolas Herrera', specialty: 'Cirugia Maxilofacial', rating: 5, location: 'Antofagasta' },
+  { name: 'Dra. Valentina Diaz', specialty: 'Periodoncia', rating: 5, location: 'Santiago' },
+];
+
+const testimonials = [
+  { quote: 'Me dolia una muela un domingo. En 10 minutos tenia la orden de radiografia y al dia siguiente ya estaba agendada.', name: 'Maria P.', role: 'Paciente', location: 'Santiago' },
+  { quote: 'La IA detecto un problema que yo no habia notado. Mi dentista confirmo el diagnostico. Impresionante.', name: 'Carlos R.', role: 'Paciente', location: 'Valparaiso' },
+  { quote: 'Desde que estoy en DentalSpot recibo pacientes con pre-diagnostico. Ahorro 30 min por consulta.', name: 'Dr. Mendoza', role: 'Ortodoncista', location: 'Santiago' },
+  { quote: 'La transparencia de precios genero confianza. Mis pacientes llegan informados y decididos.', name: 'Dra. Reyes', role: 'Endodoncista', location: 'Valparaiso' },
+  { quote: 'El odontograma digital y el dashboard me dan una vision completa de mi practica.', name: 'Dr. Torres', role: 'Implantologo', location: 'Concepcion' },
 ];
 
 const faqItems = [
-  {
-    question: 'Que es DentalSpot y como funciona?',
-    answer:
-      'DentalSpot es una plataforma que conecta pacientes con dentistas cercanos usando inteligencia artificial. Describes tu sintoma, obtienes una orden de radiografia, la IA analiza la imagen y te muestra los profesionales mas adecuados para tu caso con precios transparentes.',
-  },
-  {
-    question: 'El diagnostico de la IA reemplaza al dentista?',
-    answer:
-      'No. El analisis con IA es una orientacion preliminar para reducir incertidumbre y ayudarte a tomar mejores decisiones. Siempre necesitaras la evaluacion presencial de un profesional. El disclaimer es claro: no reemplaza un diagnostico profesional.',
-  },
-  {
-    question: 'Como sube el laboratorio mi radiografia?',
-    answer:
-      'El laboratorio puede subir tu radiografia directamente a tu perfil mediante un formulario simple con tu codigo de paciente. Tambien puede enviarla por correo y el sistema la asocia automaticamente a tu caso.',
-  },
-  {
-    question: 'Cuanto cuesta usar DentalSpot?',
-    answer:
-      'Para pacientes, describir tu sintoma y recibir orientacion es gratuito. El analisis de radiografia con IA tiene un costo accesible que se muestra antes de confirmar. Los dentistas pagan una suscripcion mensual para aparecer en la plataforma.',
-  },
-  {
-    question: 'Como se eligen los dentistas que aparecen?',
-    answer:
-      'Los profesionales son verificados antes de unirse. El ranking se basa en cercania, disponibilidad, precio y resenas de pacientes reales. No hay pago por posicionamiento: el mejor match sube naturalmente.',
-  },
-  {
-    question: 'DentalSpot cumple con la normativa chilena de datos de salud?',
-    answer:
-      'Si. DentalSpot cumple con la Ley 19.628 de Proteccion de Datos Personales y la Ley 20.584 sobre Derechos y Deberes de los Pacientes. Las radiografias e informacion clinica se almacenan de forma encriptada.',
-  },
+  { question: 'Que es DentalSpot y como funciona?', answer: 'DentalSpot conecta pacientes con dentistas cercanos usando inteligencia artificial. Describes tu sintoma, obtienes una orden de radiografia, la IA analiza la imagen y te muestra los profesionales mas adecuados con precios transparentes.' },
+  { question: 'El diagnostico de la IA reemplaza al dentista?', answer: 'No. Es una orientacion preliminar para reducir incertidumbre. Siempre necesitaras la evaluacion presencial de un profesional.' },
+  { question: 'Como sube el laboratorio mi radiografia?', answer: 'El laboratorio sube tu radiografia directamente a tu perfil mediante un formulario simple o por correo y el sistema la asocia automaticamente.' },
+  { question: 'Cuanto cuesta usar DentalSpot?', answer: 'Para pacientes, describir tu sintoma es gratuito. El analisis IA tiene un costo accesible. Los dentistas pagan suscripcion mensual.' },
+  { question: 'Como se eligen los dentistas?', answer: 'El ranking se basa en cercania, disponibilidad, precio y resenas reales. No hay pago por posicionamiento.' },
+  { question: 'Cumple con la normativa chilena?', answer: 'Si. Cumple con Ley 19.628 y Ley 20.584. Radiografias e informacion clinica se almacenan encriptadas.' },
 ];
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
-
 const HomePage = () => {
   const { trackEvent } = useMetaTracking();
-
-  useEffect(() => {
-    trackEvent('ViewContent', { content_name: 'Home Page', content_category: 'Landing' });
-  }, []);
+  useEffect(() => { trackEvent('ViewContent', { content_name: 'Home Page', content_category: 'Landing' }); }, []);
 
   const schemaData = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'DentalSpot',
-    url: 'https://dentalspot.cl',
-    description:
-      'DentalSpot conecta pacientes con dentistas cercanos usando inteligencia artificial. Describe tu sintoma, analiza tu radiografia con IA y agenda con el profesional ideal.',
-    applicationCategory: 'HealthApplication',
-    operatingSystem: 'Web',
-    offers: { '@type': 'Offer', description: 'Teleorientacion dental con IA y marketplace de dentistas' },
-    provider: {
-      '@type': 'Organization',
-      name: 'DentalSpot',
-      address: { '@type': 'PostalAddress', addressCountry: 'CL' },
-    },
-    audience: { '@type': 'Audience', audienceType: ['Pacientes', 'Dentistas', 'Clinicas Dentales', 'Laboratorios'] },
+    '@context': 'https://schema.org', '@type': 'WebApplication', name: 'DentalSpot', url: 'https://dentalspot.cl',
+    description: 'DentalSpot conecta pacientes con dentistas cercanos usando IA.',
+    applicationCategory: 'HealthApplication', operatingSystem: 'Web',
+    provider: { '@type': 'Organization', name: 'DentalSpot', address: { '@type': 'PostalAddress', addressCountry: 'CL' } },
   };
-
-  const faqSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqItems.map((item) => ({
-      '@type': 'Question',
-      name: item.question,
-      acceptedAnswer: { '@type': 'Answer', text: item.answer },
-    })),
-  };
+  const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqItems.map(i => ({ '@type': 'Question', name: i.question, acceptedAnswer: { '@type': 'Answer', text: i.answer } })) };
 
   return (
     <>
       <Helmet>
-        <title>DentalSpot | Resuelve tu problema dental 
-          en minutos</title>
-        <meta
-          name="description"
-          content="Conectamos pacientes con dentistas cercanos usando IA. Describe tu sintoma, obtiene un diagnostico preliminar y agenda con el profesional ideal. Odontologia inteligente en Chile."
-        />
-        <meta
-          name="keywords"
-          content="dentista, odontologo, radiografia dental, diagnostico dental IA, agenda dentista, DentalSpot, healthtech Chile, odontologia online, implantes, ortodoncia"
-        />
+        <title>DentalSpot | Resuelve tu problema dental en minutos</title>
+        <meta name="description" content="Conectamos pacientes con dentistas cercanos usando IA. Describe tu sintoma, obtiene diagnostico preliminar y agenda con el profesional ideal." />
+        <meta name="keywords" content="dentista, radiografia dental, diagnostico dental IA, agenda dentista, DentalSpot, healthtech Chile" />
         <link rel="canonical" href="https://dentalspot.cl" />
         <meta property="og:title" content="DentalSpot - Resuelve tu problema dental en minutos" />
-        <meta
-          property="og:description"
-          content="Describe tu sintoma, analiza tu radiografia con IA y encuentra el dentista ideal cerca de ti. Precios transparentes y agenda directa."
-        />
+        <meta property="og:description" content="Describe tu sintoma, analiza tu radiografia con IA y encuentra el dentista ideal." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://dentalspot.cl" />
         <meta property="og:locale" content="es_CL" />
@@ -208,488 +114,437 @@ const HomePage = () => {
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
 
-      <div className="bg-gradient-to-b from-slate-50 via-white to-slate-50">
+      <div className="overflow-hidden">
 
-        {/* ══════════════════════════════════════════════════════════════════
-            1. HERO
-        ══════════════════════════════════════════════════════════════════ */}
-        <section className="relative py-16 md:py-24 lg:py-28 overflow-hidden" aria-labelledby="hero-heading">
-          {/* Floating animated orbs */}
-          <motion.div animate={{ y: [0, 30, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} className="absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-          <motion.div animate={{ y: [0, -25, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }} className="absolute top-60 -left-32 w-[400px] h-[400px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-          <motion.div animate={{ y: [0, 20, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }} className="absolute bottom-0 right-1/4 w-[300px] h-[300px] rounded-full bg-secondary/10 blur-3xl pointer-events-none" />
+        {/* ═══════════ 1. HERO — Dark + Phone Mockups ═══════════ */}
+        <section className="relative min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden py-6 md:py-0" aria-labelledby="hero-heading">
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-accent/8 blur-[120px] pointer-events-none" />
+          <div className="absolute top-[30%] right-[20%] w-[200px] h-[200px] rounded-full bg-emerald-500/5 blur-[80px] pointer-events-none animate-pulse-soft" />
+          <div className="deco-circle w-[400px] h-[400px] top-[10%] left-[5%] hidden lg:block" />
+          <div className="deco-circle w-[250px] h-[250px] bottom-[20%] left-[15%] hidden lg:block" style={{ borderColor: 'rgba(69,181,196,0.15)' }} />
+          <div className="absolute top-[18%] left-[6%] grid grid-cols-5 gap-3 opacity-30 hidden lg:grid">
+            {[...Array(15)].map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-white/20" />)}
+          </div>
 
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center max-w-7xl mx-auto">
-
-              {/* ── LEFT COLUMN: Content ── */}
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.7 }}
-                className="text-center lg:text-left"
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-xl border border-primary/20 text-primary text-sm font-medium mb-6 shadow-sm"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Odontologia inteligente con IA
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center min-h-screen pt-8 pb-12 md:py-20">
+              {/* Content */}
+              <div className="text-center lg:text-left">
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-8">
+                  <Sparkles className="w-3.5 h-3.5" /> Odontologia inteligente con IA
                 </motion.div>
 
-                <motion.h1
-                  id="hero-heading"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 }}
-                  className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-2 leading-tight tracking-tight"
-                >
+                <motion.h1 id="hero-heading" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
+                  className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-3 leading-[1.1] tracking-tight">
                   Resuelve tu problema dental
                 </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.15 }}
-                  className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent"
-                >
+                <motion.p initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                  className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 leading-[1.1] tracking-tight text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(90deg, hsl(189,49%,52%), hsl(170,40%,75%), hsl(187,77%,37%))', backgroundSize: '200% auto', animation: 'gradient-x 3s ease infinite' }}>
                   en minutos
                 </motion.p>
 
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                  className="text-base sm:text-lg md:text-xl text-slate-600 max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed"
-                >
+                <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                  className="text-base md:text-lg text-white/60 max-w-lg mx-auto lg:mx-0 mb-8 leading-relaxed">
                   Describe tu sintoma, obtiene un diagnostico preliminar con IA y agenda con el dentista ideal cerca de ti.
                 </motion.p>
 
-                {/* Flow icons - always horizontal */}
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.25 }}
-                  className="flex items-center justify-center lg:justify-start gap-1 sm:gap-2 mb-8"
-                >
+                {/* Flow icons */}
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                  className="flex items-center justify-center lg:justify-start gap-2 mb-8">
                   {[
-                    { icon: '\u{1F4AC}', label: 'Describe', color: 'from-primary to-primary/80' },
-                    { icon: '\u{1F4C4}', label: 'Orden', color: 'from-violet-500 to-purple-500' },
-                    { icon: '\u{1F916}', label: 'IA analiza', color: 'from-amber-400 to-orange-400' },
-                    { icon: '\u{1F9B7}', label: 'Agenda', color: 'from-emerald-400 to-teal-500' },
-                  ].map((step, i) => (
+                    { icon: '💬', label: 'Describe', color: 'from-primary to-primary/80' },
+                    { icon: '📄', label: 'Orden', color: 'from-violet-500 to-purple-500' },
+                    { icon: '🤖', label: 'IA analiza', color: 'from-amber-400 to-orange-400' },
+                    { icon: '🦷', label: 'Agenda', color: 'from-emerald-400 to-teal-500' },
+                  ].map((s, i) => (
                     <React.Fragment key={i}>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 + i * 0.1 }}
-                        className="flex flex-col items-center gap-1 min-w-[56px] sm:min-w-[60px]"
-                      >
-                        <div className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-lg sm:text-xl md:text-2xl shadow-lg`}>
-                          {step.icon}
-                        </div>
-                        <span className="text-[9px] sm:text-[10px] md:text-xs font-semibold text-slate-700">{step.label}</span>
+                      <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.1 }}
+                        className="flex flex-col items-center gap-1">
+                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${s.color} flex items-center justify-center text-xl md:text-2xl shadow-lg`}>{s.icon}</div>
+                        <span className="text-[10px] md:text-xs font-semibold text-white/70">{s.label}</span>
                       </motion.div>
-                      {i < 3 && (
-                        <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-primary/40 flex-shrink-0 mx-0.5" />
-                      )}
+                      {i < 3 && <ArrowRight className="w-4 h-4 text-white/20 flex-shrink-0 mx-0.5" />}
                     </React.Fragment>
                   ))}
                 </motion.div>
 
                 {/* CTAs */}
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-8"
-                >
-                  <Button
-                    asChild size="lg"
-                    className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
-                  >
-                    <Link to="/consulta" className="flex items-center gap-2">
-                      Describe tu sintoma <ArrowRight className="w-5 h-5" />
-                    </Link>
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                  className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-8">
+                  <Button asChild size="lg" className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 text-base">
+                    <Link to="/consulta" className="flex items-center gap-2">Describe tu sintoma <ArrowRight className="w-5 h-5" /></Link>
                   </Button>
-                  <Button
-                    asChild variant="outline" size="lg"
-                    className="h-14 px-8 border-slate-300 text-slate-700 hover:bg-slate-50 hover:-translate-y-0.5 rounded-2xl font-medium text-base transition-all"
-                  >
+                  <Button asChild variant="outline" size="lg" className="h-14 px-8 border-2 border-white/40 text-white bg-white/10 hover:bg-white/20 rounded-2xl font-semibold text-base backdrop-blur-sm">
                     <Link to="/auth/register">Soy Dentista</Link>
                   </Button>
                 </motion.div>
 
-                {/* Trust badges */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="flex flex-wrap justify-center lg:justify-start gap-4"
-                >
+                {/* Trust */}
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                  className="flex flex-wrap justify-center lg:justify-start gap-5">
                   {[
                     { icon: <Shield className="w-3.5 h-3.5" />, label: 'Datos encriptados' },
                     { icon: <Brain className="w-3.5 h-3.5" />, label: 'IA avanzada' },
-                    { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Verificados' },
+                    { icon: <CheckCircle className="w-3.5 h-3.5" />, label: 'Dentistas verificados' },
                   ].map((b, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500">
-                      <span className="text-primary">{b.icon}</span>{b.label}
-                    </div>
+                    <div key={i} className="flex items-center gap-1.5 text-xs text-white/40"><span className="text-primary">{b.icon}</span>{b.label}</div>
                   ))}
                 </motion.div>
+              </div>
+
+              {/* Phone Mockups + Floating Cards */}
+              <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.3 }}
+                className="relative h-[520px] md:h-[600px] hidden md:block">
+
+                <FloatingCard className="top-[12%] left-[30%] lg:left-[25%]" delay={0}>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                    <span className="text-sm font-extrabold text-slate-800">4.8</span>
+                    <span className="text-[10px] text-slate-400">200+ resenas</span>
+                  </div>
+                </FloatingCard>
+
+                <FloatingCard className="top-[55%] right-[5%]" delay={0.5}>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm"><Brain className="w-4 h-4" /></div>
+                    <div>
+                      <p className="text-sm font-extrabold text-slate-800">+5,000</p>
+                      <p className="text-[10px] text-slate-400">Analisis IA</p>
+                    </div>
+                  </div>
+                </FloatingCard>
+
+                <FloatingCard className="bottom-[15%] right-[10%]" delay={1}>
+                  <div className="flex -space-x-2 mb-1.5">
+                    {['bg-primary/20', 'bg-accent/20', 'bg-secondary/40'].map((c, i) => (
+                      <div key={i} className={`w-7 h-7 rounded-full ${c} border-2 border-white flex items-center justify-center text-xs`}>
+                        {['🧑‍⚕️', '👩‍⚕️', '🦷'][i]}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-slate-400"><strong className="text-slate-700">+200</strong> dentistas activos</p>
+                </FloatingCard>
+
+                <FloatingCard className="top-[5%] right-[-5%] lg:right-[0] w-[170px] hidden lg:block" delay={1.5}>
+                  <p className="text-[10px] text-slate-400 font-semibold mb-2">Proxima cita</p>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px]">🦷</div>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-700">Dr. Mendoza</p>
+                      <p className="text-[9px] text-slate-400">Ortodoncia · Hoy 15:00</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-[9px] text-emerald-500 font-medium">
+                    <CheckCircle className="w-3 h-3" /> Confirmada
+                  </div>
+                </FloatingCard>
+
+                {/* Secondary Phone */}
+                <div className="absolute top-1/2 left-[5%] -translate-y-[45%] z-10 opacity-90 hidden lg:block">
+                  <PhoneMockup size="sm">
+                    <p className="text-[10px] text-slate-400 font-semibold mb-2">Analisis IA</p>
+                    <div className="bg-white rounded-xl p-3 shadow-sm mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center"><Brain className="w-3 h-3 text-white" /></div>
+                        <p className="text-[10px] font-bold text-slate-700">Resultado</p>
+                      </div>
+                      <div className="flex items-center gap-1 mb-1"><CheckCircle className="w-3 h-3 text-emerald-500" /><span className="text-[9px] text-emerald-600 font-medium">Sin urgencia</span></div>
+                      <p className="text-[9px] text-slate-400">Caries incipiente pieza 36</p>
+                    </div>
+                    <div className="bg-white rounded-xl p-3 shadow-sm">
+                      <p className="text-[10px] font-semibold text-slate-700 mb-2">Costo estimado</p>
+                      <p className="text-lg font-extrabold text-primary">$45.000 - $65.000</p>
+                      <p className="text-[9px] text-slate-400">Restauracion directa</p>
+                    </div>
+                  </PhoneMockup>
+                </div>
+
+                {/* Main Phone */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-[30%] lg:-translate-x-[25%] -translate-y-1/2 z-20">
+                  <PhoneMockup>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm">👋</div>
+                        <div>
+                          <p className="text-[10px] text-slate-400">Bienvenida</p>
+                          <p className="text-sm font-bold text-slate-800">Hola, Maria</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-full">
+                        <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <span className="text-[9px] text-emerald-600 font-semibold">3 citas hoy</span>
+                      </div>
+                    </div>
+                    {/* Next appointment */}
+                    <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100 mb-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-semibold text-primary uppercase tracking-wide">Proxima Cita</span>
+                        <Calendar className="w-3.5 h-3.5 text-primary/50" />
+                      </div>
+                      <p className="text-xs font-bold text-slate-900">Dr. Mendoza</p>
+                      <p className="text-[10px] text-slate-500">Ortodoncia</p>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <Clock className="w-3 h-3 text-slate-400" /><span className="text-[10px] text-slate-600 font-medium">Hoy 15:00</span>
+                        <MapPin className="w-3 h-3 text-slate-400 ml-1" /><span className="text-[10px] text-slate-600">Santiago</span>
+                      </div>
+                    </div>
+                    {/* AI card */}
+                    <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-2xl border border-primary/10 p-3.5 mb-3">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center"><Brain className="w-3.5 h-3.5 text-white" /></div>
+                        <p className="text-xs font-bold text-slate-900">IA Dental</p>
+                      </div>
+                      <p className="text-[10px] text-slate-600">Analisis listo</p>
+                      <div className="flex items-center gap-1 mt-1"><CheckCircle className="w-3 h-3 text-emerald-500" /><span className="text-[10px] text-emerald-600 font-medium">Sin urgencia</span></div>
+                    </div>
+                    {/* Odontogram */}
+                    <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-100">
+                      <div className="flex items-center gap-2 mb-1"><span className="text-sm">🦷</span><p className="text-xs font-bold text-slate-900">Odontograma</p></div>
+                      <p className="text-[10px] text-slate-500">Ultima revision: 15 Mar 2026</p>
+                    </div>
+                  </PhoneMockup>
+                </div>
               </motion.div>
+            </div>
+          </div>
+        </section>
 
-              {/* ── RIGHT COLUMN: Phone mockup ── */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="relative flex justify-center"
-              >
-                {/* Floating card: Rating — top right */}
-                <motion.div
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute -top-4 -right-2 md:right-2 lg:-right-6 z-20 bg-white rounded-2xl px-4 py-3 shadow-lg shadow-slate-200/60 border border-slate-100 hidden md:flex items-center gap-2"
-                >
-                  <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">4.8</p>
-                    <p className="text-[10px] text-slate-500">200+ resenas</p>
+        {/* ═══════════ 2. COMO FUNCIONA — 4 pasos ═══════════ */}
+        <section className="py-24 border-y border-slate-100 bg-grid-pattern" aria-labelledby="flow-heading">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-14">
+              <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-4">Asi de simple</motion.p>
+              <motion.h2 id="flow-heading" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-4">
+                De sintoma a solucion en <span className="text-gradient-primary">4 pasos</span>
+              </motion.h2>
+              <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-base text-slate-500 max-w-2xl mx-auto">
+                Sin llamar, sin esperar, sin incertidumbre. Todo digital y guiado.
+              </motion.p>
+            </div>
+            <motion.div variants={container} initial="hidden" whileInView="visible" viewport={{ once: true }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+              {[
+                { icon: <MessageCircle className="w-7 h-7" />, title: 'Describe tu problema', desc: 'Escribe tu sintoma en lenguaje simple. La IA clasifica tu caso al instante.', color: 'bg-primary/10 text-primary' },
+                { icon: <FileImage className="w-7 h-7" />, title: 'Obtiene tu orden', desc: 'Descarga un PDF con la orden de radiografia y laboratorios cercanos.', color: 'bg-violet-100 text-violet-600' },
+                { icon: <ScanLine className="w-7 h-7" />, title: 'La IA analiza', desc: 'Diagnostico preliminar, nivel de urgencia y estimacion de costos.', color: 'bg-amber-100 text-amber-600' },
+                { icon: <UserCheck className="w-7 h-7" />, title: 'Elige y agenda', desc: 'Dentistas cercanos con precios, disponibilidad y resenas. Agenda directo.', color: 'bg-emerald-100 text-emerald-600' },
+              ].map((s, i) => (
+                <motion.div key={i} variants={fadeUp} className="relative bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${s.color}`}>{s.icon}</div>
+                    <span className="text-3xl font-black text-slate-200">{i + 1}</span>
                   </div>
+                  <h3 className="text-base font-bold text-slate-900 mb-2">{s.title}</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
+                  {i < 3 && <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-10"><ArrowRight className="w-6 h-6 text-slate-300" /></div>}
                 </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
 
-                {/* Floating card: AI stats — bottom left */}
-                <motion.div
-                  animate={{ y: [0, 10, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                  className="absolute bottom-16 -left-4 md:left-0 lg:-left-10 z-20 bg-white rounded-2xl px-4 py-3 shadow-lg shadow-slate-200/60 border border-slate-100 hidden md:flex items-center gap-2"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                    <Brain className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">+5,000</p>
-                    <p className="text-[10px] text-slate-500">Analisis IA</p>
-                  </div>
-                </motion.div>
-
-                {/* Floating card: Users — mid right */}
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  className="absolute top-1/2 -right-2 md:right-0 lg:-right-8 z-20 bg-white rounded-2xl px-4 py-3 shadow-lg shadow-slate-200/60 border border-slate-100 hidden md:flex items-center gap-2"
-                >
-                  <div className="flex -space-x-2">
-                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs">
-                      {'\u{1F468}\u{200D}\u{2695}\u{FE0F}'}
+        {/* ═══════════ 3. PROBLEM — Visual chaos card (AFI style) ═══════════ */}
+        <section className="py-24 bg-white relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 10% 20%, rgba(69,181,196,0.08) 0%, transparent 40%), radial-gradient(ellipse at 90% 80%, rgba(69,181,196,0.05) 0%, transparent 40%)' }} />
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              {/* Chaos card */}
+              <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative">
+                <div className="bg-white rounded-3xl p-7 shadow-xl border border-slate-100">
+                  <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-400 to-orange-400 flex items-center justify-center text-lg">🦷</div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-slate-800">Sin DentalSpot</h4>
+                      <span className="text-xs text-slate-400">El camino tradicional</span>
                     </div>
-                    <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-xs">
-                      {'\u{1F469}\u{200D}\u{2695}\u{FE0F}'}
-                    </div>
-                    <div className="w-7 h-7 rounded-full bg-secondary/40 flex items-center justify-center text-xs">
-                      {'\u{1F9D1}\u{200D}\u{2695}\u{FE0F}'}
-                    </div>
+                    <span className="text-[10px] bg-red-50 text-red-500 px-3 py-1 rounded-full font-semibold">😩 Frustrante</span>
                   </div>
-                  <p className="text-xs font-semibold text-slate-700">+200 dentistas</p>
-                </motion.div>
-
-                {/* Phone mockup */}
-                <div
-                  className="relative max-w-[280px] sm:max-w-[300px] md:max-w-[320px] w-full"
-                  style={{ transform: 'perspective(1000px) rotateY(-5deg)' }}
-                >
-                  <div className="bg-slate-900 rounded-[2.5rem] p-3 shadow-2xl">
-                    <div className="bg-white rounded-[2rem] overflow-hidden">
-                      {/* Notch bar */}
-                      <div className="bg-slate-900 h-7 flex items-center justify-center relative">
-                        <div className="w-24 h-5 bg-slate-900 rounded-b-2xl" />
-                        <div className="absolute left-4 flex gap-1">
-                          <div className="w-1 h-1 rounded-full bg-slate-600" />
-                          <div className="w-1 h-1 rounded-full bg-slate-600" />
-                          <div className="w-1 h-1 rounded-full bg-slate-600" />
-                        </div>
-                        <span className="absolute right-4 text-[9px] text-slate-500 font-medium">9:41</span>
+                  {[
+                    { title: 'Buscar dentista en Google', sub: 'Sin referencias reales', urgent: true },
+                    { title: 'Llamar para pedir hora', sub: 'Nadie contesta, buzón lleno', urgent: true },
+                    { title: 'Esperar 2 semanas por cita', sub: 'Y el dolor sigue...', urgent: false },
+                    { title: 'Sorpresa con el precio', sub: 'Presupuesto sin aviso previo', urgent: false },
+                  ].map((t, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-2 hover:bg-slate-100 transition-all">
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${t.urgent ? 'bg-red-100 text-red-500 border border-red-200' : 'border-2 border-slate-200 bg-white'}`}>
+                        {t.urgent && '✕'}
                       </div>
-
-                      {/* Greeting header */}
-                      <div className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-[11px] text-slate-500">Bienvenida</p>
-                            <p className="text-sm font-bold text-slate-900 flex items-center gap-1">
-                              <span>{'\u{1F44B}'}</span> Hola, Maria
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-emerald-600 font-medium">3 citas hoy</span>
-                            <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card: Next appointment */}
-                      <div className="px-4 pt-3 pb-2">
-                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-[10px] font-semibold text-primary uppercase tracking-wide">Proxima Cita</p>
-                            <Calendar className="w-3.5 h-3.5 text-primary/50" />
-                          </div>
-                          <p className="text-xs font-bold text-slate-900">Dr. Mendoza</p>
-                          <p className="text-[10px] text-slate-500">Ortodoncia</p>
-                          <div className="flex items-center gap-1.5 mt-1.5">
-                            <Clock className="w-3 h-3 text-slate-400" />
-                            <span className="text-[10px] text-slate-600 font-medium">Hoy 15:00</span>
-                            <MapPin className="w-3 h-3 text-slate-400 ml-1" />
-                            <span className="text-[10px] text-slate-600">Santiago</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card: AI analysis */}
-                      <div className="px-4 pb-2">
-                        <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl border border-primary/10 p-3">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                              <Brain className="w-3.5 h-3.5 text-white" />
-                            </div>
-                            <p className="text-xs font-bold text-slate-900">IA Dental</p>
-                          </div>
-                          <p className="text-[10px] text-slate-600">Analisis listo</p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <CheckCircle className="w-3 h-3 text-emerald-500" />
-                            <span className="text-[10px] text-emerald-600 font-medium">Sin urgencia</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Card: Odontogram */}
-                      <div className="px-4 pb-4">
-                        <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-3">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <span className="text-sm">{'\u{1F9B7}'}</span>
-                            <p className="text-xs font-bold text-slate-900">Odontograma</p>
-                          </div>
-                          <p className="text-[10px] text-slate-500">Ultima revision</p>
-                          <p className="text-[10px] text-slate-700 font-medium mt-0.5">15 Mar 2026</p>
-                        </div>
-                      </div>
-
-                      {/* Bottom nav bar */}
-                      <div className="px-6 py-2 border-t border-slate-100 flex justify-around">
-                        <div className="w-8 h-1 rounded-full bg-slate-900 mx-auto" />
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-slate-700">{t.title}</p>
+                        <p className={`text-[10px] ${t.urgent ? 'text-red-400' : 'text-slate-400'}`}>{t.sub}</p>
                       </div>
                     </div>
-                  </div>
+                  ))}
+                </div>
+                {/* Floating stats */}
+                <div className="absolute -top-4 -right-4 bg-white rounded-2xl p-4 shadow-lg animate-float z-30">
+                  <p className="text-2xl font-extrabold text-red-400">72%</p>
+                  <div className="w-8 h-0.5 bg-slate-100 rounded my-1.5" />
+                  <p className="text-[10px] text-slate-400 leading-tight">Pacientes insatisfechos<br/>con la experiencia</p>
+                </div>
+                <div className="absolute bottom-[25%] -left-6 bg-white rounded-2xl p-4 shadow-lg animate-float-slow z-30 hidden md:block">
+                  <p className="text-2xl font-extrabold text-amber-400">14 dias</p>
+                  <div className="w-8 h-0.5 bg-slate-100 rounded my-1.5" />
+                  <p className="text-[10px] text-slate-400 leading-tight">Espera promedio<br/>por una cita</p>
                 </div>
               </motion.div>
 
-            </div>
-
-            {/* Search form below the hero grid */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.55 }}
-              className="mt-16"
-            >
-              <p className="text-center text-sm font-semibold text-slate-400 uppercase tracking-widest mb-5">
-                Encuentra un dentista DentalSpot cerca de ti
-              </p>
-              <HeroSearchForm />
-            </motion.div>
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════════════
-            2. COMO FUNCIONA (FLUJO)
-        ══════════════════════════════════════════════════════════════════ */}
-        {/* 🔵 Dot grid background */}
-        <section className="py-20 border-y border-slate-100" aria-labelledby="flow-heading" style={{ backgroundImage: 'radial-gradient(circle, #e2e8f0 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-14">
-              <motion.p
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="text-sm font-semibold text-primary uppercase tracking-widest mb-4"
-              >
-                Asi de simple
-              </motion.p>
-              <motion.h2
-                id="flow-heading"
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 leading-tight"
-              >
-                De sintoma a solucion en{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                  4 pasos
+              {/* Content */}
+              <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                <span className="inline-flex items-center gap-2 bg-red-50 text-red-500 px-4 py-2 rounded-full text-xs font-semibold mb-5">
+                  <AlertTriangle className="w-3.5 h-3.5" /> El Problema
                 </span>
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="text-lg text-slate-600 max-w-2xl mx-auto"
-              >
-                Sin llamar, sin esperar, sin incertidumbre. Todo el proceso es digital y guiado.
-              </motion.p>
+                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 leading-tight">
+                  Ir al dentista no deberia ser <span className="text-red-400">una odisea.</span>
+                </h2>
+                <p className="text-base text-slate-500 mb-8 leading-relaxed">
+                  Llamar, esperar semanas, no saber el precio, llegar sin diagnostico. El sistema dental esta roto.
+                </p>
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  {[{ v: '14 dias', l: 'Espera promedio' }, { v: '72%', l: 'Sin informacion de precios' }, { v: '0', l: 'Pre-diagnostico antes de ir' }].map((s, i) => (
+                    <div key={i} className="text-center p-4 bg-slate-50 rounded-2xl">
+                      <p className="text-xl font-extrabold text-primary">{s.v}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">{s.l}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-6 flex items-center gap-4 relative overflow-hidden">
+                  <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10" />
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-xl flex-shrink-0">💡</div>
+                  <p className="text-white text-sm font-medium relative z-10">
+                    DentalSpot resuelve todo esto. <strong className="text-emerald-200">En minutos, no semanas.</strong>
+                  </p>
+                </div>
+              </motion.div>
             </div>
-
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
-            >
-              {flowSteps.map((item, i) => (
-                <motion.div
-                  key={i}
-                  variants={itemVariants}
-                  className="relative bg-white/80 backdrop-blur-xl border border-white/40 rounded-2xl p-6 shadow-sm hover:shadow-[0_0_30px_rgba(69,181,196,0.15)] hover:-translate-y-1 transition-all"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.color}`}>
-                      {item.icon}
-                    </div>
-                    <span className="text-3xl font-black text-slate-200">{item.step}</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>
-                  {i < flowSteps.length - 1 && (
-                    <div className="hidden lg:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-                      <ArrowRight className="w-6 h-6 text-slate-300" />
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            3. BENEFICIOS
-        ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 bg-slate-50" aria-labelledby="benefits-heading">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-14">
-              <motion.h2
-                id="benefits-heading"
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4"
-              >
-                Por que elegir DentalSpot
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="text-lg text-slate-600 max-w-2xl mx-auto"
-              >
-                Rapidez, precision, confianza clinica y transparencia de precios en un solo lugar.
-              </motion.p>
-            </div>
+        {/* ═══════════ 4. SOLUTION — Teal gradient + Phone (AFI style) ═══════════ */}
+        <section className="relative">
+          <div className="bg-gradient-to-br from-primary via-accent to-teal-700 py-24 relative overflow-hidden">
+            <div className="absolute -top-24 -right-24 w-[400px] h-[400px] rounded-full bg-white/5 pointer-events-none" />
+            <div className="absolute bottom-12 -left-20 w-[250px] h-[250px] rounded-full border-2 border-white/10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-slate-50" style={{ clipPath: 'ellipse(55% 100% at 50% 100%)' }} />
 
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"
-            >
-              {benefits.map((b, i) => (
-                <motion.div
-                  key={i}
-                  variants={itemVariants}
-                  className="bg-white/80 backdrop-blur-xl border border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-[0_0_30px_rgba(69,181,196,0.15)] hover:-translate-y-1 transition-all group"
-                >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${b.gradient} text-white mb-4 group-hover:scale-110 transition-transform`}>
-                    {b.icon}
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                {/* Phone */}
+                <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  className="relative flex justify-center order-last lg:order-first">
+                  <div className="absolute top-[8%] left-[5%] bg-white rounded-2xl p-3 shadow-xl animate-float z-30 hidden md:block">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm">🤖</div>
+                      <div><p className="text-xs font-bold text-slate-800">Diagnostico IA</p><p className="text-[9px] text-slate-400">30 segundos</p></div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">{b.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{b.description}</p>
+                  <div className="absolute bottom-[18%] right-[5%] bg-white rounded-2xl p-3 shadow-xl animate-float-slow z-30 hidden md:block">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm"><DollarSign className="w-4 h-4 text-white" /></div>
+                      <div><p className="text-xs font-bold text-slate-800">Precio claro</p><p className="text-[9px] text-slate-400">Antes de agendar</p></div>
+                    </div>
+                  </div>
+                  <PhoneMockup size="lg">
+                    <div className="text-center mb-5 pb-4 border-b border-slate-100">
+                      <p className="text-2xl font-extrabold text-gradient-primary tracking-tight">DentalSpot</p>
+                      <p className="text-[9px] text-slate-400 mt-1">Odontologia inteligente</p>
+                    </div>
+                    {[
+                      { icon: '💬', title: 'Teleorientacion IA', sub: 'Describe tu sintoma', bg: 'bg-gradient-to-r from-primary/10 to-accent/10' },
+                      { icon: '📄', title: 'Orden Radiografia', sub: 'PDF descargable', bg: 'bg-gradient-to-r from-violet-50 to-violet-100' },
+                      { icon: '🤖', title: 'Analisis con IA', sub: 'Diagnostico preliminar', bg: 'bg-gradient-to-r from-amber-50 to-amber-100' },
+                      { icon: '🦷', title: 'Match Dentista', sub: 'Cercanos con precios', bg: 'bg-gradient-to-r from-emerald-50 to-emerald-100' },
+                    ].map((f, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl mb-2.5 hover:bg-white hover:shadow-md transition-all">
+                        <div className={`w-10 h-10 rounded-xl ${f.bg} flex items-center justify-center text-lg`}>{f.icon}</div>
+                        <div><p className="text-xs font-bold text-slate-800">{f.title}</p><p className="text-[9px] text-slate-400">{f.sub}</p></div>
+                      </div>
+                    ))}
+                    <div className="mt-4 w-full py-3 bg-gradient-to-r from-primary to-accent text-white text-center rounded-xl text-xs font-semibold">Empezar Ahora 🦷</div>
+                  </PhoneMockup>
                 </motion.div>
-              ))}
-            </motion.div>
+
+                {/* Content */}
+                <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="text-white">
+                  <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white px-4 py-2 rounded-full text-xs font-semibold mb-5">
+                    <Sparkles className="w-3.5 h-3.5" /> La Solucion
+                  </span>
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 leading-tight">
+                    Con <span className="text-emerald-200">DentalSpot</span> todo cambia
+                  </h2>
+                  <p className="text-base text-white/70 mb-8 leading-relaxed max-w-lg">
+                    De sintoma a solucion en minutos. IA que orienta, precios claros y dentistas verificados.
+                  </p>
+                  <div className="space-y-3 mb-8">
+                    {[
+                      { icon: '⚡', title: 'Orientacion inmediata', sub: 'IA clasifica tu caso al instante' },
+                      { icon: '💰', title: 'Precios transparentes', sub: 'Compara antes de decidir' },
+                      { icon: '📍', title: 'Dentistas cercanos', sub: 'Por ubicacion, especialidad y resenas' },
+                    ].map((v, i) => (
+                      <div key={i} className="flex items-center gap-3.5 bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/15 hover:translate-x-2 transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg flex-shrink-0">{v.icon}</div>
+                        <div><h4 className="text-sm font-bold text-white">{v.title}</h4><p className="text-xs text-white/60">{v.sub}</p></div>
+                      </div>
+                    ))}
+                  </div>
+                  <Button asChild size="lg" className="bg-white text-primary hover:bg-white/90 rounded-full px-8 text-base font-bold shadow-xl">
+                    <Link to="/consulta" className="flex items-center gap-2">Empezar ahora <ArrowRight className="w-4 h-4" /></Link>
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            4. PARA DENTISTAS
-        ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 bg-white" aria-labelledby="dentists-heading">
+        {/* ═══════════ 5. PARA DENTISTAS ═══════════ */}
+        <section className="py-24 bg-slate-50 relative overflow-hidden" aria-labelledby="dentists-heading">
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-                  Para profesionales
-                </p>
+              <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+                <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-xs font-semibold mb-5">🧑‍⚕️ Para profesionales</span>
                 <h2 id="dentists-heading" className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 leading-tight">
-                  Llena tu agenda con{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                    pacientes reales
-                  </span>
+                  Llena tu agenda con <span className="text-gradient-primary">pacientes reales</span>
                 </h2>
-                <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                  DentalSpot te conecta con pacientes que ya tienen un diagnostico preliminar y estan listos para agendar. Sin tiempos muertos, sin incertidumbre.
+                <p className="text-base text-slate-500 mb-8 leading-relaxed">
+                  Pacientes con pre-diagnostico IA, listos para agendar. Sin tiempos muertos.
                 </p>
-                <div className="space-y-4">
+                <div className="space-y-3 mb-8">
                   {[
                     'Recibe pacientes con pre-diagnostico IA',
-                    'Gestiona tu agenda y disponibilidad en tiempo real',
+                    'Gestiona tu agenda en tiempo real',
                     'Define tus precios y especialidades',
-                    'Perfil profesional con resenas verificadas',
+                    'Perfil con resenas verificadas',
                     'Odontograma digital integrado',
-                    'Dashboard con metricas de tu practica',
+                    'Dashboard con metricas de practica',
                   ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3">
+                    <div key={i} className="flex items-start gap-3 p-3 bg-white rounded-xl shadow-sm hover:shadow-md hover:translate-x-1 transition-all">
                       <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-slate-700">{item}</span>
+                      <span className="text-sm text-slate-700">{item}</span>
                     </div>
                   ))}
                 </div>
-                <div className="mt-8">
-                  <Button
-                    asChild size="lg"
-                    className="h-12 px-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl"
-                  >
-                    <Link to="/auth/register" className="flex items-center gap-2">
-                      Unirme como Dentista <ArrowRight className="w-5 h-5" />
-                    </Link>
-                  </Button>
-                </div>
+                <Button asChild size="lg" className="h-12 px-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl">
+                  <Link to="/auth/register" className="flex items-center gap-2">Unirme como Dentista <ArrowRight className="w-5 h-5" /></Link>
+                </Button>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl p-8 border border-primary/10"
-              >
+              <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+                className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl p-8 border border-primary/10">
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { icon: <Users className="w-8 h-8" />, value: '+200', label: 'Dentistas activos' },
-                    { icon: <MapPin className="w-8 h-8" />, value: '8+', label: 'Ciudades' },
-                    { icon: <Star className="w-8 h-8" />, value: '4.8', label: 'Rating promedio' },
-                    { icon: <Calendar className="w-8 h-8" />, value: '95%', label: 'Citas confirmadas' },
+                    { icon: <Users className="w-8 h-8" />, value: 200, suffix: '+', label: 'Dentistas activos' },
+                    { icon: <MapPin className="w-8 h-8" />, value: 8, suffix: '+', label: 'Ciudades' },
+                    { icon: <Star className="w-8 h-8" />, value: '4.8', suffix: '', label: 'Rating promedio' },
+                    { icon: <Calendar className="w-8 h-8" />, value: 95, suffix: '%', label: 'Citas confirmadas' },
                   ].map((stat, i) => (
                     <div key={i} className="bg-white rounded-2xl p-5 text-center shadow-sm">
                       <div className="text-primary mx-auto mb-2 flex justify-center">{stat.icon}</div>
-                      <div className="text-2xl font-black text-slate-900">{stat.value}</div>
+                      <div className="text-2xl font-extrabold text-slate-900">
+                        {typeof stat.value === 'number' ? <AnimatedCounter target={stat.value} suffix={stat.suffix} /> : stat.value}
+                      </div>
                       <div className="text-xs text-slate-500 mt-1">{stat.label}</div>
                     </div>
                   ))}
@@ -699,63 +554,65 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            5. PROFESIONALES DESTACADOS
-        ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 bg-slate-50" aria-labelledby="professionals-heading">
+        {/* ═══════════ 6. TESTIMONIALS ═══════════ */}
+        <section className="py-24 bg-slate-900 relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3">Lo que dicen de DentalSpot</h2>
+              <p className="text-slate-400">Pacientes y dentistas reales</p>
+            </div>
+            <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory -mx-4 px-4">
+              {testimonials.map((t, i) => (
+                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                  className="snap-start min-w-[300px] max-w-[340px] flex-shrink-0 glass-card-dark rounded-2xl p-6 hover:border-primary/20 transition-all">
+                  <Quote className="w-7 h-7 text-primary/30 mb-3" />
+                  <p className="text-slate-300 text-sm leading-relaxed mb-5">{t.quote}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center text-white text-xs font-bold">
+                      {t.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold">{t.name}</p>
+                      <p className="text-slate-500 text-xs">{t.role} · {t.location}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ 7. PROFESSIONALS ═══════════ */}
+        <section className="py-24 bg-white" aria-labelledby="professionals-heading">
           <div className="container mx-auto px-4">
             <div className="text-center mb-10">
-              <motion.h2
-                id="professionals-heading"
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4"
-              >
-                Dentistas verificados en DentalSpot
-              </motion.h2>
-              <p className="text-lg text-slate-600">
-                Profesionales con experiencia, resenas reales y disponibilidad en tiempo real.
-              </p>
+              <motion.h2 id="professionals-heading" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3">Dentistas verificados</motion.h2>
+              <p className="text-base text-slate-500">Profesionales con experiencia, resenas reales y disponibilidad.</p>
             </div>
             <FeaturedProfessionalsCarousel professionals={featuredProfessionalsData} />
             <div className="text-center mt-10">
               <Button asChild variant="outline" size="lg" className="rounded-2xl">
-                <Link to="/dentistas" className="flex items-center gap-2">
-                  Ver todos los dentistas <ArrowRight className="w-5 h-5" />
-                </Link>
+                <Link to="/dentistas" className="flex items-center gap-2">Ver todos los dentistas <ArrowRight className="w-5 h-5" /></Link>
               </Button>
             </div>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            6. FAQ
-        ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 bg-white" aria-labelledby="faq-heading">
+        {/* ═══════════ 8. FAQ ═══════════ */}
+        <section className="py-20 bg-slate-50" aria-labelledby="faq-heading">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto">
               <div className="text-center mb-12">
-                <motion.h2
-                  id="faq-heading"
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4"
-                >
-                  Preguntas frecuentes
-                </motion.h2>
+                <h2 id="faq-heading" className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-3">Preguntas frecuentes</h2>
+                <p className="text-slate-500">Todo sobre DentalSpot</p>
               </div>
-
               <Accordion type="single" collapsible className="space-y-3">
                 {faqItems.map((faq, i) => (
-                  <AccordionItem key={i} value={`faq-${i}`} className="bg-slate-50 rounded-2xl border border-slate-100 px-6">
-                    <AccordionTrigger className="text-left font-semibold text-slate-800 hover:no-underline py-5">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-slate-600 leading-relaxed pb-5">
-                      {faq.answer}
-                    </AccordionContent>
+                  <AccordionItem key={i} value={`faq-${i}`} className="bg-white rounded-2xl border border-slate-100 px-6 hover:border-slate-200 transition-colors">
+                    <AccordionTrigger className="text-left font-semibold text-slate-800 hover:no-underline py-5">{faq.question}</AccordionTrigger>
+                    <AccordionContent className="text-slate-600 leading-relaxed pb-5">{faq.answer}</AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
@@ -763,45 +620,42 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════════
-            7. CTA FINAL
-        ══════════════════════════════════════════════════════════════════ */}
-        <section className="py-20 bg-gradient-to-r from-primary to-accent relative overflow-hidden">
-          {/* 🦷 Dientes decorativos flotantes */}
-          <img src="/logo-dentalspot.png" alt="" className="absolute top-8 left-8 w-20 h-20 opacity-10 pointer-events-none" />
-          <img src="/logo-dentalspot.png" alt="" className="absolute bottom-8 right-12 w-32 h-32 opacity-5 pointer-events-none" />
-          <img src="/logo-dentalspot.png" alt="" className="absolute top-1/2 left-1/3 w-14 h-14 opacity-10 pointer-events-none" />
-          <img src="/logo-dentalspot.png" alt="" className="absolute top-1/4 right-1/4 w-16 h-16 opacity-[0.07] pointer-events-none" />
-          <div className="container mx-auto px-4 text-center relative z-10">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="max-w-2xl mx-auto"
-            >
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">
-                Tu salud dental no puede esperar
-              </h2>
-              <p className="text-lg text-white/90 mb-8">
-                Describe tu sintoma ahora y en minutos tendras un plan de accion claro con el dentista ideal para ti.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button
-                  asChild size="lg"
-                  className="h-14 px-8 bg-white text-primary hover:bg-white/90 font-semibold rounded-2xl shadow-lg text-base"
-                >
-                  <Link to="/consulta" className="flex items-center gap-2">
-                    Empezar ahora <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild variant="outline" size="lg"
-                  className="h-14 px-8 bg-white/20 border border-white/40 text-white hover:bg-white/30 rounded-2xl font-semibold text-base backdrop-blur"
-                >
-                  <Link to="/auth/register">Soy Dentista</Link>
-                </Button>
-              </div>
-            </motion.div>
+        {/* ═══════════ 9. FINAL CTA ═══════════ */}
+        <section className="py-24 bg-white text-center relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 pointer-events-none" />
+          <div className="container mx-auto px-4 relative z-10">
+            <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-xs font-semibold mb-5">🦷 Tu salud no puede esperar</span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-4">
+              Describe tu sintoma y en minutos tendras un plan
+            </h2>
+            <p className="text-base text-slate-500 max-w-lg mx-auto mb-10">
+              Diagnostico preliminar con IA, precios claros y el dentista ideal cerca de ti.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+              <Button asChild size="lg" className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-bold rounded-2xl shadow-lg text-base">
+                <Link to="/consulta" className="flex items-center gap-2">Empezar ahora <ArrowRight className="w-5 h-5" /></Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="h-14 px-8 rounded-2xl font-semibold text-base">
+                <Link to="/auth/register">Soy Dentista</Link>
+              </Button>
+            </div>
+            <div className="flex items-center justify-center gap-6">
+              {['Gratis para pacientes', 'IA avanzada', 'Sin esperas'].map((t, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-slate-400 text-sm">
+                  <CheckCircle className="w-4 h-4 text-primary" /> {t}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════ 10. CLOSING QUOTE ═══════════ */}
+        <section className="py-16 bg-gradient-to-r from-primary/5 to-accent/5 text-center">
+          <div className="container mx-auto px-4">
+            <p className="text-xl md:text-2xl text-slate-700 font-medium italic max-w-2xl mx-auto leading-relaxed">
+              "Tu salud dental no deberia depender de a quien conoces.<br/>
+              <strong className="text-primary not-italic">Deberia depender de quien es el mejor para ti.</strong>"
+            </p>
           </div>
         </section>
 
