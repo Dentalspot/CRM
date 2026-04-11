@@ -11,6 +11,7 @@ import ClinicSearchStep from '@/components/clinic/ClinicSearchStep';
 import { cleanRutEmpresa } from '@/services/clinicDetectionService';
 import logger from '@/lib/utils/logger';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const MAX_CLINICS = 10;
 
@@ -253,11 +254,12 @@ const MyClinicsSection = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white" style={{color: '#2D2D2D'}}>Mis Lugares de Atención</h2>
-        <p className="mt-2 text-lg text-muted-foreground">Registra los lugares donde atiendes y tus horarios de disponibilidad.</p>
-      </div>
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+        <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Mis Lugares de Atención</CardTitle>
+        <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">Registra los lugares donde atiendes y tus horarios de disponibilidad.</CardDescription>
+      </CardHeader>
+      <CardContent className="p-6 bg-white">
 
       {loading ? (
          <div className="flex justify-center items-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -318,7 +320,8 @@ const MyClinicsSection = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
