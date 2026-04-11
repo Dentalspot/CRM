@@ -275,17 +275,17 @@ const PersonalInfoForm = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Título Profesional</Label>
-                <Input name="professional_title" value={formData.professional_title} onChange={handleChange} />
+                <Input name="professional_title" value={formData.professional_title} onChange={handleChange} placeholder="Ej: Cirujano Dentista" />
               </div>
               <div>
                 <Label>Titular (Headline)</Label>
-                <Input name="headline" value={formData.headline} onChange={handleChange} />
+                <Input name="headline" value={formData.headline} onChange={handleChange} placeholder="Ej: Especialista en Ortodoncia y Estética Dental" />
               </div>
             </div>
 
             <div>
               <Label>Sobre Mí</Label>
-              <Textarea name="about_me" value={formData.about_me} onChange={handleChange} rows={4} />
+              <Textarea name="about_me" value={formData.about_me} onChange={handleChange} rows={4} placeholder="Ej: Odontólogo con 10 años de experiencia en rehabilitación oral e implantología..." />
             </div>
           </div>
 
