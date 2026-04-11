@@ -236,17 +236,14 @@ const MembershipPlansPage = () => {
   const upgradePlans = [PLAN_NAMES.INDIVIDUAL, PLAN_NAMES.PROFESSIONAL, PLAN_NAMES.CENTER];
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-6xl space-y-6">
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
       <Helmet><title>Mi Membresía | DentalSpot</title></Helmet>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Crown className="h-6 w-6 text-primary" /> Mi Membresía
-          </h1>
-          <p className="text-gray-500 mt-1">Gestiona tu plan y facturación</p>
-        </div>
-      </div>
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+        <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Mi Membresía</CardTitle>
+        <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">Gestiona tu plan y facturación</CardDescription>
+      </CardHeader>
+      <CardContent className="p-6 bg-white space-y-6">
 
       <CurrentPlanHeader subscription={subscription} stats={stats} onManage={() => setActiveTab('plans')} dynamicPlan={dynamicPlans?.[subscription?.plan_name]} />
 
@@ -400,7 +397,8 @@ const MembershipPlansPage = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
