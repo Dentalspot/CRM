@@ -204,7 +204,7 @@ const ServicesFeesSection = () => {
                   id={`service-name-${index}`}
                   value={service.service_name ?? ''}
                   onChange={(e) => handleChange(index, 'service_name', e.target.value)}
-                  placeholder="Ej: Evaluación Fonoaudiológica"
+                  placeholder="Ej: Limpieza Dental Profesional"
                   className="bg-background"
                   required
                 />

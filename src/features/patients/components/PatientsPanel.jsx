@@ -139,28 +139,21 @@ const PatientsPanel = () => {
             </div>
             <div className="flex gap-2 flex-wrap">
               <Button
-                variant={pieMode ? "secondary" : "outline"}
-                onClick={togglePieMode}
-                className={pieMode ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" : ""}
-              >
-                <GraduationCap className="h-4 w-4 mr-2" />
-                {pieMode ? "Cancelar PIE" : "Agregar a PIE"}
-              </Button>
-              <Button
                 variant={mergeMode ? "secondary" : "outline"}
                 onClick={toggleMergeMode}
+                size="sm"
                 className={mergeMode ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : ""}
               >
-                <Merge className="h-4 w-4 mr-2" />
-                {mergeMode ? "Cancelar Fusión" : "Fusionar Pacientes"}
+                <Merge className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">{mergeMode ? "Cancelar Fusión" : "Fusionar Pacientes"}</span>
               </Button>
-              <Button variant="outline" asChild>
+              <Button variant="outline" size="sm" asChild>
                 <Link to="import">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar
+                  <Upload className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Importar</span>
                 </Link>
               </Button>
-              <Button onClick={() => { setSelectedPatient(null); setModalOpen(true); }}>
+              <Button size="sm" onClick={() => { setSelectedPatient(null); setModalOpen(true); }}>
                 + Nuevo Paciente
               </Button>
             </div>

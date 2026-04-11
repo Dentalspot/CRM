@@ -167,15 +167,14 @@ const BankTransferInfoForm = () => {
 
   if (!isEditing && initialData?.bank_name) {
     return (
-      <Card className="border-l-4 border-l-blue-500 shadow-sm">
-        <CardHeader>
+      <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
+        <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
                 Datos de Transferencia
               </CardTitle>
-              <CardDescription>Cuenta donde recibirás tus pagos y comisiones</CardDescription>
+              <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">Cuenta donde recibirás tus pagos y comisiones</CardDescription>
             </div>
             {renderStatusBadge()}
           </div>
@@ -219,13 +218,12 @@ const BankTransferInfoForm = () => {
   }
 
   return (
-    <Card className="shadow-lg border-t-4 border-t-teal-500">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-teal-600" />
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+        <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">
           {initialData ? 'Actualizar Datos Bancarios' : 'Configurar Datos de Pago'}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">
           Ingresa los datos de la cuenta bancaria donde deseas recibir tus ganancias.
         </CardDescription>
       </CardHeader>

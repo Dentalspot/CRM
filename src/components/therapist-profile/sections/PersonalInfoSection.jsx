@@ -292,15 +292,9 @@ const PersonalInfoForm = () => {
           <div className="space-y-4">
             <h4 className="font-semibold text-gray-700">Registros y Credenciales</h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Registro Supersalud</Label>
-                <Input name="registration_supersalud" value={formData.registration_supersalud} onChange={handleChange} placeholder="Ej: 12345" />
-              </div>
-              <div>
-                <Label>Registro Secreduc (PIE)</Label>
-                <Input name="registration_secreduc" value={formData.registration_secreduc} onChange={handleChange} placeholder="Ej: 98765" />
-              </div>
+            <div>
+              <Label>Registro Superintendencia de Salud</Label>
+              <Input name="registration_supersalud" value={formData.registration_supersalud} onChange={handleChange} placeholder="Ej: 12345" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

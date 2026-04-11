@@ -358,6 +358,9 @@ const WeeklyAgendaView = ({
 
   return (
     <div className="h-full flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden select-none">
+      {/* Scrollable wrapper for mobile */}
+      <div className="overflow-x-auto">
+      <div className="min-w-[640px]">
       {/* Header with days */}
       <div className="grid grid-cols-8 border-b bg-gray-50/80 sticky top-0 z-30">
         <div className="p-2 border-r bg-gray-50" />
@@ -463,8 +466,11 @@ const WeeklyAgendaView = ({
         </div>
       </div>
 
+      </div>{/* close min-w-[640px] */}
+      </div>{/* close overflow-x-auto */}
+
       {/* Legend */}
-      <div className="border-t bg-gray-50 px-4 py-2 flex flex-wrap items-center gap-4 text-xs text-gray-600">
+      <div className="border-t bg-gray-50 px-4 py-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 bg-green-100 border border-green-300 rounded" />
           <span>Disponible</span>
@@ -472,18 +478,6 @@ const WeeklyAgendaView = ({
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 bg-sky-100 border-l-2 border-sky-400 rounded" />
           <span>Consulta</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-green-100 border-l-2 border-green-500 rounded" />
-          <span>Aula</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-orange-100 border-l-2 border-orange-500 rounded" />
-          <span>Colab.</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-yellow-100 border-l-2 border-yellow-500 rounded" />
-          <span>Coord.</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 bg-red-50 border border-dashed border-red-300 rounded" />

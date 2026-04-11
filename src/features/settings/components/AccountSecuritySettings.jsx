@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,9 @@ import {
   Eye,
   EyeOff,
   ChevronRight,
-  Info
+  Info,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import logger from "@/lib/utils/logger";
 import {
@@ -213,7 +215,7 @@ const AccountSecuritySettings = () => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pr-10 h-11 bg-white border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+        className="pr-10 h-11 bg-white border-gray-200 focus:border-pink-500 focus:ring-pink-500/20"
       />
       <button
         type="button"
@@ -226,7 +228,7 @@ const AccountSecuritySettings = () => {
   );
 
   const CheckItem = ({ checked, label }) => (
-    <div className={`flex items-center gap-2 text-sm transition-colors ${checked ? 'text-teal-600' : 'text-gray-400'}`}>
+    <div className={`flex items-center gap-2 text-sm transition-colors ${checked ? 'text-pink-600' : 'text-gray-400'}`}>
       {checked ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
       <span>{label}</span>
     </div>
@@ -235,10 +237,10 @@ const AccountSecuritySettings = () => {
   const SectionButton = ({ icon: Icon, title, description, onClick, badge }) => (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 rounded-xl bg-white border border-gray-100 hover:border-teal-200 hover:bg-teal-50/30 transition-all duration-200 text-left group"
+      className="w-full flex items-center gap-4 p-4 rounded-xl bg-white border border-gray-100 hover:border-pink-200 hover:bg-pink-50/30 transition-all duration-200 text-left group"
     >
-      <div className="p-2.5 rounded-lg bg-gray-50 group-hover:bg-teal-100/50 transition-colors">
-        <Icon className="h-5 w-5 text-gray-600 group-hover:text-teal-600 transition-colors" />
+      <div className="p-2.5 rounded-lg bg-gray-50 group-hover:bg-pink-100/50 transition-colors">
+        <Icon className="h-5 w-5 text-gray-600 group-hover:text-pink-600 transition-colors" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -251,24 +253,19 @@ const AccountSecuritySettings = () => {
         </div>
         <p className="text-sm text-gray-500 truncate">{description}</p>
       </div>
-      <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-teal-400 transition-colors" />
+      <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-pink-400 transition-colors" />
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30">
-      <div className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
-
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-lg shadow-teal-500/25">
-              <Shield className="h-6 w-6" />
-            </div>
-            <h1 className="text-2xl font-semibold text-gray-900">Seguridad</h1>
-          </div>
-          <p className="text-gray-500 ml-12">Gestiona la seguridad de tu cuenta</p>
-        </div>
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+        <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Seguridad</CardTitle>
+        <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">
+          Gestiona la seguridad de tu cuenta
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6 bg-white">
 
         {/* Patient Hint */}
         {isPatient && (
@@ -320,6 +317,15 @@ const AccountSecuritySettings = () => {
               description="Gestiona tus dispositivos conectados"
               onClick={() => setActiveSection('sessions')}
             />
+
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <SectionButton
+                icon={Trash2}
+                title="Cerrar mi cuenta"
+                description="Proceso irreversible de eliminación"
+                onClick={() => setActiveSection('delete-account')}
+              />
+            </div>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
@@ -334,328 +340,550 @@ const AccountSecuritySettings = () => {
 
             {/* Timezone Section */}
             {activeSection === 'timezone' && (
-              <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl overflow-hidden">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-lg bg-indigo-100">
-                      <Globe className="h-5 w-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-gray-900">Zona Horaria</h2>
-                      <p className="text-sm text-gray-500">Configura la zona horaria para tus citas y calendario</p>
-                    </div>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-pink-100">
+                    <Globe className="h-5 w-5 text-pink-600" />
                   </div>
-
-                  <div className="mb-6 p-4 rounded-xl bg-gray-50 border border-gray-100">
-                    <p className="text-xs text-gray-500 mb-1">Zona actual detectada</p>
-                    <p className="font-medium text-gray-900 font-mono text-sm">
-                      {Intl.DateTimeFormat().resolvedOptions().timeZone}
-                    </p>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Zona Horaria</h3>
+                    <p className="text-sm text-gray-500">Configura la zona horaria para tus citas y calendario</p>
                   </div>
+                </div>
 
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="timezone" className="text-sm font-medium text-gray-700">
-                        Selecciona tu zona horaria
-                      </Label>
-                      <Select 
-                        value={timezone} 
-                        onValueChange={setTimezone}
-                      >
-                        <SelectTrigger id="timezone" className="h-11 bg-white border-gray-200">
-                          <SelectValue placeholder="Selecciona una zona horaria" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TIMEZONES.map((tz) => (
-                            <SelectItem key={tz.value} value={tz.value}>
-                              {tz.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Las horas de tus citas se mostrarán automáticamente en tu hora local.
-                      </p>
-                    </div>
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                  <p className="text-xs text-gray-500 mb-1">Zona actual detectada</p>
+                  <p className="font-medium text-gray-900 font-mono text-sm">
+                    {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                  </p>
+                </div>
 
-                    <Button
-                      onClick={submitTimezoneChange}
-                      disabled={loadingTimezone}
-                      className="w-full h-11 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-lg shadow-indigo-500/25"
-                    >
-                      {loadingTimezone ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar zona horaria'}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="timezone" className="text-sm font-medium text-gray-700">
+                    Selecciona tu zona horaria
+                  </Label>
+                  <Select
+                    value={timezone}
+                    onValueChange={setTimezone}
+                  >
+                    <SelectTrigger id="timezone" className="h-11 bg-white border-gray-200">
+                      <SelectValue placeholder="Selecciona una zona horaria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIMEZONES.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Las horas de tus citas se mostrarán automáticamente en tu hora local.
+                  </p>
+                </div>
+
+                <Button
+                  onClick={submitTimezoneChange}
+                  disabled={loadingTimezone}
+                  className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25"
+                >
+                  {loadingTimezone ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar zona horaria'}
+                </Button>
+              </div>
             )}
 
             {/* Password Section */}
             {activeSection === 'password' && (
-              <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl overflow-hidden">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-lg bg-teal-100">
-                      <Key className="h-5 w-5 text-teal-600" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-gray-900">Cambiar contraseña</h2>
-                      <p className="text-sm text-gray-500">Elige una contraseña segura</p>
-                    </div>
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-pink-100">
+                    <Key className="h-5 w-5 text-pink-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Cambiar contraseña</h3>
+                    <p className="text-sm text-gray-500">Elige una contraseña segura</p>
+                  </div>
+                </div>
+
+                <form onSubmit={submitPasswordChange} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="current" className="text-sm font-medium text-gray-700">
+                      Contraseña actual
+                    </Label>
+                    <PasswordInput
+                      id="current"
+                      value={passwordForm.current}
+                      onChange={(v) => handlePasswordChange('current', v)}
+                      placeholder={isPatient ? "Ej: 123456" : "••••••••"}
+                      show={showPasswords.current}
+                      onToggle={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
+                    />
                   </div>
 
-                  <form onSubmit={submitPasswordChange} className="space-y-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="current" className="text-sm font-medium text-gray-700">
-                        Contraseña actual
-                      </Label>
-                      <PasswordInput
-                        id="current"
-                        value={passwordForm.current}
-                        onChange={(v) => handlePasswordChange('current', v)}
-                        placeholder={isPatient ? "Ej: 123456" : "••••••••"}
-                        show={showPasswords.current}
-                        onToggle={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
-                      />
-                    </div>
+                  <Separator />
 
-                    <Separator />
+                  <div className="space-y-2">
+                    <Label htmlFor="new" className="text-sm font-medium text-gray-700">
+                      Nueva contraseña
+                    </Label>
+                    <PasswordInput
+                      id="new"
+                      value={passwordForm.new}
+                      onChange={(v) => handlePasswordChange('new', v)}
+                      placeholder="••••••••"
+                      show={showPasswords.new}
+                      onToggle={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
+                    />
 
-                    <div className="space-y-2">
-                      <Label htmlFor="new" className="text-sm font-medium text-gray-700">
-                        Nueva contraseña
-                      </Label>
-                      <PasswordInput
-                        id="new"
-                        value={passwordForm.new}
-                        onChange={(v) => handlePasswordChange('new', v)}
-                        placeholder="••••••••"
-                        show={showPasswords.new}
-                        onToggle={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
-                      />
-
-                      {/* Strength Bar */}
-                      {passwordForm.new && (
-                        <div className="space-y-3 pt-2">
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((level) => (
-                              <div
-                                key={level}
-                                className={`h-1 flex-1 rounded-full transition-all duration-300 ${passwordStrength >= level
-                                    ? passwordStrength <= 2 ? 'bg-red-400'
-                                      : passwordStrength <= 3 ? 'bg-amber-400'
-                                        : passwordStrength <= 4 ? 'bg-teal-400'
-                                          : 'bg-emerald-500'
-                                    : 'bg-gray-100'
-                                  }`}
-                              />
-                            ))}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <CheckItem checked={passwordChecks.length} label="Mín. 8 caracteres" />
-                            <CheckItem checked={passwordChecks.uppercase} label="Una mayúscula" />
-                            <CheckItem checked={passwordChecks.number} label="Un número" />
-                            <CheckItem checked={passwordChecks.special} label="Un símbolo" />
-                          </div>
+                    {/* Strength Bar */}
+                    {passwordForm.new && (
+                      <div className="space-y-3 pt-2">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-1 flex-1 rounded-full transition-all duration-300 ${passwordStrength >= level
+                                  ? passwordStrength <= 2 ? 'bg-red-400'
+                                    : passwordStrength <= 3 ? 'bg-amber-400'
+                                      : passwordStrength <= 4 ? 'bg-pink-400'
+                                        : 'bg-emerald-500'
+                                  : 'bg-gray-100'
+                                }`}
+                            />
+                          ))}
                         </div>
-                      )}
-                    </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <CheckItem checked={passwordChecks.length} label="Mín. 8 caracteres" />
+                          <CheckItem checked={passwordChecks.uppercase} label="Una mayúscula" />
+                          <CheckItem checked={passwordChecks.number} label="Un número" />
+                          <CheckItem checked={passwordChecks.special} label="Un símbolo" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm" className="text-sm font-medium text-gray-700">
-                        Confirmar contraseña
-                      </Label>
-                      <PasswordInput
-                        id="confirm"
-                        value={passwordForm.confirm}
-                        onChange={(v) => handlePasswordChange('confirm', v)}
-                        placeholder="••••••••"
-                        show={showPasswords.confirm}
-                        onToggle={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
-                      />
-                      {passwordForm.confirm && !passwordChecks.match && (
-                        <p className="text-sm text-red-500 flex items-center gap-1">
-                          <X className="h-3.5 w-3.5" /> Las contraseñas no coinciden
-                        </p>
-                      )}
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm" className="text-sm font-medium text-gray-700">
+                      Confirmar contraseña
+                    </Label>
+                    <PasswordInput
+                      id="confirm"
+                      value={passwordForm.confirm}
+                      onChange={(v) => handlePasswordChange('confirm', v)}
+                      placeholder="••••••••"
+                      show={showPasswords.confirm}
+                      onToggle={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
+                    />
+                    {passwordForm.confirm && !passwordChecks.match && (
+                      <p className="text-sm text-red-500 flex items-center gap-1">
+                        <X className="h-3.5 w-3.5" /> Las contraseñas no coinciden
+                      </p>
+                    )}
+                  </div>
 
-                    <Button
-                      type="submit"
-                      disabled={loading || !isPasswordValid}
-                      className="w-full h-11 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white shadow-lg shadow-teal-500/25 transition-all duration-200"
-                    >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Actualizar contraseña'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+                  <Button
+                    type="submit"
+                    disabled={loading || !isPasswordValid}
+                    className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all duration-200"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Actualizar contraseña'}
+                  </Button>
+                </form>
+              </div>
             )}
 
             {/* Email Section */}
             {activeSection === 'email' && (
-              <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl overflow-hidden">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <Mail className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-gray-900">Cambiar email</h2>
-                      <p className="text-sm text-gray-500">Actualiza tu dirección de correo</p>
-                    </div>
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-pink-100">
+                    <Mail className="h-5 w-5 text-pink-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Cambiar email</h3>
+                    <p className="text-sm text-gray-500">Actualiza tu dirección de correo</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-gray-50">
+                  <p className="text-xs text-gray-500 mb-1">Email actual</p>
+                  <p className="font-medium text-gray-900">{user?.email || 'Cargando...'}</p>
+                </div>
+
+                <form onSubmit={submitEmailChange} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="newEmail" className="text-sm font-medium text-gray-700">
+                      Nuevo email
+                    </Label>
+                    <Input
+                      id="newEmail"
+                      type="email"
+                      value={emailForm.newEmail}
+                      onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
+                      placeholder="nuevo@email.com"
+                      className="h-11 bg-white border-gray-200 focus:border-pink-500 focus:ring-pink-500/20"
+                      required
+                    />
                   </div>
 
-                  <div className="mb-6 p-4 rounded-xl bg-gray-50">
-                    <p className="text-xs text-gray-500 mb-1">Email actual</p>
-                    <p className="font-medium text-gray-900">{user?.email || 'Cargando...'}</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="emailPassword" className="text-sm font-medium text-gray-700">
+                      Confirma tu contraseña
+                    </Label>
+                    <PasswordInput
+                      id="emailPassword"
+                      value={emailForm.password}
+                      onChange={(v) => setEmailForm({ ...emailForm, password: v })}
+                      placeholder="••••••••"
+                      show={showPasswords.current}
+                      onToggle={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
+                    />
                   </div>
 
-                  <form onSubmit={submitEmailChange} className="space-y-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="newEmail" className="text-sm font-medium text-gray-700">
-                        Nuevo email
-                      </Label>
-                      <Input
-                        id="newEmail"
-                        type="email"
-                        value={emailForm.newEmail}
-                        onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
-                        placeholder="nuevo@email.com"
-                        className="h-11 bg-white border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
-                        required
-                      />
-                    </div>
+                  <div className="p-3 rounded-lg bg-pink-50 border border-pink-100">
+                    <p className="text-xs text-pink-700">
+                      Recibirás un enlace de confirmación en tu nuevo email.
+                    </p>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="emailPassword" className="text-sm font-medium text-gray-700">
-                        Confirma tu contraseña
-                      </Label>
-                      <PasswordInput
-                        id="emailPassword"
-                        value={emailForm.password}
-                        onChange={(v) => setEmailForm({ ...emailForm, password: v })}
-                        placeholder="••••••••"
-                        show={showPasswords.current}
-                        onToggle={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
-                      />
-                    </div>
-
-                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-100">
-                      <p className="text-xs text-blue-700">
-                        Recibirás un enlace de confirmación en tu nuevo email.
-                      </p>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full h-11 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25"
-                    >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cambiar email'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cambiar email'}
+                  </Button>
+                </form>
+              </div>
             )}
 
             {/* 2FA Section */}
             {activeSection === '2fa' && (
-              <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl overflow-hidden">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-lg bg-purple-100">
-                      <Smartphone className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-gray-900">Autenticación de dos factores</h2>
-                      <p className="text-sm text-gray-500">Protege tu cuenta con verificación adicional</p>
-                    </div>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100">
+                    <Smartphone className="h-5 w-5 text-purple-600" />
                   </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Autenticación de dos factores</h3>
+                    <p className="text-sm text-gray-500">Protege tu cuenta con verificación adicional</p>
+                  </div>
+                </div>
 
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 mb-6">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50">
+                  <div>
+                    <p className="font-medium text-gray-900">Estado de 2FA</p>
+                    <p className="text-sm text-gray-500">
+                      {mfaEnabled ? 'Tu cuenta está protegida' : 'No está configurado'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={mfaEnabled}
+                    onCheckedChange={() => {
+                      if (!mfaEnabled) {
+                        toast({ title: "Próximamente", description: "Esta función estará disponible pronto." });
+                      } else {
+                        toast({ title: "Info", description: "Contacta soporte para desactivar 2FA." });
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
+                  <div className="flex gap-3">
+                    <ShieldCheck className="h-5 w-5 text-purple-500 shrink-0" />
                     <div>
-                      <p className="font-medium text-gray-900">Estado de 2FA</p>
-                      <p className="text-sm text-gray-500">
-                        {mfaEnabled ? 'Tu cuenta está protegida' : 'No está configurado'}
+                      <p className="text-sm font-medium text-purple-800">Configuración de 2FA</p>
+                      <p className="text-xs text-purple-700 mt-1">
+                        Estamos trabajando en la configuración de 2FA desde tu panel. Mientras tanto, puedes contactar a soporte para habilitarla.
                       </p>
                     </div>
-                    <Switch
-                      checked={mfaEnabled}
-                      onCheckedChange={() => {
-                        if (!mfaEnabled) {
-                          toast({ title: "Próximamente", description: "Esta función estará disponible pronto." });
-                        } else {
-                          toast({ title: "Info", description: "Contacta soporte para desactivar 2FA." });
-                        }
-                      }}
-                    />
                   </div>
-
-                  <div className="p-4 rounded-xl bg-purple-50 border border-purple-100">
-                    <div className="flex gap-3">
-                      <ShieldCheck className="h-5 w-5 text-purple-500 shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-purple-800">Configuración de 2FA</p>
-                        <p className="text-xs text-purple-700 mt-1">
-                          Estamos trabajando en la configuración de 2FA desde tu panel. Mientras tanto, puedes contactar a soporte para habilitarla.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
 
             {/* Sessions Section */}
             {activeSection === 'sessions' && (
-              <Card className="border-0 shadow-xl shadow-gray-200/50 rounded-2xl overflow-hidden">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 rounded-lg bg-orange-100">
-                      <Monitor className="h-5 w-5 text-orange-600" />
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-pink-100">
+                    <Monitor className="h-5 w-5 text-pink-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Sesiones activas</h3>
+                    <p className="text-sm text-gray-500">Dispositivos donde has iniciado sesión</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-100">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Monitor className="h-8 w-8 text-pink-600" />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
                     </div>
                     <div>
-                      <h2 className="font-semibold text-gray-900">Sesiones activas</h2>
-                      <p className="text-sm text-gray-500">Dispositivos donde has iniciado sesión</p>
+                      <p className="font-medium text-gray-900">Este dispositivo</p>
+                      <p className="text-xs text-gray-500">Sesión activa ahora</p>
                     </div>
                   </div>
+                </div>
 
-                  <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Monitor className="h-8 w-8 text-emerald-600" />
-                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Este dispositivo</p>
-                        <p className="text-xs text-gray-500">Sesión activa ahora</p>
-                      </div>
-                    </div>
-                  </div>
+                <Button
+                  variant="outline"
+                  onClick={handleLogoutOthers}
+                  disabled={loading}
+                  className="w-full h-11 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cerrar otras sesiones'}
+                </Button>
 
-                  <Button
-                    variant="outline"
-                    onClick={handleLogoutOthers}
-                    disabled={loading}
-                    className="w-full h-11 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                  >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cerrar otras sesiones'}
-                  </Button>
+                <p className="text-xs text-gray-400 text-center">
+                  Esto cerrará sesión en todos los demás dispositivos
+                </p>
+              </div>
+            )}
 
-                  <p className="text-xs text-gray-400 text-center mt-4">
-                    Esto cerrará sesión en todos los demás dispositivos
-                  </p>
-                </CardContent>
-              </Card>
+            {/* Delete Account Section */}
+            {activeSection === 'delete-account' && (
+              <DeleteAccountSection />
             )}
 
             {/* Derechos ARCO */}
             <ArcoSection />
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Sección de Cierre de Cuenta
+const DeleteAccountSection = () => {
+  const { toast } = useToast();
+  const [step, setStep] = useState(1); // 1: info, 2: motivo, 3: confirmar
+  const [reason, setReason] = useState('');
+  const [confirmText, setConfirmText] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedDataLoss, setAcceptedDataLoss] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const REASONS = [
+    'Ya no ejerzo como odontólogo/a',
+    'Encontré otra plataforma',
+    'No utilizo las herramientas',
+    'Problemas técnicos recurrentes',
+    'Preocupaciones de privacidad',
+    'Otro motivo',
+  ];
+
+  const handleDeleteAccount = async () => {
+    if (confirmText !== 'QUIERO CERRAR MI CUENTA') return;
+    if (!acceptedTerms || !acceptedDataLoss) return;
+
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No se encontró el usuario');
+
+      // Register the deletion request (admin will process it)
+      const { error } = await supabase.from('arco_requests').insert({
+        user_id: user.id,
+        request_type: 'cancellation',
+        description: `SOLICITUD DE CIERRE DE CUENTA\n\nMotivo: ${reason}\nConfirmación: El usuario escribió "QUIERO CERRAR MI CUENTA"\nAceptó pérdida de datos: Sí\nAceptó términos: Sí\nFecha: ${new Date().toISOString()}`,
+        status: 'pending',
+      });
+
+      if (error) throw error;
+
+      // Deactivate the profile
+      await supabase
+        .from('profiles')
+        .update({ status: 'deactivated' })
+        .eq('id', user.id);
+
+      // Sign out
+      await supabase.auth.signOut();
+
+      toast({
+        title: 'Solicitud registrada',
+        description: 'Tu cuenta ha sido desactivada. El equipo procesará la eliminación definitiva en un plazo de 15 días hábiles. Recibirás un correo de confirmación.',
+      });
+
+      // Redirect to home
+      window.location.href = '/';
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error', description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="border-red-200 shadow-xl shadow-red-100/30 rounded-2xl overflow-hidden">
+      <CardContent className="p-6 sm:p-8">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-red-100 rounded-lg">
+            <Trash2 className="h-5 w-5 text-red-600" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-gray-900">Cerrar mi cuenta</h2>
+            <p className="text-sm text-gray-500">Proceso irreversible de eliminación</p>
+          </div>
+        </div>
+
+        {/* Step 1: Information */}
+        {step === 1 && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+              <div className="flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                <div className="space-y-2 text-sm text-red-800">
+                  <p className="font-semibold">Antes de continuar, ten en cuenta que:</p>
+                  <ul className="list-disc ml-4 space-y-1.5">
+                    <li><strong>Se eliminará permanentemente</strong> todo tu historial clínico, odontogramas, fichas de pacientes y documentos generados.</li>
+                    <li><strong>Se perderán</strong> todas tus notas clínicas, planes de tratamiento y registros de sesiones.</li>
+                    <li><strong>Se cancelarán</strong> todas tus citas futuras y se eliminarán los recordatorios programados.</li>
+                    <li><strong>Se eliminará</strong> tu perfil profesional del buscador público de DentalSpot.</li>
+                    <li><strong>Se revocarán</strong> tus invitaciones pendientes y se perderán los beneficios asociados a tu plan.</li>
+                    <li><strong>No podrás recuperar</strong> ningún dato después de la eliminación. Esta acción es irreversible.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+              <div className="flex gap-3">
+                <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-semibold mb-1">Alternativas a cerrar tu cuenta:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Puedes <strong>exportar tus datos</strong> antes de cerrar (Derechos ARCO → Portabilidad).</li>
+                    <li>Si tienes problemas técnicos, contáctanos a <strong>hola@comunicare.cl</strong>.</li>
+                    <li>Puedes <strong>pausar tu cuenta</strong> sin perder datos contactando al soporte.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-sm text-blue-800">
+              <p><strong>Marco legal:</strong> Conforme a la Ley N° 19.628 sobre Protección de la Vida Privada y la Ley N° 21.719 (2026), tienes derecho a solicitar la supresión de tus datos personales. Tu solicitud será procesada en un plazo máximo de <strong>15 días hábiles</strong>. Los datos clínicos requeridos por normativa sanitaria podrán ser anonimizados en lugar de eliminados, según lo establecido en la legislación vigente.</p>
+            </div>
+
+            <Button
+              onClick={() => setStep(2)}
+              variant="outline"
+              className="w-full border-red-300 text-red-600 hover:bg-red-50"
+            >
+              Entiendo y quiero continuar
+            </Button>
+          </div>
+        )}
+
+        {/* Step 2: Reason */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">Ayúdanos a mejorar. ¿Por qué deseas cerrar tu cuenta?</p>
+            <div className="space-y-2">
+              {REASONS.map((r) => (
+                <label
+                  key={r}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                    reason === r ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="delete-reason"
+                    value={r}
+                    checked={reason === r}
+                    onChange={() => setReason(r)}
+                    className="accent-red-600"
+                  />
+                  <span className="text-sm">{r}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setStep(1)} className="flex-1">Volver</Button>
+              <Button
+                onClick={() => setStep(3)}
+                disabled={!reason}
+                variant="outline"
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+              >
+                Continuar
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Final confirmation */}
+        {step === 3 && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-red-50 border border-red-300 text-center">
+              <AlertTriangle className="h-8 w-8 text-red-600 mx-auto mb-2" />
+              <p className="font-bold text-red-800 text-lg">Última confirmación</p>
+              <p className="text-sm text-red-700 mt-1">Esta acción no se puede deshacer</p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={acceptedDataLoss}
+                  onChange={(e) => setAcceptedDataLoss(e.target.checked)}
+                  className="mt-0.5 accent-red-600"
+                />
+                <span className="text-sm text-gray-700">
+                  Entiendo que <strong>todos mis datos clínicos, fichas de pacientes, odontogramas, notas y documentos serán eliminados permanentemente</strong> y no podrán ser recuperados.
+                </span>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 accent-red-600"
+                />
+                <span className="text-sm text-gray-700">
+                  He leído y acepto los{' '}
+                  <a href="/legal/terminos-condiciones" target="_blank" className="text-primary underline">Términos y Condiciones</a>{' '}
+                  y la{' '}
+                  <a href="/legal/politica-privacidad" target="_blank" className="text-primary underline">Política de Privacidad</a>{' '}
+                  respecto al proceso de eliminación de cuenta y datos personales.
+                </span>
+              </label>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">
+                Escribe <strong className="text-red-600">QUIERO CERRAR MI CUENTA</strong> para confirmar:
+              </Label>
+              <Input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="Escribe aquí..."
+                className={confirmText === 'QUIERO CERRAR MI CUENTA' ? 'border-red-500' : ''}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setStep(2)} className="flex-1">Volver</Button>
+              <Button
+                onClick={handleDeleteAccount}
+                disabled={loading || confirmText !== 'QUIERO CERRAR MI CUENTA' || !acceptedTerms || !acceptedDataLoss}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Cerrar mi cuenta definitivamente
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

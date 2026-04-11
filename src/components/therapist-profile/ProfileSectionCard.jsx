@@ -28,16 +28,16 @@ const ProfileSectionCard = ({
   const cardContent = (
     <Card
       id={id}
-      className={`overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 mb-8 scroll-mt-20 ${className}`}
+      className={`overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500 hover:shadow-xl transition-shadow duration-300 mb-8 scroll-mt-20 ${className}`}
     >
-      <CardHeader className="bg-muted/30 border-b">
-        <CardTitle className="text-2xl font-semibold text-primary">{title}</CardTitle>
-        {description && <CardDescription className="text-md">{description}</CardDescription>}
+      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+        <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">{title}</CardTitle>
+        {description && <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">{description}</CardDescription>}
       </CardHeader>
 
       {withSeparator && <Separator />}
 
-      <CardContent className="p-6 space-y-6">
+      <CardContent className="p-6 bg-white space-y-6">
         {children}
       </CardContent>
     </Card>

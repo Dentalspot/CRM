@@ -121,86 +121,34 @@ const PatientTable = ({
         return (
           <div
             key={patient.id}
-            className={`rounded-lg border p-3 transition-colors ${isSelected ? (pieMode ? 'bg-indigo-50 border-indigo-200' : 'bg-primary/5 border-primary/20') : 'bg-white'}`}
+            className={`rounded-xl border p-4 transition-colors shadow-sm ${isSelected ? 'bg-primary/5 border-primary/20' : 'bg-white hover:shadow-md'}`}
           >
-            {/* Top row: checkbox + avatar + name + badge */}
-            <div className="flex items-start gap-3">
-              <div className="pt-0.5">
-                {pieMode ? (
-                  <Checkbox
-                    checked={selectedForPie.includes(patient.id)}
-                    onCheckedChange={() => onTogglePie(patient.id)}
-                    className="border-indigo-400 data-[state=checked]:bg-indigo-600"
-                  />
-                ) : (
-                  <Checkbox
-                    checked={selectedRows.includes(patient.id)}
-                    onCheckedChange={(checked) => handleSelectRow(patient.id, checked)}
-                  />
-                )}
-              </div>
+            {/* Top row: avatar + name + actions */}
+            <div className="flex items-center gap-3">
+              {(mergeMode) && (
+                <Checkbox
+                  checked={selectedRows.includes(patient.id)}
+                  onCheckedChange={(checked) => handleSelectRow(patient.id, checked)}
+                />
+              )}
 
               <Avatar className="h-10 w-10 shrink-0">
                 <AvatarImage src={patient.avatar_url} />
-                <AvatarFallback className="text-sm">{patient.full_name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-sm bg-pink-100 text-pink-700">{patient.full_name?.charAt(0)}</AvatarFallback>
               </Avatar>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    onClick={() => handleViewFile(patient.id)}
-                    className="font-semibold text-sm hover:underline text-left truncate"
-                  >
-                    {patient.full_name}
-                  </button>
-                  {patient.attention_type === 'pie_escolar' ? (
-                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0 h-4">
-                      🏫 PIE
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200 text-[10px] px-1.5 py-0 h-4">
-                      🏥
-                    </Badge>
-                  )}
-                </div>
-                {patient.rut && patient.rut !== '-' && (
-                  <p className="text-[11px] text-muted-foreground">RUT: {patient.rut}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Info grid */}
-            <div className="grid grid-cols-3 gap-2 mt-3 ml-[52px]">
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Edad</p>
-                <p className="text-xs font-medium">{calculateAge(patient.birthdate)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Última cita</p>
-                <p className="text-xs font-medium">{formatLastAppointment(patient.lastAppointmentDate)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
-                <Badge variant="secondary" className="font-mono text-[10px] px-1.5 py-0">
-                  {patient.appointmentCount || 0}
-                </Badge>
-              </div>
-            </div>
-
-            {/* Contact + Actions */}
-            <div className="flex items-center justify-between mt-3 ml-[52px]">
-              <div className="flex items-center gap-3 text-[11px] text-muted-foreground min-w-0">
-                {patient.email && (
-                  <span className="flex items-center gap-1 truncate max-w-[120px]">
-                    <Mail className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{patient.email}</span>
-                  </span>
-                )}
+                <button
+                  onClick={() => handleViewFile(patient.id)}
+                  className="font-semibold text-sm hover:underline text-left truncate block"
+                >
+                  {patient.full_name}
+                </button>
                 {patient.phone && (
-                  <span className="flex items-center gap-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                     <Phone className="h-3 w-3 shrink-0" />
                     {patient.phone}
-                  </span>
+                  </p>
                 )}
               </div>
 
@@ -209,21 +157,39 @@ const PatientTable = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 text-teal-600 hover:bg-teal-50"
+                    className="h-8 w-8 p-0 text-pink-600 hover:bg-pink-50"
                     onClick={() => onBookAppointment(patient.id)}
                   >
-                    <CalendarPlus className="h-3.5 w-3.5" />
+                    <CalendarPlus className="h-4 w-4" />
                   </Button>
                 )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-primary hover:bg-primary/10 text-xs"
+                  className="h-8 px-2 text-primary hover:bg-primary/10 text-xs"
                   onClick={() => handleViewFile(patient.id)}
                 >
                   <Eye className="h-3.5 w-3.5 mr-1" />
                   Ver
                 </Button>
+              </div>
+            </div>
+
+            {/* Info grid */}
+            <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-100">
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Edad</p>
+                <p className="text-sm font-semibold">{calculateAge(patient.birthdate)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Última cita</p>
+                <p className="text-sm font-semibold">{formatLastAppointment(patient.lastAppointmentDate)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total</p>
+                <Badge variant="secondary" className="font-mono text-xs px-2">
+                  {patient.appointmentCount || 0}
+                </Badge>
               </div>
             </div>
           </div>
@@ -306,15 +272,6 @@ const PatientTable = ({
                       >
                         {patient.full_name}
                       </button>
-                      {patient.attention_type === 'pie_escolar' ? (
-                        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0 h-4 leading-tight">
-                          🏫 PIE Escolar
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-gray-100 text-gray-800 border-gray-200 text-[10px] px-1.5 py-0 h-4 leading-tight">
-                          🏥 Consulta
-                        </Badge>
-                      )}
                     </div>
                     <span className="text-xs text-muted-foreground">
                       RUT: {patient.rut || '-'}
