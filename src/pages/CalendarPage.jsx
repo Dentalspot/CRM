@@ -333,6 +333,29 @@ const CalendarPage = () => {
     }
   };
 
+  const handleBlockDragCreate = (slotInfo) => {
+    setSelectedBlockedTime(null);
+    setSelectedSlot(slotInfo);
+    setBlockModalOpen(true);
+  };
+
+  const handleBlockMove = async (blockId, newDate, newStartTime, newEndTime) => {
+    try {
+      const { error } = await supabase
+        .from('blocked_times')
+        .update({
+          start_time: `${newDate}T${newStartTime}:00`,
+          end_time: `${newDate}T${newEndTime}:00`,
+        })
+        .eq('id', blockId);
+      if (error) throw error;
+      toast({ title: '✅ Bloqueo movido' });
+      fetchBlockedTimes();
+    } catch (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 lg:py-8">
@@ -421,6 +444,8 @@ const CalendarPage = () => {
               onAppointmentClick={handleAppointmentClick}
               onBlockedTimeClick={handleBlockedTimeClick}
               onAppointmentMove={handleAppointmentMove}
+              onBlockDragCreate={handleBlockDragCreate}
+              onBlockMove={handleBlockMove}
               loading={loading}
             />
           </motion.div>

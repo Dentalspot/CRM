@@ -108,10 +108,16 @@ export const scheduleNextAppointment = async ({
   previousAppointment,
   nextDate,
   nextTime,
+  nextEndTime,
 }) => {
   const startTime = nextTime || previousAppointment.start_time;
-  const endTime = previousAppointment.end_time;
+  const endTime = nextEndTime || previousAppointment.end_time;
   const prevDateStr = previousAppointment.date;
+
+  // Calculate duration from start and end times
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  const duration = (eh * 60 + em) - (sh * 60 + sm);
 
   const { data, error } = await supabase
     .from('appointments')
@@ -122,7 +128,7 @@ export const scheduleNextAppointment = async ({
       date: nextDate,
       start_time: startTime,
       end_time: endTime,
-      duration_minutes: previousAppointment.duration_minutes || 45,
+      duration_minutes: duration > 0 ? duration : (previousAppointment.duration_minutes || 45),
       modality_patient: previousAppointment.modality_patient || null,
       service_id: previousAppointment.service_id || null,
       status: 'scheduled',

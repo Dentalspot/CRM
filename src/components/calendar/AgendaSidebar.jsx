@@ -1,14 +1,11 @@
 /**
  * AgendaSidebar.jsx
- * 
+ *
  * Sidebar de la agenda con:
- * - Selector de clínica (principal)
- * - Resumen de hoy
+ * - Selector de clínica (con colores)
+ * - Resumen de hoy (total, completadas, canceladas, ausentes)
  * - Próximas citas
  * - Acciones rápidas
- * - Tip
- * 
- * NOTA: El buscador de pacientes se movió al header de CalendarPage
  */
 
 import React from 'react';
@@ -21,7 +18,9 @@ import {
   RefreshCw,
   Ban,
   Users,
-  Lightbulb
+  Lightbulb,
+  XCircle,
+  UserX
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getClinicColor } from './WeeklyAgendaView';
 
 const AgendaSidebar = ({
   clinics = [],
@@ -42,22 +42,27 @@ const AgendaSidebar = ({
 }) => {
   const navigate = useNavigate();
 
-  // Stats calculation
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  // Use local date to avoid timezone issues with format()
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   const todayAppointments = appointments.filter(appt => {
-    if (!appt.date && !appt.start_time) return false;
-    const apptDate = new Date(appt.date || appt.start_time);
-    return format(apptDate, 'yyyy-MM-dd') === todayStr;
+    // Compare date strings directly to avoid timezone issues
+    if (appt.date) return appt.date === todayStr;
+    if (appt.start_time) {
+      try { return format(new Date(appt.start_time), 'yyyy-MM-dd') === todayStr; } catch { return false; }
+    }
+    return false;
   });
 
   const stats = {
     total: todayAppointments.length,
     completed: todayAppointments.filter(a => a.status === 'completed').length,
     scheduled: todayAppointments.filter(a => ['scheduled', 'confirmed'].includes(a.status)).length,
+    canceled: todayAppointments.filter(a => a.status === 'canceled' || a.status === 'cancelled').length,
+    noShow: todayAppointments.filter(a => a.status === 'no-show').length,
   };
 
-  // Next appointments (future ones today)
   const now = new Date();
   const nextAppointments = todayAppointments
     .filter(a => ['scheduled', 'confirmed'].includes(a.status))
@@ -82,18 +87,53 @@ const AgendaSidebar = ({
     navigate('/dashboard/patients');
   };
 
-  // Get selected clinic name for display
-  const selectedClinicName = selectedClinicId === 'all'
-    ? 'Todas las clínicas'
-    : clinics.find(c => c.id === selectedClinicId)?.name || 'Seleccionar clínica';
-
-  // Count appointments for this week for selected clinic
   const weekAppointmentsCount = appointments.length;
 
   return (
     <div className={cn("flex flex-col h-full gap-4", className)}>
 
-      {/* 1) Clinic Selector - Principal */}
+      {/* 0) Today's upcoming appointments card */}
+      {todayAppointments.filter(a => ['scheduled', 'confirmed'].includes(a.status)).length > 0 && (
+        <Card className="shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+          <CardHeader className="p-3 pb-1">
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-700">
+              <CalendarIcon className="h-4 w-4" />
+              Citas de Hoy
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-1 space-y-2">
+            {todayAppointments
+              .filter(a => ['scheduled', 'confirmed'].includes(a.status))
+              .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
+              .map((appt, i) => {
+                const timeStr = appt.start_time?.substring(0, 5) || '--:--';
+                const patientName = appt.patient?.profile?.full_name || appt.patient?.full_name || 'Paciente';
+                const serviceName = appt.service?.service_name || null;
+                return (
+                  <div key={appt.id || i} className="flex items-start gap-2 py-1.5 border-b border-blue-50 last:border-0">
+                    <div className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 mt-0.5">
+                      {timeStr}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-gray-800 truncate">{patientName}</p>
+                      {serviceName && (
+                        <p className="text-[10px] text-gray-500 truncate">{serviceName}</p>
+                      )}
+                    </div>
+                    <Badge variant="outline" className={cn(
+                      "text-[9px] px-1 py-0 shrink-0",
+                      appt.status === 'confirmed' ? "border-blue-300 text-blue-600" : "border-gray-200 text-gray-500"
+                    )}>
+                      {appt.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}
+                    </Badge>
+                  </div>
+                );
+              })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 1) Clinic Selector with colors */}
       <Card className="shadow-sm border-2 border-pink-100 bg-gradient-to-br from-pink-50 to-white">
         <CardHeader className="p-3 pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-pink-700">
@@ -111,16 +151,36 @@ const AgendaSidebar = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las clínicas</SelectItem>
-              {clinics.map((clinic) => (
-                <SelectItem key={clinic.id} value={clinic.id}>
-                  {clinic.name}
-                </SelectItem>
-              ))}
+              {clinics.map((clinic) => {
+                const color = getClinicColor(clinic.id, clinics);
+                return (
+                  <SelectItem key={clinic.id} value={clinic.id}>
+                    <div className="flex items-center gap-2">
+                      {color && <div className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />}
+                      {clinic.name}
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
-          <p className="text-xs text-pink-600">
-            Mostrando disponibilidad y citas de esta clínica
-          </p>
+
+          {/* Clinic color legend */}
+          {clinics.length > 1 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {clinics.map((clinic) => {
+                const color = getClinicColor(clinic.id, clinics);
+                if (!color) return null;
+                return (
+                  <div key={clinic.id} className="flex items-center gap-1">
+                    <div className={cn("w-2 h-2 rounded-full", color.dot)} />
+                    <span className={cn("text-[10px] font-medium", color.label)}>{clinic.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex justify-between items-center text-sm pt-1">
             <span className="text-slate-600">Esta semana</span>
             <span className="font-semibold text-slate-700">{weekAppointmentsCount} citas</span>
@@ -128,7 +188,7 @@ const AgendaSidebar = ({
         </CardContent>
       </Card>
 
-      {/* 2) Today's Summary */}
+      {/* 2) Today's Summary - Enhanced */}
       <Card className="shadow-none border bg-white/50">
         <CardHeader className="p-3 pb-1">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-700">
@@ -145,15 +205,27 @@ const AgendaSidebar = ({
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="flex items-center gap-2 text-slate-500 text-xs">
+              <Clock className="h-3 w-3 text-sky-500" /> Programadas
+            </span>
+            <span className="text-xs font-medium text-sky-600">{stats.scheduled}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="flex items-center gap-2 text-slate-500 text-xs">
               <CheckCircle2 className="h-3 w-3 text-green-500" /> Completadas
             </span>
             <span className="text-xs font-medium text-green-600">{stats.completed}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
             <span className="flex items-center gap-2 text-slate-500 text-xs">
-              <Clock className="h-3 w-3 text-blue-500" /> Programadas
+              <XCircle className="h-3 w-3 text-red-400" /> Canceladas
             </span>
-            <span className="text-xs font-medium text-blue-600">{stats.scheduled}</span>
+            <span className="text-xs font-medium text-red-500">{stats.canceled}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="flex items-center gap-2 text-slate-500 text-xs">
+              <UserX className="h-3 w-3 text-amber-700" /> Ausentes
+            </span>
+            <span className="text-xs font-medium text-amber-700">{stats.noShow}</span>
           </div>
         </CardContent>
       </Card>
@@ -172,7 +244,7 @@ const AgendaSidebar = ({
                 ? appt.start_time.substring(0, 5)
                 : '--:--';
 
-              const patientName = appt.patients?.full_name || appt.patient?.full_name || 'Paciente';
+              const patientName = appt.patients?.full_name || appt.patient?.full_name || appt.patient?.profile?.full_name || 'Paciente';
 
               return (
                 <div key={appt.id || i} className="flex items-center gap-2 text-sm group cursor-default">
@@ -240,7 +312,7 @@ const AgendaSidebar = ({
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-yellow-700">Tip</p>
               <p className="text-[11px] text-yellow-700/80 leading-snug">
-                Arrastra las citas para reprogramarlas. Haz clic en un bloqueo para editarlo o eliminarlo.
+                Arrastra las citas para reprogramarlas. Arrastra sobre slots vacíos para crear bloqueos.
               </p>
             </div>
           </div>

@@ -1,20 +1,36 @@
 
 /**
  * WeeklyAgendaView.jsx
- * 
+ *
  * Vista semanal del calendario que usa datos de disponibilidad REALES.
  * Implementa Drag & Drop con persistencia a base de datos.
- * 
- * CAMBIO: Muestra solo nombre del paciente y colores específicos para block_types.
+ * Soporta drag-to-create blocks y mover bloques existentes.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { format, addDays, startOfWeek, isToday, addMinutes, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { MapPin, Video, AlertCircle, Loader2, GripVertical } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
+
+// Palette for clinic column backgrounds (soft tints)
+const CLINIC_COLORS = [
+  { bg: 'bg-pink-50/40', border: 'border-pink-200', dot: 'bg-pink-400', label: 'text-pink-700' },
+  { bg: 'bg-indigo-50/40', border: 'border-indigo-200', dot: 'bg-indigo-400', label: 'text-indigo-700' },
+  { bg: 'bg-teal-50/40', border: 'border-teal-200', dot: 'bg-teal-400', label: 'text-teal-700' },
+  { bg: 'bg-amber-50/40', border: 'border-amber-200', dot: 'bg-amber-400', label: 'text-amber-700' },
+  { bg: 'bg-violet-50/40', border: 'border-violet-200', dot: 'bg-violet-400', label: 'text-violet-700' },
+  { bg: 'bg-cyan-50/40', border: 'border-cyan-200', dot: 'bg-cyan-400', label: 'text-cyan-700' },
+];
+
+export const getClinicColor = (clinicId, clinics) => {
+  if (!clinicId) return null;
+  const idx = clinics.findIndex(c => c.id === clinicId);
+  if (idx < 0) return null;
+  return CLINIC_COLORS[idx % CLINIC_COLORS.length];
+};
 
 const WeeklyAgendaView = ({
   currentWeek,
@@ -29,12 +45,20 @@ const WeeklyAgendaView = ({
   onAppointmentClick,
   onBlockedTimeClick,
   onAppointmentMove,
+  onBlockDragCreate,
+  onBlockMove,
   loading = false
 }) => {
   const { toast } = useToast();
 
   const [draggedApt, setDraggedApt] = useState(null);
+  const [draggedBlock, setDraggedBlock] = useState(null);
   const [dragOverSlot, setDragOverSlot] = useState(null);
+
+  // Drag-to-create block state
+  const [blockSelection, setBlockSelection] = useState(null); // { date, startTime, endTime } - only set when dragging
+  const isSelectingBlock = useRef(false);
+  const suppressClick = useRef(false); // suppress next click after drag-to-block
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -79,7 +103,7 @@ const WeeklyAgendaView = ({
     return availabilityMap[dateStr][timeStr]?.available === true;
   };
 
-  const isRangeAvailableForDrop = (dateStr, startTimeStr, durationMinutes, excludeAptId) => {
+  const isRangeAvailableForDrop = (dateStr, startTimeStr, durationMinutes, excludeId, isBlock = false) => {
     const slotDuration = 30;
     const slotsNeeded = Math.ceil(durationMinutes / slotDuration);
     const hasAvailabilityForDate = availabilityMap[dateStr] && Object.keys(availabilityMap[dateStr]).length > 0;
@@ -91,11 +115,13 @@ const WeeklyAgendaView = ({
     for (let i = 0; i < slotsNeeded; i++) {
       const currentTimeStr = `${String(currentH).padStart(2, '0')}:${String(currentM).padStart(2, '0')}`;
 
-      if (hasAvailabilityForDate && !isSlotAvailable(dateStr, currentTimeStr)) return false;
-      if (getBlockedTimeForSlot(dateStr, currentTimeStr)) return false;
+      if (!isBlock && hasAvailabilityForDate && !isSlotAvailable(dateStr, currentTimeStr)) return false;
+
+      const existingBlock = getBlockedTimeForSlot(dateStr, currentTimeStr);
+      if (existingBlock && existingBlock.id !== excludeId) return false;
 
       const blockingApt = getAppointmentForSlot(dateStr, currentTimeStr);
-      if (blockingApt && blockingApt.id !== excludeAptId) return false;
+      if (blockingApt && blockingApt.id !== excludeId) return false;
 
       currentM += slotDuration;
       if (currentM >= 60) {
@@ -134,10 +160,77 @@ const WeeklyAgendaView = ({
     });
   };
 
+  const getNextTimeSlot = (timeStr) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    const newM = m + 30;
+    if (newM >= 60) return `${String(h + 1).padStart(2, '0')}:00`;
+    return `${String(h).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+  };
+
+  // --- Drag-to-create block handlers ---
+  // mouseDown records the anchor slot, but does NOT set blockSelection state yet.
+  // blockSelection is only set once the mouse actually moves to a different slot.
+  // This ensures a simple click never shows block UI.
+  const dragAnchor = useRef(null); // { date, time }
+
+  const handleSlotMouseDown = useCallback((e, dateStr, timeStr) => {
+    if (e.button !== 0) return;
+    if (getAppointmentForSlot(dateStr, timeStr)) return;
+    if (getBlockedTimeForSlot(dateStr, timeStr)) return;
+
+    dragAnchor.current = { date: dateStr, time: timeStr };
+    isSelectingBlock.current = true;
+    suppressClick.current = false;
+  }, [appointments, blockedTimes]);
+
+  const handleSlotMouseEnter = useCallback((dateStr, timeStr) => {
+    if (!isSelectingBlock.current || !dragAnchor.current) return;
+    if (dateStr !== dragAnchor.current.date) return;
+    if (timeStr === dragAnchor.current.time) return; // still on same slot
+
+    // User moved to a different slot → NOW start showing block selection
+    const anchor = dragAnchor.current;
+    if (timeStr >= anchor.time) {
+      setBlockSelection({ date: dateStr, startTime: anchor.time, endTime: getNextTimeSlot(timeStr) });
+    }
+  }, []);
+
+  const handleSlotMouseUp = useCallback(() => {
+    const hadSelection = blockSelection !== null;
+    isSelectingBlock.current = false;
+    dragAnchor.current = null;
+
+    if (hadSelection && blockSelection.endTime > blockSelection.startTime) {
+      suppressClick.current = true;
+      const slotInfo = {
+        date: blockSelection.date,
+        startTime: blockSelection.startTime,
+        endTime: blockSelection.endTime,
+        clinicId: availabilityMap[blockSelection.date]?.[blockSelection.startTime]?.clinicId
+          || (selectedClinic !== 'all' ? selectedClinic : null)
+      };
+      if (onBlockDragCreate) {
+        onBlockDragCreate(slotInfo);
+      }
+    }
+
+    setBlockSelection(null);
+  }, [blockSelection, selectedClinic, availabilityMap, onBlockDragCreate]);
+
+  const isSlotInBlockSelection = (dateStr, timeStr) => {
+    if (!blockSelection || blockSelection.date !== dateStr) return false;
+    return timeStr >= blockSelection.startTime && timeStr < blockSelection.endTime;
+  };
+
   const handleSlotClick = (day, timeStr) => {
+    // Don't fire click if user just finished a drag-to-block
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
+
     const dateStr = format(day, 'yyyy-MM-dd');
 
-    // Only block if availability data exists AND slot is explicitly unavailable
     const hasAvailabilityForDate = availabilityMap[dateStr] && Object.keys(availabilityMap[dateStr]).length > 0;
     if (hasAvailabilityForDate && !isSlotAvailable(dateStr, timeStr)) return;
     if (getAppointmentForSlot(dateStr, timeStr)) return;
@@ -157,10 +250,25 @@ const WeeklyAgendaView = ({
     });
   };
 
+  // --- Appointment drag handlers ---
   const handleDragStart = (e, apt) => {
-    e.dataTransfer.setData('application/json', JSON.stringify(apt));
+    e.dataTransfer.setData('application/json', JSON.stringify({ ...apt, _type: 'appointment' }));
     e.dataTransfer.effectAllowed = 'move';
     setDraggedApt(apt);
+    setDraggedBlock(null);
+  };
+
+  // --- Block drag handlers ---
+  const handleBlockDragStart = (e, block) => {
+    e.stopPropagation();
+    const blockStart = new Date(block.start_time);
+    const blockEnd = new Date(block.end_time);
+    const diffMins = (blockEnd - blockStart) / 60000;
+
+    e.dataTransfer.setData('application/json', JSON.stringify({ ...block, _type: 'block', _duration: diffMins }));
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedBlock({ ...block, duration: diffMins });
+    setDraggedApt(null);
   };
 
   const handleDragOver = (e, dateStr, timeStr) => {
@@ -176,32 +284,66 @@ const WeeklyAgendaView = ({
   const handleDrop = (e, dateStr, timeStr) => {
     e.preventDefault();
     setDragOverSlot(null);
-    setDraggedApt(null);
 
-    if (!draggedApt) return;
+    // Handle block drop
+    if (draggedBlock) {
+      const block = draggedBlock;
+      setDraggedBlock(null);
 
-    const currentStart = draggedApt.start_time.substring(0, 5);
-    if (draggedApt.date === dateStr && currentStart === timeStr) return;
+      const blockStart = new Date(block.start_time);
+      const currentStartTime = format(blockStart, 'HH:mm');
+      const currentDate = format(blockStart, 'yyyy-MM-dd');
+      if (currentDate === dateStr && currentStartTime === timeStr) return;
 
-    const duration = draggedApt.duration_minutes || 60;
+      const duration = block.duration;
+      if (!isRangeAvailableForDrop(dateStr, timeStr, duration, block.id, true)) {
+        toast({
+          variant: "destructive",
+          title: "No disponible",
+          description: "No se puede mover el bloqueo a este horario."
+        });
+        return;
+      }
 
-    if (!isRangeAvailableForDrop(dateStr, timeStr, duration, draggedApt.id)) {
-      toast({
-        variant: "destructive",
-        title: "No disponible",
-        description: "El horario seleccionado no está disponible o tiene conflictos."
-      });
+      const [h, m] = timeStr.split(':').map(Number);
+      const newStart = new Date();
+      newStart.setHours(h, m, 0, 0);
+      const newEnd = addMinutes(newStart, duration);
+      const endTimeStr = format(newEnd, 'HH:mm');
+
+      if (onBlockMove) {
+        onBlockMove(block.id, dateStr, timeStr, endTimeStr);
+      }
       return;
     }
 
-    const [h, m] = timeStr.split(':').map(Number);
-    const startDate = new Date();
-    startDate.setHours(h, m, 0, 0);
-    const endDate = addMinutes(startDate, duration);
-    const endTimeStr = format(endDate, 'HH:mm');
+    // Handle appointment drop
+    if (draggedApt) {
+      setDraggedApt(null);
 
-    if (onAppointmentMove) {
-      onAppointmentMove(draggedApt.id, dateStr, timeStr, endTimeStr);
+      const currentStart = draggedApt.start_time.substring(0, 5);
+      if (draggedApt.date === dateStr && currentStart === timeStr) return;
+
+      const duration = draggedApt.duration_minutes || 60;
+
+      if (!isRangeAvailableForDrop(dateStr, timeStr, duration, draggedApt.id)) {
+        toast({
+          variant: "destructive",
+          title: "No disponible",
+          description: "El horario seleccionado no está disponible o tiene conflictos."
+        });
+        return;
+      }
+
+      const [h, m] = timeStr.split(':').map(Number);
+      const startDate = new Date();
+      startDate.setHours(h, m, 0, 0);
+      const endDate = addMinutes(startDate, duration);
+      const endTimeStr = format(endDate, 'HH:mm');
+
+      if (onAppointmentMove) {
+        onAppointmentMove(draggedApt.id, dateStr, timeStr, endTimeStr);
+      }
     }
   };
 
@@ -229,7 +371,6 @@ const WeeklyAgendaView = ({
     let colorClasses = "";
     let blockLabel = "";
 
-    // Task 5: Colores específicos por block_type
     if (apt.block_type) {
       if (apt.block_type === 'aula_recursos') {
         colorClasses = "bg-green-100 border-green-500 text-green-800";
@@ -251,11 +392,23 @@ const WeeklyAgendaView = ({
         blockLabel = apt.block_type.replace('_', ' ');
       }
     } else {
-      colorClasses = apt.status === 'completed'
-        ? "bg-emerald-100 border-emerald-500 text-emerald-800"
-        : apt.status === 'confirmed'
-          ? "bg-blue-100 border-blue-500 text-blue-800"
-          : "bg-sky-100 border-sky-400 text-sky-800";
+      switch (apt.status) {
+        case 'completed':
+          colorClasses = "bg-green-100 border-green-500 text-green-800";
+          break;
+        case 'confirmed':
+          colorClasses = "bg-blue-100 border-blue-500 text-blue-800";
+          break;
+        case 'canceled':
+        case 'cancelled':
+          colorClasses = "bg-red-100 border-red-400 text-red-700 opacity-60";
+          break;
+        case 'no-show':
+          colorClasses = "bg-amber-900/10 border-amber-800 text-amber-900";
+          break;
+        default: // scheduled
+          colorClasses = "bg-white border-gray-300 text-gray-800";
+      }
     }
 
     return (
@@ -317,28 +470,38 @@ const WeeklyAgendaView = ({
     const diffMins = (end - start) / 60000;
     const heightSlots = Math.ceil(diffMins / 30);
     const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
+    const isDraggingThis = draggedBlock?.id === block.id;
 
     return (
       <TooltipProvider key={block.id}>
         <Tooltip>
           <TooltipTrigger asChild>
             <div
+              draggable
+              onDragStart={(e) => handleBlockDragStart(e, block)}
               style={style}
-              className="absolute inset-x-1 bg-red-50 border border-red-200 border-dashed rounded-md p-1 cursor-pointer hover:bg-red-100 flex items-center justify-center"
+              className={cn(
+                "absolute inset-x-1 bg-red-50 border border-red-200 border-dashed rounded-md p-1 cursor-grab active:cursor-grabbing hover:bg-red-100 group",
+                isDraggingThis ? "opacity-40" : "opacity-100"
+              )}
               onClick={(e) => {
                 e.stopPropagation();
-                onBlockedTimeClick?.(block);
+                if (!isDraggingThis) onBlockedTimeClick?.(block);
               }}
             >
-              <div className="flex items-center gap-1 text-red-500 text-[10px] font-medium">
-                <AlertCircle className="h-3 w-3" />
-                <span>Bloqueado</span>
+              <div className="flex items-center justify-between h-full">
+                <div className="flex items-center gap-1 text-red-500 text-[10px] font-medium">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>Bloqueado</span>
+                </div>
+                <GripVertical className="h-3 w-3 text-red-300 opacity-0 group-hover:opacity-100 flex-shrink-0" />
               </div>
             </div>
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-semibold text-red-600">Horario Bloqueado</p>
             <p className="text-xs">{block.reason || 'Sin motivo especificado'}</p>
+            <p className="text-xs text-red-400 mt-1">Arrastra para mover</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -357,7 +520,16 @@ const WeeklyAgendaView = ({
   }
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden select-none">
+    <div
+      className="h-full flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden select-none"
+      onMouseUp={handleSlotMouseUp}
+      onMouseLeave={() => {
+        if (isSelectingBlock.current) {
+          isSelectingBlock.current = false;
+          setBlockSelection(null);
+        }
+      }}
+    >
       {/* Scrollable wrapper for mobile */}
       <div className="overflow-x-auto">
       <div className="min-w-[640px]">
@@ -367,13 +539,18 @@ const WeeklyAgendaView = ({
         {weekDays.map((day) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const hasAvailability = availabilityMap[dateStr] && Object.values(availabilityMap[dateStr]).some(s => s.available);
+          // Get the clinic for this day from availability data
+          const dayClinicId = availabilityMap[dateStr]
+            ? Object.values(availabilityMap[dateStr]).find(s => s.clinicId)?.clinicId
+            : null;
+          const clinicColor = getClinicColor(dayClinicId, clinics);
 
           return (
             <div
               key={dateStr}
               className={cn(
                 "p-2 text-center border-r last:border-r-0",
-                isToday(day) ? "bg-blue-50" : "bg-gray-50/50"
+                isToday(day) ? "bg-blue-50" : clinicColor ? clinicColor.bg : "bg-gray-50/50"
               )}
             >
               <div className="text-xs font-semibold text-gray-500 uppercase">
@@ -385,9 +562,13 @@ const WeeklyAgendaView = ({
               )}>
                 {format(day, 'd')}
               </div>
-              {hasAvailability && (
+              {hasAvailability && clinicColor ? (
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <div className={cn("w-2 h-2 rounded-full", clinicColor.dot)} title={clinics.find(c => c.id === dayClinicId)?.name} />
+                </div>
+              ) : hasAvailability ? (
                 <div className="w-2 h-2 bg-green-400 rounded-full mx-auto mt-1" title="Tiene disponibilidad" />
-              )}
+              ) : null}
             </div>
           );
         })}
@@ -421,13 +602,18 @@ const WeeklyAgendaView = ({
                   const appointment = getAppointmentForSlot(dateStr, timeStr);
                   const blockedTime = getBlockedTimeForSlot(dateStr, timeStr);
                   const isHalfHour = idx % 2 === 1;
-                  // Slot is clickable if: has no appointment/block AND (is available OR no availability data configured)
                   const isClickable = !appointment && !blockedTime && (isAvailable || !hasAvailabilityForDate);
 
                   const isDragOver = dragOverSlot?.date === dateStr && dragOverSlot?.time === timeStr;
-                  const canDropHere = draggedApt
-                    ? isRangeAvailableForDrop(dateStr, timeStr, draggedApt.duration_minutes || 60, draggedApt.id)
+                  const draggedItem = draggedApt || draggedBlock;
+                  const dragDuration = draggedApt
+                    ? (draggedApt.duration_minutes || 60)
+                    : (draggedBlock?.duration || 30);
+                  const canDropHere = draggedItem
+                    ? isRangeAvailableForDrop(dateStr, timeStr, dragDuration, draggedItem.id, !!draggedBlock)
                     : false;
+
+                  const inBlockSelection = isSlotInBlockSelection(dateStr, timeStr);
 
                   return (
                     <div
@@ -443,18 +629,26 @@ const WeeklyAgendaView = ({
                         isToday(day) && "bg-blue-50/30",
                         isAvailable && !appointment && !blockedTime && isToday(day) && "bg-blue-50/50 hover:bg-blue-100/70",
                         isDragOver && canDropHere && "bg-blue-200 !important ring-2 ring-inset ring-blue-400 z-30",
-                        isDragOver && !canDropHere && "bg-red-100 !important ring-2 ring-inset ring-red-400 z-30"
+                        isDragOver && !canDropHere && "bg-red-100 !important ring-2 ring-inset ring-red-400 z-30",
+                        inBlockSelection && "!bg-red-100/70 ring-1 ring-inset ring-red-300"
                       )}
                       onClick={() => handleSlotClick(day, timeStr)}
+                      onMouseDown={(e) => isClickable && handleSlotMouseDown(e, dateStr, timeStr)}
+                      onMouseEnter={() => handleSlotMouseEnter(dateStr, timeStr)}
                       onDragOver={(e) => handleDragOver(e, dateStr, timeStr)}
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, dateStr, timeStr)}
                     >
                       {appointment && renderAppointment(appointment, dateStr, timeStr)}
                       {!appointment && blockedTime && renderBlockedTime(blockedTime, dateStr, timeStr)}
-                      {isClickable && !draggedApt && (
+                      {isClickable && !draggedItem && !inBlockSelection && (
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                           <span className={isAvailable ? "text-green-600 text-lg font-light" : "text-gray-400 text-lg font-light"}>+</span>
+                        </div>
+                      )}
+                      {inBlockSelection && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="text-red-500 text-[10px] font-medium">Bloquear</span>
                         </div>
                       )}
                     </div>
@@ -472,12 +666,24 @@ const WeeklyAgendaView = ({
       {/* Legend */}
       <div className="border-t bg-gray-50 px-4 py-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-green-100 border border-green-300 rounded" />
-          <span>Disponible</span>
+          <div className="w-3 h-3 bg-white border border-gray-300 rounded" />
+          <span>Programada</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-sky-100 border-l-2 border-sky-400 rounded" />
-          <span>Consulta</span>
+          <div className="w-3 h-3 bg-blue-100 border-l-2 border-blue-500 rounded" />
+          <span>Confirmada</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-green-100 border-l-2 border-green-500 rounded" />
+          <span>Completada</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-red-100 border-l-2 border-red-400 rounded" />
+          <span>Cancelada</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-amber-900/10 border-l-2 border-amber-800 rounded" />
+          <span>Ausente</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 bg-red-50 border border-dashed border-red-300 rounded" />

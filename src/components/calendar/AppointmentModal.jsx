@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Ban, Loader2, CheckCircle2, FileText } from 'lucide-react';
+import { User, Ban, Loader2, CheckCircle2, FileText, XCircle, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -16,7 +17,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { scheduleEmailReminder } from '@/features/reminders/api/remindersApi';
 import BlockTimeForm from './BlockTimeForm';
 import PatientModal from '@/features/patients/components/PatientModal';
 import logger from '@/lib/utils/logger';
@@ -29,6 +29,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
   const [activeTab, setActiveTab] = useState('cita');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appointmentData, setAppointmentData] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // States required for the unified inline form
   const [clinics, setClinics] = useState([]);
@@ -178,44 +179,6 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     return (h2 * 60 + m2) - (h1 * 60 + m1);
   };
 
-  // Programar recordatorio al crear cita
-  const scheduleReminderForAppointment = async (appointmentId, appointmentDateTime) => {
-    try {
-      const { data: therapistDetails } = await supabase
-        .from('therapist_details')
-        .select('reminder_preferences')
-        .eq('user_id', user?.id)
-        .single();
-
-      const prefs = therapistDetails?.reminder_preferences || {};
-      const emailEnabled = prefs.email_enabled !== false; 
-      const hoursBefore = prefs.timing_hours || 24; 
-
-      if (!emailEnabled) return;
-
-      const appointmentDate = new Date(appointmentDateTime);
-      const scheduledTime = new Date(appointmentDate);
-      scheduledTime.setHours(scheduledTime.getHours() - hoursBefore);
-
-      if (scheduledTime <= new Date()) return;
-
-      const { error: reminderError } = await scheduleEmailReminder(
-        appointmentId,
-        user?.id,
-        'patient', 
-        scheduledTime.toISOString()
-      );
-
-      if (!reminderError) {
-        toast({
-          title: '✅ Cita creada',
-          description: `Recordatorio programado para ${scheduledTime.toLocaleString('es-CL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
-        });
-      }
-    } catch (error) {
-      logger.error('Error programando recordatorio:', error);
-    }
-  };
 
   const handleCompleteSession = async () => {
     setIsSubmitting(true);
@@ -238,16 +201,51 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     }
   };
 
+  const handleCancelAppointment = async () => {
+    if (!slotInfo?.id) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'canceled' })
+        .eq('id', slotInfo.id);
+      if (error) throw error;
+      toast({ title: 'Cita cancelada' });
+      onAppointmentUpdated?.();
+      onOpenChange(false);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteAppointment = async () => {
+    if (!slotInfo?.id) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', slotInfo.id);
+      if (error) throw error;
+      toast({ title: 'Cita eliminada', description: 'La hora ha sido liberada.' });
+      onAppointmentUpdated?.();
+      onOpenChange(false);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleModalClose = () => {
     onOpenChange(false);
     setAppointmentData(null);
   };
 
   const handleSuccess = async (newAppointment) => {
-    if (!isEditing && newAppointment?.id && newAppointment?.date && newAppointment?.start_time) {
-      const appointmentDateTime = `${newAppointment.date}T${newAppointment.start_time}`;
-      await scheduleReminderForAppointment(newAppointment.id, appointmentDateTime);
-    }
+    // Reminder is auto-scheduled by DB trigger (trg_auto_schedule_reminders)
     if (isEditing) {
       onAppointmentUpdated?.();
     } else {
@@ -277,6 +275,8 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
       let savedApt;
       if (isEditing) {
         payload.status = formData.status;
+        payload.duration_minutes = calculateDuration(formData.start_time, formData.end_time);
+
         const { data, error } = await supabase.from('appointments').update(payload).eq('id', slotInfo.id).select().single();
         if (error) throw error;
         savedApt = data;
@@ -296,7 +296,26 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
       await handleSuccess(savedApt);
     } catch (error) {
       logger.error(error);
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      const msg = error.message || '';
+      let friendlyMessage = 'No se pudo guardar la cita. Intenta nuevamente.';
+
+      if (msg.includes('Ya existe una cita en ese horario') || msg.includes('ya tiene una cita programada')) {
+        friendlyMessage = 'Ya existe una cita agendada en ese horario. Por favor selecciona otro horario disponible.';
+      } else if (msg.includes('horario está bloqueado')) {
+        friendlyMessage = 'Este horario está bloqueado. Selecciona otro horario disponible.';
+      } else if (msg.includes('fuera del horario de disponibilidad')) {
+        // Detectar el día de la semana para dar mensaje específico
+        const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        const selectedDate = formData.date ? new Date(formData.date + 'T12:00:00') : null;
+        const dayName = selectedDate ? dayNames[selectedDate.getDay()] : '';
+        friendlyMessage = dayName
+          ? `No tienes agenda configurada los días ${dayName}. Configura tu disponibilidad en "Mi Agenda" o selecciona otro día.`
+          : 'No tienes agenda configurada para este día. Configura tu disponibilidad en "Mi Agenda" o selecciona otro día.';
+      } else if (msg.includes('scheduled_reminders') && msg.includes('foreign key')) {
+        friendlyMessage = 'Error al programar el recordatorio. El paciente no tiene un perfil asociado.';
+      }
+
+      toast({ variant: 'destructive', title: 'No se pudo agendar', description: friendlyMessage });
     } finally {
       setIsSubmitting(false);
     }
@@ -483,6 +502,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
             {isEditing && formData.patient_id && (
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => {
                   handleModalClose();
                   navigate(`/dashboard/patients/${formData.patient_id}`);
@@ -491,22 +511,22 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
                 <FileText className="h-4 w-4 mr-2" /> Ver Ficha
               </Button>
             )}
+            {isEditing && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                disabled={isSubmitting}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" /> Eliminar
+              </Button>
+            )}
           </div>
           <div className="flex gap-2">
-          <Button variant="ghost" onClick={handleModalClose}>Cancelar</Button>
-          {isEditing && slotInfo?.status === 'scheduled' && (
-            <Button
-              variant="default"
-              className="bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting}
-              onClick={handleCompleteSession}
-            >
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-              Completar Sesión
-            </Button>
-          )}
           <Button
             disabled={isSubmitting}
+            className={isEditing ? "bg-green-600 hover:bg-green-700" : ""}
             onClick={() => {
               if (isEditing || activeTab === 'cita') {
                 document.getElementById('appointment-form-submit')?.click();
@@ -522,6 +542,27 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Confirmación de eliminación */}
+    <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Eliminar cita</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción no se puede deshacer. Se eliminará la cita y se liberará el horario de forma permanente.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-red-600 hover:bg-red-700"
+            onClick={handleDeleteAppointment}
+          >
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     {/* Modal para crear paciente nuevo */}
     <PatientModal

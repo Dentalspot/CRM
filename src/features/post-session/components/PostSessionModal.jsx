@@ -158,6 +158,8 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
   // Step 3 state
   const [scheduleNext, setScheduleNext] = useState(true);
   const [nextDate, setNextDate] = useState('');
+  const [nextTime, setNextTime] = useState('');
+  const [nextEndTime, setNextEndTime] = useState('');
 
   // Notiz AI result handler
   const handleNotizResult = ({ sessionNotes: notes, objectives: obj, nextSteps: steps }) => {
@@ -205,6 +207,8 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
         ? format(addDays(new Date(appointment.date), 7), 'yyyy-MM-dd')
         : format(addDays(new Date(), 7), 'yyyy-MM-dd');
       setNextDate(defaultNext);
+      setNextTime(appointment?.start_time?.substring(0, 5) || '09:00');
+      setNextEndTime(appointment?.end_time?.substring(0, 5) || '10:00');
     }
   }, [appointment]);
 
@@ -325,6 +329,8 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
         clinicId: appointment.clinic_id,
         previousAppointment: appointment,
         nextDate,
+        nextTime,
+        nextEndTime,
       });
 
       setCompleted((prev) => ({ ...prev, schedule: true }));
@@ -344,15 +350,15 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
 
   // ─── Preview text for step 3 ───
   const schedulePreview = useMemo(() => {
-    if (!nextDate || !appointment?.start_time) return null;
+    if (!nextDate || !nextTime) return null;
     try {
       const dateObj = new Date(nextDate + 'T12:00:00');
       const dayStr = format(dateObj, "EEEE d 'de' MMMM", { locale: es });
-      return `Se agendará para el ${dayStr} a las ${appointment.start_time}`;
+      return `Se agendará para el ${dayStr} de ${nextTime} a ${nextEndTime || '?'}`;
     } catch {
       return null;
     }
-  }, [nextDate, appointment?.start_time]);
+  }, [nextDate, nextTime, nextEndTime]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -603,6 +609,26 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
                     min={format(new Date(), 'yyyy-MM-dd')}
                     className="mt-1"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-500">Hora inicio</Label>
+                    <Input
+                      type="time"
+                      value={nextTime}
+                      onChange={(e) => setNextTime(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Hora fin</Label>
+                    <Input
+                      type="time"
+                      value={nextEndTime}
+                      onChange={(e) => setNextEndTime(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
                 {schedulePreview && (
                   <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
