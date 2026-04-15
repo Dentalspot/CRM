@@ -35,6 +35,7 @@ const PatientFilePage = () => {
   const [treatmentTemplates, setTreatmentTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('datos');
+  const [odontogramMode, setOdontogramMode] = useState('diagnostico');
 
   // Planning and payments are core features available to all paid plans
   const canAccessPlanning = !isFreePlan;
@@ -298,7 +299,31 @@ const PatientFilePage = () => {
                   </TabsContent>
 
                   <TabsContent value="odontograma" className="mt-0">
-                    <div className="mb-4 flex justify-end">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setOdontogramMode('diagnostico')}
+                          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+                            odontogramMode === 'diagnostico'
+                              ? 'bg-teal-500 text-white'
+                              : 'bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          Diagnóstico Inicial
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOdontogramMode('tratamiento')}
+                          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors ${
+                            odontogramMode === 'tratamiento'
+                              ? 'bg-teal-500 text-white'
+                              : 'bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          Tratamiento
+                        </button>
+                      </div>
                       <Button
                         variant="outline"
                         size="sm"
@@ -306,10 +331,10 @@ const PatientFilePage = () => {
                         className="text-pink-600 border-pink-200 hover:bg-pink-50"
                       >
                         <ClipboardCheck className="h-4 w-4 mr-2" />
-                        Nueva Evaluación Odontológica
+                        Nueva Evaluación
                       </Button>
                     </div>
-                    <Odontogram patientId={id} />
+                    <Odontogram key={odontogramMode} patientId={id} odontogramType={odontogramMode} />
                   </TabsContent>
                 </>
               )}

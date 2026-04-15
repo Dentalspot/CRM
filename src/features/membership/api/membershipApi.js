@@ -251,8 +251,95 @@ export const subscribeToPlan = async (userId, planDetails) => {
 };
 
 /**
+ * Activate a plan directly without MercadoPago (for 100% discount coupons).
+ * Creates/updates the subscription as 'active' immediately.
+ */
+export const activateFreeCouponPlan = async (userId, { planSlug, couponId, couponCode, durationDays = 30 }) => {
+  logger.api('Activating free coupon plan for', userId, planSlug);
+
+  // 1. Check if user already redeemed this coupon
+  const { data: existingRedemption } = await supabase
+    .from('coupon_redemptions')
+    .select('id')
+    .eq('coupon_id', couponId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingRedemption) {
+    throw new Error('Ya utilizaste este cupón anteriormente. Solo se permite un uso por usuario.');
+  }
+
+  // 2. Clean up pending subscriptions
+  await supabase
+    .from('therapist_subscriptions')
+    .delete()
+    .eq('therapist_id', userId)
+    .eq('status', 'pending');
+
+  // 3. Check existing active subscription
+  const { data: existing } = await supabase
+    .from('therapist_subscriptions')
+    .select('id, plan_name')
+    .eq('therapist_id', userId)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  const now = new Date();
+  const periodEnd = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+  if (existing) {
+    // Upgrade existing subscription
+    const { error } = await supabase.from('therapist_subscriptions')
+      .update({
+        plan_name: planSlug,
+        price: 0,
+        original_price: 0,
+        discount_percent: 100,
+        status: 'active',
+        payment_status: 'approved',
+        current_period_start: now.toISOString().split('T')[0],
+        current_period_end: periodEnd.toISOString().split('T')[0],
+        external_reference: `coupon_${couponCode}_${userId}_${Date.now()}`,
+        updated_at: now.toISOString(),
+      })
+      .eq('id', existing.id);
+    if (error) throw error;
+  } else {
+    // Create new subscription
+    const { error } = await supabase.from('therapist_subscriptions').insert({
+      therapist_id: userId,
+      plan_name: planSlug,
+      price: 0,
+      original_price: 0,
+      discount_percent: 100,
+      currency: 'CLP',
+      billing_cycle: 'monthly',
+      status: 'active',
+      payment_status: 'approved',
+      external_reference: `coupon_${couponCode}_${userId}_${Date.now()}`,
+      current_period_start: now.toISOString().split('T')[0],
+      current_period_end: periodEnd.toISOString().split('T')[0],
+      cancel_at_period_end: true, // Auto-cancel after period (no auto-renewal for free coupon)
+    });
+    if (error) throw error;
+  }
+
+  // 4. Record coupon redemption
+  await supabase.from('coupon_redemptions').insert({
+    coupon_id: couponId,
+    user_id: userId,
+    plan_name: planSlug,
+  });
+
+  // 5. Increment coupon usage
+  await supabase.rpc('increment_coupon_usage', { p_coupon_id: couponId });
+
+  return { success: true };
+};
+
+/**
  * Cancel current subscription (sets cancel_at_period_end to true)
- * @param {string} subscriptionId 
+ * @param {string} subscriptionId
  */
 export const cancelSubscription = async (subscriptionId) => {
   try {

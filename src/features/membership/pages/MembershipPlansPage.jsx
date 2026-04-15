@@ -15,7 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabaseClient';
 import {
-  getCurrentSubscription, getUsageStats, subscribeToPlan,
+  getCurrentSubscription, getUsageStats, subscribeToPlan, activateFreeCouponPlan,
   cancelSubscription, reactivateSubscription,
   PLAN_PRICING, PLAN_NAMES,
 } from '../api/membershipApi';
@@ -121,8 +121,22 @@ const MembershipPlansPage = () => {
         return;
       }
 
+      // Check if user already redeemed this coupon (single use per user)
+      const { data: redemption } = await supabase
+        .from('coupon_redemptions')
+        .select('id')
+        .eq('coupon_id', data.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (redemption) {
+        toast({ variant: 'destructive', title: 'Cupón ya utilizado', description: 'Ya utilizaste este cupón anteriormente.' });
+        setCouponApplied(null);
+        return;
+      }
+
       setCouponApplied(data);
-      toast({ title: 'Cupón aplicado', description: `Descuento de ${data.discount_type === 'percent' ? `${data.discount_value}%` : `$${data.discount_value.toLocaleString('es-CL')}`}` });
+      toast({ title: 'Cupón aplicado', description: `Descuento de ${isPercentCoupon(data) ? `${data.discount_value}%` : `$${data.discount_value.toLocaleString('es-CL')}`}` });
     } catch (err) {
       toast({ variant: 'destructive', title: 'Error', description: err.message });
     } finally {
@@ -135,9 +149,11 @@ const MembershipPlansPage = () => {
     setCouponCode('');
   };
 
+  const isPercentCoupon = (coupon) => coupon?.discount_type === 'percent' || coupon?.discount_type === 'percentage';
+
   const getCouponDiscount = (price) => {
     if (!couponApplied) return 0;
-    if (couponApplied.discount_type === 'percent') {
+    if (isPercentCoupon(couponApplied)) {
       return Math.round(price * couponApplied.discount_value / 100);
     }
     return Math.min(couponApplied.discount_value, price);
@@ -164,29 +180,46 @@ const MembershipPlansPage = () => {
       const couponDiscount = getCouponDiscount(finalPrice);
       const priceAfterCoupon = finalPrice - couponDiscount;
 
-      const result = await subscribeToPlan(user.id, {
-        id: planId,
-        email: user.email,
-        fullName: profile?.full_name || user.email,
-        clinic_id: clinicData?.clinicId || null,
-        discount_percent: discount?.discount || 0,
-        final_price: priceAfterCoupon,
-        original_price: planPricing.priceCLP,
-        coupon_id: couponApplied?.id || null,
-        coupon_code: couponApplied?.code || null,
-      });
+      // If price is 0 (100% coupon), activate directly without MercadoPago
+      if (priceAfterCoupon <= 0 && couponApplied) {
+        const result = await activateFreeCouponPlan(user.id, {
+          planSlug: planId,
+          couponId: couponApplied.id,
+          couponCode: couponApplied.code,
+          durationDays: 30,
+        });
 
-      // Increment coupon usage
-      if (couponApplied && result.success) {
-        await supabase
-          .from('discount_coupons')
-          .update({ current_uses: (couponApplied.current_uses || 0) + 1 })
-          .eq('id', couponApplied.id);
-      }
+        if (result.success) {
+          toast({ title: '🎉 ¡Plan activado!', description: `Tu plan ${planId} está activo por 30 días.` });
+          setCouponApplied(null);
+          setCouponCode('');
+          await loadData();
+        }
+      } else {
+        const result = await subscribeToPlan(user.id, {
+          id: planId,
+          email: user.email,
+          fullName: profile?.full_name || user.email,
+          clinic_id: clinicData?.clinicId || null,
+          discount_percent: discount?.discount || 0,
+          final_price: priceAfterCoupon,
+          original_price: planPricing.priceCLP,
+          coupon_id: couponApplied?.id || null,
+          coupon_code: couponApplied?.code || null,
+        });
 
-      if (result.success && result.init_point) {
-        toast({ title: 'Abriendo MercadoPago', description: 'Se abrirá una nueva ventana para completar el pago...' });
-        window.open(result.init_point, '_blank');
+        // Increment coupon usage
+        if (couponApplied && result.success) {
+          await supabase
+            .from('discount_coupons')
+            .update({ current_uses: (couponApplied.current_uses || 0) + 1 })
+            .eq('id', couponApplied.id);
+        }
+
+        if (result.success && result.init_point) {
+          toast({ title: 'Abriendo MercadoPago', description: 'Se abrirá una nueva ventana para completar el pago...' });
+          window.open(result.init_point, '_blank');
+        }
       }
     } catch (error) {
       logger.error('Error:', error);
@@ -319,7 +352,7 @@ const MembershipPlansPage = () => {
                     <div className="flex items-center gap-3">
                       <Badge variant="default" className="gap-1.5 px-3 py-1">
                         <Check className="h-3.5 w-3.5" />
-                        {couponApplied.code} — {couponApplied.discount_type === 'percent' ? `${couponApplied.discount_value}% dcto` : `$${couponApplied.discount_value.toLocaleString('es-CL')} dcto`}
+                        {couponApplied.code} — {isPercentCoupon(couponApplied) ? `${couponApplied.discount_value}% dcto` : `$${couponApplied.discount_value.toLocaleString('es-CL')} dcto`}
                       </Badge>
                       <Button variant="ghost" size="sm" onClick={removeCoupon} className="text-red-500 text-xs">Quitar</Button>
                     </div>

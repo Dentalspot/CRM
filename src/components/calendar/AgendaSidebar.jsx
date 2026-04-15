@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { getClinicColor } from './WeeklyAgendaView';
 
@@ -92,23 +93,26 @@ const AgendaSidebar = ({
   return (
     <div className={cn("flex flex-col h-full gap-4", className)}>
 
-      {/* 0) Today's upcoming appointments card */}
-      {todayAppointments.filter(a => ['scheduled', 'confirmed'].includes(a.status)).length > 0 && (
-        <Card className="shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-700">
-              <CalendarIcon className="h-4 w-4" />
-              Citas de Hoy
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-1 space-y-2">
-            {todayAppointments
-              .filter(a => ['scheduled', 'confirmed'].includes(a.status))
+      {/* 0) Today's appointments card - always visible */}
+      <Card className="shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+        <CardHeader className="p-3 pb-1">
+          <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-700">
+            <CalendarIcon className="h-4 w-4" />
+            Citas de Hoy
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-3 pt-1 space-y-2">
+          {todayAppointments.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-2">Sin citas para hoy</p>
+          ) : (
+            todayAppointments
               .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
               .map((appt, i) => {
                 const timeStr = appt.start_time?.substring(0, 5) || '--:--';
                 const patientName = appt.patient?.profile?.full_name || appt.patient?.full_name || 'Paciente';
                 const serviceName = appt.service?.service_name || null;
+                const statusLabel = { completed: 'Completada', confirmed: 'Confirmada', canceled: 'Cancelada', cancelled: 'Cancelada', 'no-show': 'Ausente' }[appt.status] || 'Pendiente';
+                const statusColor = { completed: 'border-green-300 text-green-600', confirmed: 'border-blue-300 text-blue-600', canceled: 'border-red-300 text-red-500', cancelled: 'border-red-300 text-red-500', 'no-show': 'border-amber-300 text-amber-700' }[appt.status] || 'border-gray-200 text-gray-500';
                 return (
                   <div key={appt.id || i} className="flex items-start gap-2 py-1.5 border-b border-blue-50 last:border-0">
                     <div className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 mt-0.5">
@@ -120,18 +124,15 @@ const AgendaSidebar = ({
                         <p className="text-[10px] text-gray-500 truncate">{serviceName}</p>
                       )}
                     </div>
-                    <Badge variant="outline" className={cn(
-                      "text-[9px] px-1 py-0 shrink-0",
-                      appt.status === 'confirmed' ? "border-blue-300 text-blue-600" : "border-gray-200 text-gray-500"
-                    )}>
-                      {appt.status === 'confirmed' ? 'Confirmada' : 'Pendiente'}
+                    <Badge variant="outline" className={cn("text-[9px] px-1 py-0 shrink-0", statusColor)}>
+                      {statusLabel}
                     </Badge>
                   </div>
                 );
-              })}
-          </CardContent>
-        </Card>
-      )}
+              })
+          )}
+        </CardContent>
+      </Card>
 
       {/* 1) Clinic Selector with colors */}
       <Card className="shadow-sm border-2 border-pink-100 bg-gradient-to-br from-pink-50 to-white">
@@ -188,7 +189,7 @@ const AgendaSidebar = ({
         </CardContent>
       </Card>
 
-      {/* 2) Today's Summary - Enhanced */}
+      {/* 2) Today's Summary - Clickable with detail popovers */}
       <Card className="shadow-none border bg-white/50">
         <CardHeader className="p-3 pb-1">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-700">
@@ -196,37 +197,58 @@ const AgendaSidebar = ({
             Resumen de Hoy
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-3 space-y-2">
+        <CardContent className="p-3 space-y-1">
           <div className="flex justify-between items-center text-sm">
             <span className="text-slate-600">Total citas</span>
             <Badge variant="secondary" className="font-bold bg-slate-100 text-slate-700">
               {stats.total}
             </Badge>
           </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center gap-2 text-slate-500 text-xs">
-              <Clock className="h-3 w-3 text-sky-500" /> Programadas
-            </span>
-            <span className="text-xs font-medium text-sky-600">{stats.scheduled}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center gap-2 text-slate-500 text-xs">
-              <CheckCircle2 className="h-3 w-3 text-green-500" /> Completadas
-            </span>
-            <span className="text-xs font-medium text-green-600">{stats.completed}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center gap-2 text-slate-500 text-xs">
-              <XCircle className="h-3 w-3 text-red-400" /> Canceladas
-            </span>
-            <span className="text-xs font-medium text-red-500">{stats.canceled}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center gap-2 text-slate-500 text-xs">
-              <UserX className="h-3 w-3 text-amber-700" /> Ausentes
-            </span>
-            <span className="text-xs font-medium text-amber-700">{stats.noShow}</span>
-          </div>
+          {[
+            { key: 'scheduled', label: 'Programadas', icon: <Clock className="h-3 w-3 text-sky-500" />, color: 'text-sky-600', filter: a => ['scheduled', 'confirmed'].includes(a.status), count: stats.scheduled },
+            { key: 'completed', label: 'Completadas', icon: <CheckCircle2 className="h-3 w-3 text-green-500" />, color: 'text-green-600', filter: a => a.status === 'completed', count: stats.completed },
+            { key: 'canceled', label: 'Canceladas', icon: <XCircle className="h-3 w-3 text-red-400" />, color: 'text-red-500', filter: a => a.status === 'canceled' || a.status === 'cancelled', count: stats.canceled },
+            { key: 'noshow', label: 'Ausentes', icon: <UserX className="h-3 w-3 text-amber-700" />, color: 'text-amber-700', filter: a => a.status === 'no-show', count: stats.noShow },
+          ].map(({ key, label, icon, color, filter, count }) => {
+            const filtered = todayAppointments.filter(filter);
+            return (
+              <Popover key={key}>
+                <PopoverTrigger asChild>
+                  <button className="flex justify-between items-center text-sm w-full rounded-md px-1 py-1 hover:bg-gray-50 transition-colors cursor-pointer">
+                    <span className="flex items-center gap-2 text-slate-500 text-xs">
+                      {icon} {label}
+                    </span>
+                    <span className={cn("text-xs font-medium", color)}>{count}</span>
+                  </button>
+                </PopoverTrigger>
+                {filtered.length > 0 && (
+                  <PopoverContent className="w-64 p-0" align="end">
+                    <div className="p-3 border-b">
+                      <p className="text-sm font-medium">{label} — Hoy</p>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                      {filtered
+                        .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
+                        .map((appt, i) => {
+                          const time = appt.start_time?.substring(0, 5) || '--:--';
+                          const name = appt.patient?.profile?.full_name || appt.patient?.full_name || 'Paciente';
+                          const service = appt.service?.service_name || null;
+                          return (
+                            <div key={appt.id || i} className="flex items-start gap-2 p-1.5 rounded hover:bg-gray-50">
+                              <span className="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">{time}</span>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-gray-800 truncate">{name}</p>
+                                {service && <p className="text-[10px] text-gray-500 truncate">{service}</p>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </PopoverContent>
+                )}
+              </Popover>
+            );
+          })}
         </CardContent>
       </Card>
 

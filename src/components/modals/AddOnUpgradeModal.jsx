@@ -93,7 +93,8 @@ const AddOnUpgradeModal = ({
       }
 
       setCouponApplied(data);
-      toast({ title: 'Cupón aplicado', description: `Descuento de ${data.discount_type === 'percent' ? `${data.discount_value}%` : formatPriceCLP(data.discount_value)}` });
+      const isPct = data.discount_type === 'percent' || data.discount_type === 'percentage';
+      toast({ title: 'Cupón aplicado', description: `Descuento de ${isPct ? `${data.discount_value}%` : formatPriceCLP(data.discount_value)}` });
     } catch (err) {
       toast({ variant: 'destructive', title: 'Error', description: err.message });
     } finally {
@@ -106,9 +107,11 @@ const AddOnUpgradeModal = ({
     setCouponCode('');
   };
 
+  const isPercentCoupon = (c) => c?.discount_type === 'percent' || c?.discount_type === 'percentage';
+
   const getCouponDiscount = (price) => {
     if (!couponApplied) return 0;
-    if (couponApplied.discount_type === 'percent') {
+    if (isPercentCoupon(couponApplied)) {
       return Math.round(price * couponApplied.discount_value / 100);
     }
     return Math.min(couponApplied.discount_value, price);
@@ -117,16 +120,84 @@ const AddOnUpgradeModal = ({
   const discount = getCouponDiscount(config.price);
   const finalPrice = config.price - discount;
 
+  const activateFreeAddon = async () => {
+    // Check if already redeemed
+    const { data: existingRedemption } = await supabase
+      .from('coupon_redemptions')
+      .select('id')
+      .eq('coupon_id', couponApplied.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existingRedemption) {
+      throw new Error('Ya utilizaste este cupón anteriormente.');
+    }
+
+    const now = new Date();
+    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Check existing addon
+    const { data: existing } = await supabase
+      .from('user_addons')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('addon_key', addOnId)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('user_addons')
+        .update({
+          status: 'active',
+          price: 0,
+          current_period_start: now.toISOString().split('T')[0],
+          current_period_end: periodEnd.toISOString().split('T')[0],
+          external_reference: `coupon_${couponApplied.code}_${user.id}`,
+          updated_at: now.toISOString(),
+        })
+        .eq('id', existing.id);
+    } else {
+      const { error } = await supabase.from('user_addons').insert({
+        user_id: user.id,
+        addon_key: addOnId,
+        status: 'active',
+        price: 0,
+        currency: 'CLP',
+        billing_cycle: 'monthly',
+        current_period_start: now.toISOString().split('T')[0],
+        current_period_end: periodEnd.toISOString().split('T')[0],
+        external_reference: `coupon_${couponApplied.code}_${user.id}`,
+      });
+      if (error) throw error;
+    }
+
+    // Record redemption
+    await supabase.from('coupon_redemptions').insert({
+      coupon_id: couponApplied.id,
+      user_id: user.id,
+      plan_name: addOnId,
+    });
+
+    // Increment usage
+    await supabase.rpc('increment_coupon_usage', { p_coupon_id: couponApplied.id });
+  };
+
   const handlePurchase = async () => {
     try {
       setIsProcessing(true);
-      
-      // We use the existing subscription checkout logic.
-      // This assumes the backend handles 'notiz', 'planGenerator', etc. as valid plan_names or handles them via a separate flag.
-      // For now, we simulate the integration with the existing API.
+
+      // If price is 0 (100% coupon), activate directly without MercadoPago
+      if (finalPrice <= 0 && couponApplied) {
+        await activateFreeAddon();
+        toast({ title: '🎉 ¡Activado!', description: `${config.name} está activo por 30 días.` });
+        onClose(false);
+        // Reload to refresh access
+        window.location.reload();
+        return;
+      }
+
       const result = await createSubscriptionCheckout({
         userId: user.id,
-        planId: addOnId, // Passing add-on ID as planId
+        planId: addOnId,
         email: user.email,
         fullName: user.full_name
       });
@@ -140,7 +211,7 @@ const AddOnUpgradeModal = ({
     } catch (error) {
       logger.error('Purchase error:', error);
       toast({
-        title: "Error al iniciar compra",
+        title: "Error al activar",
         description: error.message || "Intenta nuevamente más tarde.",
         variant: "destructive"
       });
@@ -219,7 +290,7 @@ const AddOnUpgradeModal = ({
               <Tag className="h-4 w-4 text-green-600 flex-shrink-0" />
               <Badge variant="default" className="gap-1.5 px-3 py-1 bg-green-600">
                 <Check className="h-3.5 w-3.5" />
-                {couponApplied.code} — {couponApplied.discount_type === 'percent' ? `${couponApplied.discount_value}% dcto` : `${formatPriceCLP(couponApplied.discount_value)} dcto`}
+                {couponApplied.code} — {isPercentCoupon(couponApplied) ? `${couponApplied.discount_value}% dcto` : `${formatPriceCLP(couponApplied.discount_value)} dcto`}
               </Badge>
               <button onClick={removeCoupon} className="ml-auto text-gray-400 hover:text-red-500">
                 <X className="h-4 w-4" />
@@ -266,7 +337,11 @@ const AddOnUpgradeModal = ({
               </>
             ) : (
               <>
-                {couponApplied ? `Suscribirse por ${formatPriceCLP(finalPrice)}/mes` : 'Suscribirse ahora'}
+                {finalPrice <= 0 && couponApplied
+                  ? '🎉 Activar gratis por 30 días'
+                  : couponApplied
+                    ? `Suscribirse por ${formatPriceCLP(finalPrice)}/mes`
+                    : 'Suscribirse ahora'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}

@@ -16,8 +16,8 @@ import ConditionLegend from './ConditionLegend';
  * @param {function} onTeethChange - Callback cuando cambian los dientes (modo evaluación)
  * @param {boolean} evaluationMode - Si true, usa datos externos en vez de DB
  */
-const Odontogram = ({ patientId, externalTeethData, onTeethChange, evaluationMode = false }) => {
-  const hook = useOdontogram(evaluationMode ? null : patientId);
+const Odontogram = ({ patientId, odontogramType = 'diagnostico', externalTeethData, onTeethChange, evaluationMode = false, onSave }) => {
+  const hook = useOdontogram(evaluationMode ? null : patientId, odontogramType, { onSave });
   const {
     teethData: hookTeethData,
     toothType,

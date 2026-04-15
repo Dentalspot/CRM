@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Save, FileText } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, Save, FileText, Pencil, X, ClipboardList, Stethoscope } from 'lucide-react';
 import TemplateFormModal from '@/components/patient/TemplateFormModal';
 import DiagnosisSection from './patient-data/DiagnosisSection';
+import Odontogram from '@/features/odontogram/components/Odontogram';
 import usePatientData from '../hooks/usePatientData';
 
 const PatientDataTab = ({ patient, templates = [], onSave }) => {
@@ -34,16 +36,58 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
     age, user,
   } = usePatientData({ patient, templates, onSave });
 
+  const [isEditingGeneral, setIsEditingGeneral] = useState(false);
+
+  const handleSaveGeneral = async (e) => {
+    e.preventDefault();
+    await handleSubmit(e);
+    setIsEditingGeneral(false);
+  };
+
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSaveGeneral} className="space-y-6">
         {/* Section 1: Datos Generales */}
         <Card className="shadow-sm">
           <CardHeader className="pb-4 border-b">
-            <CardTitle className="text-lg text-teal-600 font-bold flex items-center gap-2">
-              <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">1</span>
-              Datos Generales del Paciente
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg text-teal-600 font-bold flex items-center gap-2">
+                <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">1</span>
+                Datos Generales del Paciente
+              </CardTitle>
+              {!isEditingGeneral ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setIsEditingGeneral(true)}
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Editar
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-gray-500"
+                    onClick={() => setIsEditingGeneral(false)}
+                  >
+                    <X className="h-3.5 w-3.5" /> Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                    disabled={saving}
+                  >
+                    {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Guardar
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
@@ -55,6 +99,7 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   onChange={(e) => handleProfileChange('full_name', e.target.value)}
                   placeholder="Nombre del paciente"
                   className="h-10"
+                  readOnly={!isEditingGeneral}
                 />
               </div>
 
@@ -71,12 +116,13 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   value={profileData.birthdate}
                   onChange={(e) => handleProfileChange('birthdate', e.target.value)}
                   className="h-10"
+                  readOnly={!isEditingGeneral}
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="gender" className="text-teal-700 font-medium">Género</Label>
-                <Select value={profileData.gender} onValueChange={(val) => handleProfileChange('gender', val)}>
+                <Select value={profileData.gender} onValueChange={(val) => handleProfileChange('gender', val)} disabled={!isEditingGeneral}>
                   <SelectTrigger className="h-10"><SelectValue placeholder="Seleccione..." /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="masculino">Masculino</SelectItem>
@@ -92,14 +138,19 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   value={patientData.patient_type}
                   onValueChange={(val) => handlePatientChange('patient_type', val)}
                   className="flex gap-6 h-10 items-center"
+                  disabled={!isEditingGeneral}
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="privado" id="privado" />
+                    <RadioGroupItem value="privado" id="privado" disabled={!isEditingGeneral} />
                     <Label htmlFor="privado" className="font-normal cursor-pointer">Privado</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="aseguradora" id="aseguradora" />
-                    <Label htmlFor="aseguradora" className="font-normal cursor-pointer">Aseguradora</Label>
+                    <RadioGroupItem value="fonasa" id="fonasa" disabled={!isEditingGeneral} />
+                    <Label htmlFor="fonasa" className="font-normal cursor-pointer">Fonasa</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="convenio" id="convenio" disabled={!isEditingGeneral} />
+                    <Label htmlFor="convenio" className="font-normal cursor-pointer">Convenio</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -113,6 +164,7 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   value={profileData.email}
                   onChange={(e) => handleProfileChange('email', e.target.value)}
                   className="h-10"
+                  readOnly={!isEditingGeneral}
                 />
               </div>
 
@@ -125,6 +177,7 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   value={displayPhone}
                   onChange={handlePhoneChange}
                   className="h-10"
+                  readOnly={!isEditingGeneral}
                 />
               </div>
 
@@ -136,6 +189,7 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   onChange={handleRutChange}
                   placeholder="12.345.678-9"
                   className="h-10"
+                  readOnly={!isEditingGeneral}
                 />
               </div>
 
@@ -147,6 +201,7 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   value={patientData.responsible_name}
                   onChange={(e) => handlePatientChange('responsible_name', e.target.value)}
                   className="h-10"
+                  readOnly={!isEditingGeneral}
                 />
               </div>
 
@@ -158,14 +213,16 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   value={displayResponsibleRut}
                   onChange={handleResponsibleRutChange}
                   className="h-10"
+                  readOnly={!isEditingGeneral}
                 />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 2: Diagnósticos */}
+        {/* Section 3: Diagnósticos (includes auto-generated odontogram summary) */}
         <DiagnosisSection
+          patientId={patient?.id}
           patientDiagnoses={patientDiagnoses}
           filteredCodes={filteredCodes}
           selectedSystem={selectedSystem}
@@ -187,7 +244,7 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
         <Card className="shadow-sm">
           <CardHeader className="pb-4 border-b">
             <CardTitle className="text-lg text-teal-600 font-bold flex items-center gap-2">
-              <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">2</span>
+              <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">4</span>
               Anamnesis
             </CardTitle>
           </CardHeader>
@@ -257,7 +314,7 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
         <Card className="shadow-sm">
           <CardHeader className="pb-4 border-b">
             <CardTitle className="text-lg text-teal-600 font-bold flex items-center gap-2">
-              <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">3</span>
+              <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">5</span>
               Evaluaciones
             </CardTitle>
           </CardHeader>
@@ -330,6 +387,42 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
           </Button>
         </div>
       </form>
+
+      {/* Section 2: Odontograma — outside form to prevent button conflicts */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4 border-b">
+          <CardTitle className="text-lg text-teal-600 font-bold flex items-center gap-2">
+            <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">2</span>
+            Odontograma
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <Tabs defaultValue="diagnostico" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="diagnostico" className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" />
+                Diagnóstico Inicial
+              </TabsTrigger>
+              <TabsTrigger value="tratamiento" className="flex items-center gap-2">
+                <Stethoscope className="h-4 w-4" />
+                Tratamiento
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="diagnostico">
+              <p className="text-xs text-gray-500 mb-3">
+                Registra el estado inicial de la dentadura del paciente al momento del diagnóstico.
+              </p>
+              <Odontogram patientId={patient?.id} odontogramType="diagnostico" />
+            </TabsContent>
+            <TabsContent value="tratamiento">
+              <p className="text-xs text-gray-500 mb-3">
+                Registra los avances del tratamiento. Actualiza las superficies a medida que se realizan procedimientos.
+              </p>
+              <Odontogram patientId={patient?.id} odontogramType="tratamiento" />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       {/* Template Form Modal */}
       {selectedTemplate && (

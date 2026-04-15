@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ADULT_TEETH, CHILD_TEETH, getDefaultToothState } from '@/constants/dentalConstants';
+import { useAuth } from '@/contexts/AuthContext';
 import logger from '@/lib/utils/logger';
 
 /**
  * Hook para manejar el estado del odontograma.
  * Carga, guarda y actualiza datos de dientes para un paciente.
  */
-export const useOdontogram = (patientId) => {
+export const useOdontogram = (patientId, odontogramType = 'diagnostico', { onSave: onSaveCallback } = {}) => {
+  const { user } = useAuth();
   const [teethData, setTeethData] = useState({});
   const [toothType, setToothType] = useState('adult');
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,7 @@ export const useOdontogram = (patientId) => {
         .from('odontograms')
         .select('*')
         .eq('patient_id', patientId)
+        .eq('odontogram_type', odontogramType)
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -55,7 +58,7 @@ export const useOdontogram = (patientId) => {
     } finally {
       setLoading(false);
     }
-  }, [patientId, initializeTeeth]);
+  }, [patientId, odontogramType, initializeTeeth]);
 
   useEffect(() => {
     load();
@@ -86,8 +89,10 @@ export const useOdontogram = (patientId) => {
     try {
       const payload = {
         patient_id: patientId,
+        therapist_id: user?.id || null,
         tooth_type: toothType,
         teeth_data: teethData,
+        odontogram_type: odontogramType,
         updated_at: new Date().toISOString(),
       };
 
@@ -107,13 +112,14 @@ export const useOdontogram = (patientId) => {
         setOdontogramId(data.id);
       }
       setLastSaved(new Date().toISOString());
+      onSaveCallback?.(teethData);
     } catch (err) {
       logger.error('[useOdontogram] Error saving:', err);
       throw err;
     } finally {
       setSaving(false);
     }
-  }, [patientId, toothType, teethData, odontogramId]);
+  }, [patientId, toothType, teethData, odontogramId, odontogramType, user?.id, onSaveCallback]);
 
   // Resetear todo
   const reset = useCallback(() => {

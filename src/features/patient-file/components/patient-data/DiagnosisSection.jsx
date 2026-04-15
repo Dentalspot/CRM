@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Loader2, Stethoscope, X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabaseClient';
+import OdontogramSummary from '@/features/odontogram/components/OdontogramSummary';
 
 const DiagnosisSection = ({
+  patientId,
   patientDiagnoses,
   filteredCodes,
   selectedSystem,
@@ -25,6 +29,40 @@ const DiagnosisSection = ({
   diagnosis,
   onDiagnosisChange,
 }) => {
+  // Load diagnostic odontogram data directly from DB
+  const [odontogramTeethData, setOdontogramTeethData] = useState(null);
+
+  useEffect(() => {
+    if (!patientId) return;
+    const loadOdontogram = async () => {
+      const { data } = await supabase
+        .from('odontograms')
+        .select('teeth_data')
+        .eq('patient_id', patientId)
+        .eq('odontogram_type', 'diagnostico')
+        .maybeSingle();
+      if (data?.teeth_data) setOdontogramTeethData(data.teeth_data);
+    };
+    loadOdontogram();
+
+    // Listen for odontogram updates via realtime or custom event
+    const channel = supabase
+      .channel(`odontogram-${patientId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'odontograms',
+        filter: `patient_id=eq.${patientId}`,
+      }, (payload) => {
+        if (payload.new?.odontogram_type === 'diagnostico') {
+          setOdontogramTeethData(payload.new.teeth_data);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [patientId]);
+
   return (
     <Card className="shadow-sm border-teal-100">
       <CardHeader className="pb-4 border-b border-teal-100 bg-teal-50/30">
@@ -35,6 +73,13 @@ const DiagnosisSection = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
+        {/* Odontogram findings - auto-generated from diagnostic odontogram */}
+        {odontogramTeethData && (
+          <>
+            <OdontogramSummary teethData={odontogramTeethData} />
+            <Separator className="my-5" />
+          </>
+        )}
         {/* Current Diagnoses */}
         {patientDiagnoses.length > 0 && (
           <div className="space-y-3 mb-6">

@@ -440,12 +440,15 @@ const WeeklyAgendaView = ({
               <div className="flex items-center gap-1 mt-0.5 text-[10px] opacity-80">
                 {apt.block_type ? (
                    <span className="truncate">{blockLabel}</span>
-                ) : isOnline ? (
-                  <><Video className="h-3 w-3" /> Online</>
                 ) : (
-                  <><MapPin className="h-3 w-3" /> Presencial</>
+                  <><MapPin className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{getClinicName(apt.clinic_id) || (isOnline ? 'Online' : 'Presencial')}</span></>
                 )}
               </div>
+              {!apt.block_type && apt.service?.service_name && (
+                <div className="text-[9px] opacity-60 truncate mt-0.5">
+                  {apt.service.service_name}
+                </div>
+              )}
             </div>
           </TooltipTrigger>
           <TooltipContent>
