@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, CheckCircle2, XCircle, Package, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import logger from '@/lib/utils/logger';
+import { sanitizeHTML } from '@/lib/utils/sanitize';
 import { formatCurrency } from '@/lib/adminUtils';
 
 const ProductDetailPage = () => {
@@ -153,7 +154,7 @@ const ProductDetailPage = () => {
           {product.description && (
             <div>
               <Label className="text-xs text-muted-foreground">Descripción</Label>
-              <div className="text-sm mt-1 p-3 bg-slate-50 rounded-lg border" dangerouslySetInnerHTML={{ __html: product.description }} />
+              <div className="text-sm mt-1 p-3 bg-slate-50 rounded-lg border" dangerouslySetInnerHTML={{ __html: sanitizeHTML(product.description) }} />
             </div>
           )}
         </CardContent>

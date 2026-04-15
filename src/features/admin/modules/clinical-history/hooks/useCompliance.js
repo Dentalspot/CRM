@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import logger from '@/lib/utils/logger';
 import { supabase } from '@/lib/supabaseClient';
+import { escapeHTML } from '@/lib/utils/sanitize';
 
 export const useCompliance = () => {
   const [stats, setStats] = useState({
@@ -93,11 +94,11 @@ export const useCompliance = () => {
       <h1>Reporte de Cumplimiento Normativo</h1>
       <p>Generado: ${new Date().toLocaleString('es-CL')}</p>
       <div>
-        <div class="stat"><h3>${stats.totalRecords}</h3><p>Total Registros</p></div>
-        <div class="stat"><h3>${stats.reviewed}</h3><p>Revisados</p></div>
-        <div class="stat"><h3>${stats.pendingReview}</h3><p>Pendientes</p></div>
-        <div class="stat"><h3>${stats.complianceRate}%</h3><p>Tasa de Cumplimiento</p></div>
-        <div class="stat"><h3>${stats.recentAccesses}</h3><p>Accesos (30 días)</p></div>
+        <div class="stat"><h3>${escapeHTML(stats.totalRecords)}</h3><p>Total Registros</p></div>
+        <div class="stat"><h3>${escapeHTML(stats.reviewed)}</h3><p>Revisados</p></div>
+        <div class="stat"><h3>${escapeHTML(stats.pendingReview)}</h3><p>Pendientes</p></div>
+        <div class="stat"><h3>${escapeHTML(stats.complianceRate)}%</h3><p>Tasa de Cumplimiento</p></div>
+        <div class="stat"><h3>${escapeHTML(stats.recentAccesses)}</h3><p>Accesos (30 días)</p></div>
       </div>
       <h2>Marco Normativo</h2>
       <table>

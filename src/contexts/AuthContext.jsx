@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, useCallb
 import { supabase } from '@/lib/supabaseClient';
 import logger from '@/lib/utils/logger';
 import { USER_ROLES } from '@/constants/roles';
+import useIdleTimeout from '@/hooks/useIdleTimeout';
 
 const AuthContext = createContext({});
 
@@ -273,6 +274,9 @@ export const AuthProvider = ({ children }) => {
       subscription?.unsubscribe();
     };
   }, [fetchProfile]);
+
+  // Idle timeout: logout automático tras 30 min de inactividad
+  useIdleTimeout({ hasSession: !!session, onLogout: signOut });
 
   const value = {
     session,

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, Shield, Calendar, User, Printer } from 'lucide-react';
+import { sanitizeHTML, escapeHTML } from '@/lib/utils/sanitize';
 
 const STATUS_MAP = {
   draft: { label: 'Borrador', class: 'bg-yellow-100 text-yellow-700' },
@@ -44,14 +45,14 @@ const PolicyDetailPage = () => {
   const handlePrint = () => {
     if (!policy) return;
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html><head><title>${policy.title}</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>${escapeHTML(policy.title)}</title>
       <style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:20px;color:#333;line-height:1.8}
       h1{font-size:24px;border-bottom:2px solid #333;padding-bottom:10px}
       .meta{color:#666;font-size:14px;margin-bottom:30px}.content{white-space:pre-wrap;font-size:15px}
       .footer{margin-top:40px;border-top:1px solid #ccc;padding-top:10px;font-size:12px;color:#999}</style></head>
-      <body><h1>${policy.title}</h1>
-      <div class="meta">Categoría: ${CATEGORY_MAP[policy.category] || policy.category} | Responsable: ${policy.responsible || 'No asignado'} | Estado: ${STATUS_MAP[policy.status]?.label || policy.status}</div>
-      <div class="content">${policy.content || ''}</div>
+      <body><h1>${escapeHTML(policy.title)}</h1>
+      <div class="meta">Categoría: ${escapeHTML(CATEGORY_MAP[policy.category] || policy.category)} | Responsable: ${escapeHTML(policy.responsible || 'No asignado')} | Estado: ${escapeHTML(STATUS_MAP[policy.status]?.label || policy.status)}</div>
+      <div class="content">${sanitizeHTML(policy.content || '')}</div>
       <div class="footer">Política interna DentalSpot — dentalspot.cl<br/>Impreso: ${new Date().toLocaleDateString('es-CL')}</div>
       </body></html>`);
     w.document.close();

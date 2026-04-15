@@ -11,6 +11,7 @@ import { usePatients } from '../hooks/usePatients';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { createPatientAccount } from '@/services/patientAccountService';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
   const { toast } = useToast();
@@ -116,7 +117,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
   const handleClinicChange = (value) => {
     const selectedClinic = clinics.find(c => c.id === value);
     if (selectedClinic) {
-      const attType = selectedClinic.type === 'colegio' ? 'pie_escolar' : 'consulta_privada';
+      const attType = (FEATURE_FLAGS.PIE_ESCOLAR && selectedClinic.type === 'colegio') ? 'pie_escolar' : 'consulta_privada';
       setFormData(prev => ({
         ...prev,
         clinic_id: value,

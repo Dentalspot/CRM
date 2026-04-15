@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, Clock, User, Calendar, FileText, Printer } from 'lucide-react';
 import PermissionGuard from '@/features/admin/permissions/PermissionGuard';
 import logger from '@/lib/utils/logger';
+import { sanitizeHTML, escapeHTML } from '@/lib/utils/sanitize';
 
 const STATUS_MAP = {
   draft: { label: 'Borrador', class: 'bg-yellow-100 text-yellow-700' },
@@ -73,7 +74,7 @@ const DocumentDetailPage = () => {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <!DOCTYPE html>
-      <html><head><title>${doc.title}</title>
+      <html><head><title>${escapeHTML(doc.title)}</title>
       <style>
         body { font-family: Georgia, serif; max-width: 800px; margin: 40px auto; padding: 20px; color: #333; line-height: 1.8; }
         h1 { font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; }
@@ -82,12 +83,12 @@ const DocumentDetailPage = () => {
         .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px; font-size: 12px; color: #999; }
       </style></head>
       <body>
-        <h1>${doc.title}</h1>
+        <h1>${escapeHTML(doc.title)}</h1>
         <div class="meta">
-          Tipo: ${TYPE_MAP[doc.type] || doc.type} | Versión: ${doc.version} |
-          Vigente desde: ${doc.effective_date || 'No especificado'}
+          Tipo: ${escapeHTML(TYPE_MAP[doc.type] || doc.type)} | Versión: ${escapeHTML(doc.version)} |
+          Vigente desde: ${escapeHTML(doc.effective_date || 'No especificado')}
         </div>
-        <div class="content">${doc.content || ''}</div>
+        <div class="content">${sanitizeHTML(doc.content || '')}</div>
         <div class="footer">
           Documento generado por DentalSpot — dentalspot.cl<br/>
           Fecha de impresión: ${new Date().toLocaleDateString('es-CL')}

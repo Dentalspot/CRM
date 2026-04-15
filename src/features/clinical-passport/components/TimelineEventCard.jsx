@@ -7,6 +7,7 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/lib/supabaseClient';
+import { sanitizeFullHTML } from '@/lib/utils/sanitize';
 
 const TimelineEventCard = ({ event, onClick }) => {
   const [expanded, setExpanded] = useState(false);
@@ -33,7 +34,7 @@ const TimelineEventCard = ({ event, onClick }) => {
       if (data?.report_html) {
         const w = window.open('', '_blank');
         if (w) {
-          w.document.write(data.report_html);
+          w.document.write(sanitizeFullHTML(data.report_html));
           w.document.close();
         }
       }

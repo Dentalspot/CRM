@@ -28,9 +28,18 @@ const usePatientData = ({ patient, templates = [], onSave }) => {
     patient_type: patient?.patient_type || 'privado',
     responsible_name: patient?.responsible_name || '',
     responsible_rut: patient?.responsible_rut || '',
+    address: patient?.address || '',
+    emergency_contact_name: patient?.emergency_contact_name || '',
+    emergency_contact_phone: patient?.emergency_contact_phone || '',
+    consultation_reason: patient?.consultation_reason || '',
     diagnosis: patient?.diagnosis || '',
     medical_history: patient?.medical_history || '',
     allergies: patient?.allergies || '',
+    medications: patient?.medications || '',
+    systemic_diseases: patient?.systemic_diseases || '',
+    pregnancy: patient?.pregnancy || 'no',
+    surgical_history: patient?.surgical_history || '',
+    clinical_alerts: patient?.clinical_alerts || '',
     other_info: patient?.other_info || '',
     anamnesis_template: patient?.anamnesis_template || '',
     evaluation_template: patient?.evaluation_template || ''
@@ -260,7 +269,7 @@ const usePatientData = ({ patient, templates = [], onSave }) => {
   // SUBMIT
   // =====================================================
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, { skipRefresh = false } = {}) => {
     e.preventDefault();
     setSaving(true);
 
@@ -290,9 +299,18 @@ const usePatientData = ({ patient, templates = [], onSave }) => {
           patient_type: patientData.patient_type,
           responsible_name: patientData.responsible_name || null,
           responsible_rut: patientData.responsible_rut || null,
+          address: patientData.address || null,
+          emergency_contact_name: patientData.emergency_contact_name || null,
+          emergency_contact_phone: patientData.emergency_contact_phone || null,
+          consultation_reason: patientData.consultation_reason || null,
           diagnosis: patientData.diagnosis || null,
           medical_history: patientData.medical_history || null,
           allergies: patientData.allergies || null,
+          medications: patientData.medications || null,
+          systemic_diseases: patientData.systemic_diseases || null,
+          pregnancy: patientData.pregnancy || null,
+          surgical_history: patientData.surgical_history || null,
+          clinical_alerts: patientData.clinical_alerts || null,
           other_info: patientData.other_info || null,
           anamnesis_template: patientData.anamnesis_template || null,
           evaluation_template: patientData.evaluation_template || null,
@@ -303,7 +321,7 @@ const usePatientData = ({ patient, templates = [], onSave }) => {
       if (patientError) throw patientError;
 
       toast({ title: "✅ Datos guardados correctamente" });
-      if (onSave) onSave();
+      if (onSave && !skipRefresh) onSave();
     } catch (error) {
       logger.error("Error saving:", error);
       toast({ variant: "destructive", title: "Error al guardar", description: error.message });

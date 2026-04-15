@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { marketingApi } from '../api/marketingApi';
+import { sanitizeHTML } from '@/lib/utils/sanitize';
 
 const STATUS_COLORS = {
   draft: 'bg-gray-100 text-gray-700',
@@ -411,7 +412,7 @@ const CampaignsPage = () => {
                   </Button>
                 </div>
                 {previewMode ? (
-                  <div className="border rounded p-4 min-h-[200px] bg-white prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: form.body_html || '' }} />
+                  <div className="border rounded p-4 min-h-[200px] bg-white prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHTML(form.body_html || '') }} />
                 ) : (
                   <textarea rows={8} value={form.body_html || ''} onChange={e => setForm(f => ({ ...f, body_html: e.target.value }))}
                     className="w-full border rounded p-3 text-xs font-mono resize-y focus:ring-2 focus:ring-pink-300"

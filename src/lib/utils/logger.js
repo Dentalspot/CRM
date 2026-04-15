@@ -5,7 +5,13 @@ const noop = () => {};
 const logger = {
   log: isDev ? (...args) => console.log('[DENTALSPOT]', ...args) : noop,
   warn: isDev ? (...args) => console.warn('[DENTALSPOT]', ...args) : noop,
-  error: (...args) => console.error('[DENTALSPOT]', ...args),
+  error: isDev
+    ? (...args) => console.error('[DENTALSPOT]', ...args)
+    : (...args) => {
+        // Producción: solo logear mensaje de texto, no objetos que puedan contener datos sensibles
+        const msg = typeof args[0] === 'string' ? args[0] : 'Error';
+        console.error('[DENTALSPOT]', msg);
+      },
   info: isDev ? (...args) => console.info('[DENTALSPOT]', ...args) : noop,
   debug: isDev ? (...args) => console.debug('[DENTALSPOT]', ...args) : noop,
 

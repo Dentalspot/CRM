@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, History, FileLock2, Download, Loader2, Calendar, User, Stethoscope, FileText } from 'lucide-react';
+import { sanitizeHTML, escapeHTML } from '@/lib/utils/sanitize';
 import { useClinicalRecord } from '../hooks/useClinicalRecord';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -24,17 +25,17 @@ const ClinicalHistoryDetailPage = () => {
       .meta p{margin:4px 0;font-size:14px}</style></head><body>
       <h1>Registro Clínico</h1>
       <div class="meta">
-        <p><strong>Paciente:</strong> ${record.patient?.profiles?.full_name || 'N/A'}</p>
-        <p><strong>Terapeuta:</strong> ${record.therapist?.full_name || 'N/A'}</p>
-        <p><strong>Fecha:</strong> ${record.entry_date || record.event_date || record.created_at}</p>
-        <p><strong>Tipo:</strong> ${record.event_type || record.entry_type || 'N/A'}</p>
+        <p><strong>Paciente:</strong> ${escapeHTML(record.patient?.profiles?.full_name || 'N/A')}</p>
+        <p><strong>Terapeuta:</strong> ${escapeHTML(record.therapist?.full_name || 'N/A')}</p>
+        <p><strong>Fecha:</strong> ${escapeHTML(record.entry_date || record.event_date || record.created_at)}</p>
+        <p><strong>Tipo:</strong> ${escapeHTML(record.event_type || record.entry_type || 'N/A')}</p>
       </div>
       <h2>Resumen</h2>
-      <p>${record.summary || record.title || 'Sin resumen'}</p>
+      <p>${escapeHTML(record.summary || record.title || 'Sin resumen')}</p>
       <h2>Notas de Sesión</h2>
-      <div>${record.session_notes || record.description || 'Sin notas'}</div>
+      <div>${sanitizeHTML(record.session_notes || record.description || 'Sin notas')}</div>
       <h2>Observaciones</h2>
-      <p>${record.observations || 'Sin observaciones'}</p>
+      <p>${escapeHTML(record.observations || 'Sin observaciones')}</p>
       <hr><p style="font-size:12px;color:#999">Exportado desde DentalSpot — ${new Date().toLocaleString('es-CL')}</p>
       </body></html>
     `);
@@ -128,7 +129,7 @@ const ClinicalHistoryDetailPage = () => {
                   <h3 className="font-medium text-gray-700 mb-1">Notas de Sesión</h3>
                   <div
                     className="text-sm text-gray-600 prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: record.session_notes || record.description || '' }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHTML(record.session_notes || record.description || '') }}
                   />
                 </div>
               )}

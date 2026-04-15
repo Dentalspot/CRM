@@ -3,6 +3,7 @@ import lazy from '@/lib/utils/lazyRetry';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { USER_ROLES } from '@/constants/roles';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 // Guards
 import AuthGuard from '@/components/guards/AuthGuard';
@@ -121,31 +122,53 @@ const DashboardRouter = () => {
             <Route path="blog/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><BlogArticleEditorPage /></RoleGuard>} />
             <Route path="blog/:id/edit" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><BlogArticleEditorPage /></RoleGuard>} />
             <Route path="patient-progress" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><PlanGuard feature="aiProgressAnalysis" showFallback><PatientProgressPage /></PlanGuard></RoleGuard>} />
-            <Route path="pie" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><PieDashboardPage /></RoleGuard>} />
-            <Route path="pie/tecal/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TecalEvaluationPage /></RoleGuard>} />
-            <Route path="pie/tecal/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TecalEvaluationPage /></RoleGuard>} />
-            <Route path="pie/stsg/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><StsgEvaluationPage /></RoleGuard>} />
-            <Route path="pie/stsg/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><StsgEvaluationPage /></RoleGuard>} />
-            <Route path="pie/teprosif/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TeprosifEvaluationPage /></RoleGuard>} />
-            <Route path="pie/teprosif/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TeprosifEvaluationPage /></RoleGuard>} />
-            <Route path="ados2" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2ListPage /></RoleGuard>} />
-            <Route path="ados2/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
-            <Route path="ados2/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
-            <Route path="ados2/:id/edit" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
+            {/* PIE Escolar — desactivado en Dentalspot (módulo heredado FonoKit) */}
+            {FEATURE_FLAGS.PIE_ESCOLAR && (
+              <>
+                <Route path="pie" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><PieDashboardPage /></RoleGuard>} />
+                <Route path="pie/tecal/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TecalEvaluationPage /></RoleGuard>} />
+                <Route path="pie/tecal/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TecalEvaluationPage /></RoleGuard>} />
+                <Route path="pie/stsg/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><StsgEvaluationPage /></RoleGuard>} />
+                <Route path="pie/stsg/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><StsgEvaluationPage /></RoleGuard>} />
+                <Route path="pie/teprosif/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TeprosifEvaluationPage /></RoleGuard>} />
+                <Route path="pie/teprosif/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TeprosifEvaluationPage /></RoleGuard>} />
+              </>
+            )}
+            {/* ADOS-2 — desactivado en Dentalspot (módulo heredado FonoKit) */}
+            {FEATURE_FLAGS.ADOS2 && (
+              <>
+                <Route path="ados2" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2ListPage /></RoleGuard>} />
+                <Route path="ados2/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
+                <Route path="ados2/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
+                <Route path="ados2/:id/edit" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><Ados2EvaluationPage /></RoleGuard>} />
+              </>
+            )}
 
             {/* Odontograma Module */}
             <Route path="odontograma" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><OdontogramListPage /></RoleGuard>} />
             <Route path="odontograma/nueva" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><OdontogramEvaluationPage /></RoleGuard>} />
             <Route path="odontograma/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><OdontogramEvaluationPage /></RoleGuard>} />
 
-            {/* TEA Module */}
-            <Route path="tea" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TeaDashboardPage /></RoleGuard>} />
-            <Route path="adir" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AdirListPage /></RoleGuard>} />
-            <Route path="adir/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AdirEvaluationPage /></RoleGuard>} />
-            <Route path="adir/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AdirEvaluationPage /></RoleGuard>} />
-            <Route path="sensorial" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><SensorialListPage /></RoleGuard>} />
-            <Route path="sensorial/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><SensorialEvaluationPage /></RoleGuard>} />
-            <Route path="sensorial/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><SensorialEvaluationPage /></RoleGuard>} />
+            {/* TEA Module — desactivado en Dentalspot (módulo heredado FonoKit) */}
+            {FEATURE_FLAGS.TEA && (
+              <Route path="tea" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><TeaDashboardPage /></RoleGuard>} />
+            )}
+            {/* ADIR — desactivado en Dentalspot (módulo heredado FonoKit) */}
+            {FEATURE_FLAGS.ADIR && (
+              <>
+                <Route path="adir" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AdirListPage /></RoleGuard>} />
+                <Route path="adir/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AdirEvaluationPage /></RoleGuard>} />
+                <Route path="adir/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AdirEvaluationPage /></RoleGuard>} />
+              </>
+            )}
+            {/* Perfil Sensorial — desactivado en Dentalspot (módulo heredado FonoKit) */}
+            {FEATURE_FLAGS.SENSORIAL_PROFILE && (
+              <>
+                <Route path="sensorial" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><SensorialListPage /></RoleGuard>} />
+                <Route path="sensorial/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><SensorialEvaluationPage /></RoleGuard>} />
+                <Route path="sensorial/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><SensorialEvaluationPage /></RoleGuard>} />
+              </>
+            )}
 
             <Route path="invitations" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><InvitationsPanel /></RoleGuard>} />
             
@@ -159,14 +182,21 @@ const DashboardRouter = () => {
             {/* AI Tools */}
             <Route path="create-template" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="planGenerator"><TemplateGeneratorPage /></AddOnGuard></RoleGuard>} />
             <Route path="notiz" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="notiz"><NotizPage /></AddOnGuard></RoleGuard>} />
-            <Route path="voice-visualizer" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><VoiceVisualizerPage /></RoleGuard>} />
+            {/* Voice Visualizer — desactivado en Dentalspot (módulo heredado FonoKit) */}
+            {FEATURE_FLAGS.VOICE_VISUALIZER && (
+              <Route path="voice-visualizer" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><VoiceVisualizerPage /></RoleGuard>} />
+            )}
             <Route path="evidence-search" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><EvidenceSearchPage /></RoleGuard>} />
 
-            {/* Educator Add-on */}
-            <Route path="educator" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><EducatorDashboardPage /></AddOnGuard></RoleGuard>} />
-            <Route path="educator/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><CourseEditorPage /></AddOnGuard></RoleGuard>} />
-            <Route path="educator/:id/edit" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><CourseEditorPage /></AddOnGuard></RoleGuard>} />
-            <Route path="educator/:id/students" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><CourseStudentsPage /></AddOnGuard></RoleGuard>} />
+            {/* Educator Add-on — desactivado en Dentalspot (módulo heredado FonoKit) */}
+            {FEATURE_FLAGS.EDUCATOR && (
+              <>
+                <Route path="educator" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><EducatorDashboardPage /></AddOnGuard></RoleGuard>} />
+                <Route path="educator/new" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><CourseEditorPage /></AddOnGuard></RoleGuard>} />
+                <Route path="educator/:id/edit" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><CourseEditorPage /></AddOnGuard></RoleGuard>} />
+                <Route path="educator/:id/students" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="educator"><CourseStudentsPage /></AddOnGuard></RoleGuard>} />
+              </>
+            )}
           </Route>
 
           <Route path="patients" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><PatientsPage /></RoleGuard>} />

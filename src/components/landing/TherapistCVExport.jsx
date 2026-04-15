@@ -6,6 +6,7 @@
  */
 
 import { DENTALSPOT_COLORS } from './sections/shared/utils';
+import { escapeHTML } from '@/lib/utils/sanitize';
 
 const EDUCATION_TYPE_MAP = {
   doctorado: { label: 'Doctorado', weight: 6 },
@@ -52,7 +53,7 @@ export function exportTherapistCV(data) {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>CV - ${therapist.full_name}</title>
+<title>CV - ${escapeHTML(therapist.full_name)}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -371,21 +372,21 @@ export function exportTherapistCV(data) {
 <div class="cv-container">
   <!-- HEADER -->
   <header class="cv-header">
-    ${avatarUrl ? `<img class="cv-avatar" src="${avatarUrl}" alt="${therapist.full_name}" />` : ''}
+    ${avatarUrl ? `<img class="cv-avatar" src="${avatarUrl}" alt="${escapeHTML(therapist.full_name)}" />` : ''}
     <div class="cv-header-info">
-      <h1 class="cv-name">${therapist.full_name || ''}</h1>
-      <p class="cv-title">${details.professional_title || 'Odontólogo/a'}</p>
-      ${therapist.badge_label ? `<span class="cv-badge">${therapist.badge_label}</span>` : ''}
-      ${details.headline_statement ? `<p class="cv-headline">${details.headline_statement}</p>` : ''}
+      <h1 class="cv-name">${escapeHTML(therapist.full_name || '')}</h1>
+      <p class="cv-title">${escapeHTML(details.professional_title || 'Odontólogo/a')}</p>
+      ${therapist.badge_label ? `<span class="cv-badge">${escapeHTML(therapist.badge_label)}</span>` : ''}
+      ${details.headline_statement ? `<p class="cv-headline">${escapeHTML(details.headline_statement)}</p>` : ''}
       <div class="cv-contact">
-        ${details.public_email || therapist.email ? `<span>📧 ${details.public_email || therapist.email}</span>` : ''}
-        ${therapist.phone ? `<span>📱 ${therapist.phone}</span>` : ''}
-        ${details.years_experience ? `<span>🗓 ${details.years_experience} años de experiencia</span>` : ''}
-        ${details.university ? `<span>🎓 ${details.university}${details.graduation_year ? ` (${details.graduation_year})` : ''}</span>` : ''}
+        ${details.public_email || therapist.email ? `<span>📧 ${escapeHTML(details.public_email || therapist.email)}</span>` : ''}
+        ${therapist.phone ? `<span>📱 ${escapeHTML(therapist.phone)}</span>` : ''}
+        ${details.years_experience ? `<span>🗓 ${escapeHTML(details.years_experience)} años de experiencia</span>` : ''}
+        ${details.university ? `<span>🎓 ${escapeHTML(details.university)}${details.graduation_year ? ` (${escapeHTML(details.graduation_year)})` : ''}</span>` : ''}
       </div>
       <div class="cv-contact" style="margin-top:4px;">
-        ${details.registration_supersalud ? `<span>SIS: ${details.registration_supersalud}</span>` : ''}
-        ${details.registration_secreduc ? `<span>SECREDUC: ${details.registration_secreduc}</span>` : ''}
+        ${details.registration_supersalud ? `<span>SIS: ${escapeHTML(details.registration_supersalud)}</span>` : ''}
+        ${details.registration_secreduc ? `<span>SECREDUC: ${escapeHTML(details.registration_secreduc)}</span>` : ''}
       </div>
     </div>
   </header>
@@ -394,7 +395,7 @@ export function exportTherapistCV(data) {
   ${details.about_me ? `
   <section class="cv-section">
     <h2 class="cv-section-title">Perfil Profesional</h2>
-    <p class="cv-about">${details.about_me}</p>
+    <p class="cv-about">${escapeHTML(details.about_me)}</p>
   </section>
   ` : ''}
 
@@ -407,14 +408,14 @@ export function exportTherapistCV(data) {
       <div class="cv-specialty-list">
         ${specialtyBadges.map(sb => `
           <div class="cv-specialty-item">
-            <span class="cv-specialty-name">${sb.specialty}</span>
-            <span class="cv-specialty-badge">${sb.badge}</span>
+            <span class="cv-specialty-name">${escapeHTML(sb.specialty)}</span>
+            <span class="cv-specialty-badge">${escapeHTML(sb.badge)}</span>
           </div>
         `).join('')}
       </div>
       ` : `
       <div class="cv-tags">
-        ${specialties.map(s => `<span class="cv-tag">${s}</span>`).join('')}
+        ${specialties.map(s => `<span class="cv-tag">${escapeHTML(s)}</span>`).join('')}
       </div>
       `}
     </section>
@@ -424,7 +425,7 @@ export function exportTherapistCV(data) {
     <section class="cv-section">
       <h2 class="cv-section-title">Condiciones que Trata</h2>
       <div class="cv-tags">
-        ${conditions.map(c => `<span class="cv-tag cv-tag--secondary">${c}</span>`).join('')}
+        ${conditions.map(c => `<span class="cv-tag cv-tag--secondary">${escapeHTML(c)}</span>`).join('')}
       </div>
     </section>
     ` : ''}
@@ -439,10 +440,10 @@ export function exportTherapistCV(data) {
         const type = detectType(edu);
         return `
         <div class="cv-edu-item">
-          <div class="cv-edu-type">${type.label}</div>
-          <div class="cv-edu-title">${edu.title || edu.degree || ''}</div>
-          <div class="cv-edu-institution">${edu.institution || ''}</div>
-          ${edu.graduation_year ? `<div class="cv-edu-year">${edu.graduation_year}</div>` : ''}
+          <div class="cv-edu-type">${escapeHTML(type.label)}</div>
+          <div class="cv-edu-title">${escapeHTML(edu.title || edu.degree || '')}</div>
+          <div class="cv-edu-institution">${escapeHTML(edu.institution || '')}</div>
+          ${edu.graduation_year ? `<div class="cv-edu-year">${escapeHTML(edu.graduation_year)}</div>` : ''}
         </div>`;
       }).join('')}
     </section>
@@ -453,8 +454,8 @@ export function exportTherapistCV(data) {
       <h2 class="cv-section-title">Experiencia Profesional</h2>
       ${experience.map(exp => `
         <div class="cv-exp-item">
-          <div class="cv-exp-role">${exp.role || exp.position || ''}</div>
-          <div class="cv-exp-company">${exp.institution || exp.company || ''}</div>
+          <div class="cv-exp-role">${escapeHTML(exp.role || exp.position || '')}</div>
+          <div class="cv-exp-company">${escapeHTML(exp.institution || exp.company || '')}</div>
           <div class="cv-exp-dates">${formatDate(exp.start_date)}${exp.end_date ? ` — ${formatDate(exp.end_date)}` : ' — Presente'}</div>
         </div>
       `).join('')}
@@ -469,7 +470,7 @@ export function exportTherapistCV(data) {
     <div class="cv-services-grid">
       ${services.map(s => `
         <div class="cv-service-item">
-          <div class="cv-service-name">${s.name || ''}</div>
+          <div class="cv-service-name">${escapeHTML(s.name || '')}</div>
           <div class="cv-service-detail">
             ${s.duration_minutes ? `${s.duration_minutes} min` : ''}
             ${s.modality ? ` · ${s.modality === 'online' ? 'Online' : s.modality === 'presencial' ? 'Presencial' : 'Online/Presencial'}` : ''}
@@ -485,7 +486,7 @@ export function exportTherapistCV(data) {
   <section class="cv-section">
     <h2 class="cv-section-title">Idiomas</h2>
     <div class="cv-lang-list">
-      ${languages.map(l => `<span class="cv-lang-item">${typeof l === 'string' ? l : l.language}</span>`).join(' · ')}
+      ${languages.map(l => `<span class="cv-lang-item">${escapeHTML(typeof l === 'string' ? l : l.language)}</span>`).join(' · ')}
     </div>
   </section>
   ` : ''}

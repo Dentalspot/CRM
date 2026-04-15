@@ -12,6 +12,7 @@
 
 import { getScoreDescription } from '@/features/ados2/constants/ados2ScoreDescriptions';
 import { supabase } from '@/lib/supabaseClient';
+import { escapeHTML } from '@/lib/utils/sanitize';
 
 const BRAND = {
   primary: '#ff74c3',
@@ -40,8 +41,8 @@ function wrapReport(title, patientName, therapistName, date, bodyContent, patien
     <section class="section">
       <h3 class="section-title">Datos del Paciente</h3>
       <table>
-        <tr><td><strong>Nombre:</strong> ${patientName || 'No especificado'}</td><td><strong>RUT:</strong> ${formatRut(patientData.rut) || 'No registrado'}</td></tr>
-        <tr><td><strong>Fecha de Nacimiento:</strong> ${patientData.birthdate || 'No registrada'}</td><td><strong>Edad:</strong> ${age !== null ? `${age} años` : 'No calculada'}</td></tr>
+        <tr><td><strong>Nombre:</strong> ${escapeHTML(patientName || 'No especificado')}</td><td><strong>RUT:</strong> ${escapeHTML(formatRut(patientData.rut) || 'No registrado')}</td></tr>
+        <tr><td><strong>Fecha de Nacimiento:</strong> ${escapeHTML(patientData.birthdate || 'No registrada')}</td><td><strong>Edad:</strong> ${age !== null ? `${age} años` : 'No calculada'}</td></tr>
       </table>
     </section>`;
 
@@ -49,7 +50,7 @@ function wrapReport(title, patientName, therapistName, date, bodyContent, patien
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>${title} - ${patientName || 'Paciente'}</title>
+<title>${escapeHTML(title)} - ${escapeHTML(patientName || 'Paciente')}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -101,11 +102,11 @@ function wrapReport(title, patientName, therapistName, date, bodyContent, patien
 </div>
 <div class="report">
   <header class="header">
-    <h1>${title}</h1>
-    <h2>${patientName}</h2>
+    <h1>${escapeHTML(title)}</h1>
+    <h2>${escapeHTML(patientName)}</h2>
     <div class="meta">
-      <span>Profesional: ${therapistName}</span>
-      <span>Fecha: ${date}</span>
+      <span>Profesional: ${escapeHTML(therapistName)}</span>
+      <span>Fecha: ${escapeHTML(date)}</span>
       <span>Generado: ${new Date().toLocaleDateString('es-CL')}</span>
     </div>
   </header>
@@ -153,7 +154,7 @@ export function generateAdirReport({ evaluation, patientName, therapistName, pat
       <h3 class="section-title">Información de la Evaluación</h3>
       <table>
         <tr><td><strong>Informante:</strong> ${evaluation.informant_name || 'No especificado'}</td><td><strong>Relación:</strong> ${evaluation.informant_relationship || '—'}</td></tr>
-        <tr><td><strong>Estatus verbal:</strong> ${evaluation.verbal_status === 'verbal' ? 'Verbal' : 'No verbal'}</td><td><strong>Examinador:</strong> ${evaluation.examinador || '—'}</td></tr>
+        <tr><td><strong>Estatus verbal:</strong> ${evaluation.verbal_status === 'verbal' ? 'Verbal' : 'No verbal'}</td><td><strong>Examinador:</strong> ${escapeHTML(evaluation.examinador || '—')}</td></tr>
       </table>
     </section>
 
@@ -386,7 +387,7 @@ export function generateAdos2Report({ evaluation, patientName, therapistName, pa
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Informe ADOS-2 - ${patientName}</title>
+<title>Informe ADOS-2 - ${escapeHTML(patientName)}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1e293b; font-size: 11px; line-height: 1.6; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -469,7 +470,7 @@ function printReport() {
         : `<div class="prof-logo-placeholder">${(tName || 'F').charAt(0).toUpperCase()}</div>`
       }
       <div>
-        <div class="prof-name">${tName}</div>
+        <div class="prof-name">${escapeHTML(tName)}</div>
         <div class="prof-title">${tTitle}${tHeadline ? ` · ${tHeadline}` : ''}</div>
         ${(tRegistroSS || tRegistroSE) ? `<div class="prof-registros">${tRegistroSS ? `Registro SUPERSALUD ${tRegistroSS}` : ''}${tRegistroSS && tRegistroSE ? ' · ' : ''}${tRegistroSE ? `SECREDUC ${tRegistroSE}` : ''}</div>` : ''}
       </div>
@@ -492,12 +493,12 @@ function printReport() {
   <section class="section">
     <div class="section-num">I. IDENTIFICACIÓN</div>
     <div class="info-grid">
-      <div><span class="label">Nombre:</span> ${patientName || 'No especificado'}</div>
-      <div><span class="label">RUT:</span> ${pRut || 'No registrado'}</div>
-      <div><span class="label">Fecha de Nacimiento:</span> ${pBirthdate || 'No registrada'}</div>
+      <div><span class="label">Nombre:</span> ${escapeHTML(patientName || 'No especificado')}</div>
+      <div><span class="label">RUT:</span> ${escapeHTML(pRut || 'No registrado')}</div>
+      <div><span class="label">Fecha de Nacimiento:</span> ${escapeHTML(pBirthdate || 'No registrada')}</div>
       <div><span class="label">Edad:</span> ${age !== null ? `${age} años` : 'No calculada'}</div>
-      <div><span class="label">Fecha Evaluación:</span> ${date}</div>
-      <div><span class="label">Examinador:</span> ${evaluation.examinador || tName}</div>
+      <div><span class="label">Fecha Evaluación:</span> ${escapeHTML(date)}</div>
+      <div><span class="label">Examinador:</span> ${escapeHTML(evaluation.examinador || tName)}</div>
     </div>
     <p style="margin-top:10px; font-size:9px; color:#64748b; font-style:italic;">
       Codificación: Los códigos generales que se asignan a esta sección se completan de acuerdo al comportamiento mostrado por el niño a lo largo de toda la sesión, no se basan en el comportamiento informado u observado en otros contextos.
@@ -576,8 +577,8 @@ function printReport() {
 
   <!-- ═══ FOOTER PROFESIONAL ═══ -->
   <footer class="prof-footer">
-    <strong>${tName}</strong> — ${tTitle}${tHeadline ? `, ${tHeadline}` : ''}.<br>
-    ${(tRegistroSS || tRegistroSE) ? `${tRegistroSS ? `Registro SUPERSALUD ${tRegistroSS}` : ''}${tRegistroSS && tRegistroSE ? ' · ' : ''}${tRegistroSE ? `SECREDUC ${tRegistroSE}` : ''}.<br>` : ''}
+    <strong>${escapeHTML(tName)}</strong> — ${escapeHTML(tTitle)}${tHeadline ? `, ${escapeHTML(tHeadline)}` : ''}.<br>
+    ${(tRegistroSS || tRegistroSE) ? `${tRegistroSS ? `Registro SUPERSALUD ${escapeHTML(tRegistroSS)}` : ''}${tRegistroSS && tRegistroSE ? ' · ' : ''}${tRegistroSE ? `SECREDUC ${escapeHTML(tRegistroSE)}` : ''}.<br>` : ''}
     Este documento y la información contenida en él son confidenciales. Está prohibida su divulgación, copia, distribución o uso por cualquier persona o entidad que no sean los destinatarios autorizados.
   </footer>
 
@@ -740,7 +741,7 @@ export function generateSensorialReport({ evaluation, patientName, therapistName
       <h3 class="section-title">Información de la Evaluación</h3>
       <table>
         <tr><td><strong>Informante:</strong> ${evaluation.informant_name || '—'}</td><td><strong>Relación:</strong> ${evaluation.informant_relationship || '—'}</td></tr>
-        <tr><td><strong>Examinador:</strong> ${evaluation.examinador || '—'}</td><td><strong>Secciones atípicas:</strong> ${evaluation.atypical_sections || 0} de 7</td></tr>
+        <tr><td><strong>Examinador:</strong> ${escapeHTML(evaluation.examinador || '—')}</td><td><strong>Secciones atípicas:</strong> ${evaluation.atypical_sections || 0} de 7</td></tr>
       </table>
     </section>
 

@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import logger from '@/lib/utils/logger';
+import { sanitizeHTML } from '@/lib/utils/sanitize';
 
 const FUNNEL_CONFIG = {
   all: { label: 'Todos', color: 'bg-gray-100 text-gray-700' },
@@ -218,7 +219,7 @@ const TemplatesPage = () => {
                       </div>
                       <div
                         className="p-3 max-h-64 overflow-y-auto bg-white text-xs"
-                        dangerouslySetInnerHTML={{ __html: t.body_html_template }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHTML(t.body_html_template) }}
                       />
                     </div>
                   )}

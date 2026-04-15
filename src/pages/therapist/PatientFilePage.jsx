@@ -3,10 +3,11 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Loader2, Lock, ClipboardCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, Lock, ClipboardCheck, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import { getPatientFile, getDocumentTemplates } from '@/lib/patientApi';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -41,7 +42,7 @@ const PatientFilePage = () => {
   const canAccessPlanning = !isFreePlan;
   const canAccessPayments = !isFreePlan;
 
-  const isPie = patientData?.patient?.attention_type === 'pie_escolar';
+  const isPie = FEATURE_FLAGS.PIE_ESCOLAR && patientData?.patient?.attention_type === 'pie_escolar';
 
   useEffect(() => {
     if (isPie) {
@@ -210,6 +211,30 @@ const PatientFilePage = () => {
           therapistName={user?.full_name}
           onConsentSigned={() => window.location.reload()}
         />
+
+        {patient?.allergies && patient.allergies.trim() && patient.allergies.trim().toLowerCase() !== 'no presenta alergias' && (
+          <div className="flex items-start gap-3 p-4 bg-fuchsia-50 border-2 border-fuchsia-300 rounded-xl animate-in fade-in duration-500">
+            <div className="p-2 bg-fuchsia-100 rounded-full shrink-0">
+              <ShieldAlert className="h-5 w-5 text-fuchsia-600" />
+            </div>
+            <div>
+              <p className="font-bold text-fuchsia-800 text-sm">Alergia Declarada</p>
+              <p className="text-fuchsia-700 text-sm mt-0.5">{patient.allergies}</p>
+            </div>
+          </div>
+        )}
+
+        {patient?.clinical_alerts && patient.clinical_alerts.trim() && patient.clinical_alerts.trim().toLowerCase() !== 'no presenta alertas clínicas' && (
+          <div className="flex items-start gap-3 p-4 bg-red-50 border-2 border-red-300 rounded-xl animate-in fade-in duration-500">
+            <div className="p-2 bg-red-100 rounded-full shrink-0">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <p className="font-bold text-red-800 text-sm">Alerta Clínica</p>
+              <p className="text-red-700 text-sm mt-0.5">{patient.clinical_alerts}</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-3">

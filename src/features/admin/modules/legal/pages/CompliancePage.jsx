@@ -7,6 +7,7 @@ import { useComplianceMetrics } from '../hooks/useComplianceMetrics';
 import { useLegalDocuments } from '../hooks/useLegalDocuments';
 import { useLegalPolicies } from '../hooks/useLegalPolicies';
 import PermissionGuard from '@/features/admin/permissions/PermissionGuard';
+import { escapeHTML } from '@/lib/utils/sanitize';
 
 const CompliancePage = () => {
   const { metrics, loading: metricsLoading, refetch } = useComplianceMetrics();
@@ -33,11 +34,11 @@ const CompliancePage = () => {
     </div>
     <h2>Documentos Legales</h2>
     <table><tr><th>Título</th><th>Tipo</th><th>Estado</th></tr>
-    ${documents.map(d => `<tr><td>${d.title}</td><td>${d.type}</td><td class="${d.status === 'published' ? 'ok' : 'warn'}">${d.status}</td></tr>`).join('')}
+    ${documents.map(d => `<tr><td>${escapeHTML(d.title)}</td><td>${escapeHTML(d.type)}</td><td class="${d.status === 'published' ? 'ok' : 'warn'}">${escapeHTML(d.status)}</td></tr>`).join('')}
     </table>
     <h2>Políticas Internas</h2>
     <table><tr><th>Título</th><th>Categoría</th><th>Estado</th><th>Responsable</th></tr>
-    ${policies.map(p => `<tr><td>${p.title}</td><td>${p.category}</td><td class="${p.status === 'active' ? 'ok' : 'warn'}">${p.status}</td><td>${p.responsible || '—'}</td></tr>`).join('')}
+    ${policies.map(p => `<tr><td>${escapeHTML(p.title)}</td><td>${escapeHTML(p.category)}</td><td class="${p.status === 'active' ? 'ok' : 'warn'}">${escapeHTML(p.status)}</td><td>${escapeHTML(p.responsible || '—')}</td></tr>`).join('')}
     </table>
     <h2>Marco Normativo Aplicable</h2>
     <table><tr><th>Normativa</th><th>Estado</th></tr>

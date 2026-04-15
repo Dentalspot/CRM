@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, User, Mail, Lock, CheckCircle2, AlertCircle, Gift, Eye, EyeOff } from 'lucide-react';
 import { getPublicRoles } from '@/constants/roles';
 import { cleanRut, formatRut, validateRut } from '@/utils/rutUtils';
+import { isValidPassword } from '@/lib/utils/validators';
 import logger from '@/lib/utils/logger';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -47,6 +48,18 @@ const AuthForm = ({ isLogin }) => {
   const [inviteCode, setInviteCode] = useState(urlInviteCode ? urlInviteCode.toUpperCase() : '');
   const [inviteStatus, setInviteStatus] = useState('none'); // none, loading, valid, invalid, expired
   const [inviterName, setInviterName] = useState(null);
+
+  // Idle timeout message
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showIdleMessage, setShowIdleMessage] = useState(false);
+
+  useEffect(() => {
+    if (isLogin && searchParams.get('reason') === 'idle') {
+      setShowIdleMessage(true);
+      searchParams.delete('reason');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []); // Solo al montar
 
   // Discount code state
   const [discountCode, setDiscountCode] = useState('');
@@ -163,6 +176,15 @@ const AuthForm = ({ isLogin }) => {
         });
         return;
       }
+    }
+
+    if (!isValidPassword(formData.password)) {
+      toast({
+        variant: "destructive",
+        title: "Contraseña insegura",
+        description: "Mínimo 8 caracteres, incluir al menos una mayúscula, una minúscula y un número"
+      });
+      return;
     }
 
     const metadata = {
@@ -386,6 +408,16 @@ const AuthForm = ({ isLogin }) => {
       </CardHeader>
 
       <CardContent>
+        {/* Idle timeout message */}
+        {showIdleMessage && isLogin && (
+          <Alert className="mb-4 bg-blue-50 border-blue-200">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="ml-2 text-blue-800">
+              Tu sesión se cerró automáticamente por inactividad. Ingresa nuevamente para continuar.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Invitation logic UI */}
         {!isLogin && (
           urlInviteCode ? (
@@ -488,7 +520,7 @@ const AuthForm = ({ isLogin }) => {
                 onChange={handleChange('password')}
                 className="pl-10 pr-10"
                 required
-                minLength={6}
+                minLength={8}
                 disabled={isLoading}
               />
               <button
@@ -502,7 +534,7 @@ const AuthForm = ({ isLogin }) => {
             </div>
             {!isLogin && (
               <p className="text-xs text-muted-foreground">
-                Mínimo 6 caracteres
+                Mínimo 8 caracteres, incluir mayúscula, minúscula y número
               </p>
             )}
           </div>

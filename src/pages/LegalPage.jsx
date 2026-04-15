@@ -6,6 +6,7 @@ import { ArrowLeft, Calendar, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { sanitizeHTML } from '@/lib/utils/sanitize';
 
 const LegalPage = () => {
   const { slug } = useParams();
@@ -75,7 +76,7 @@ const LegalPage = () => {
 
           <div className="prose prose-gray max-w-none">
             {doc.content?.startsWith('<') ? (
-              <div dangerouslySetInnerHTML={{ __html: doc.content }} />
+              <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(doc.content) }} />
             ) : (
               doc.content?.split('\n').map((p, i) => (
                 p.trim() ? <p key={i}>{p}</p> : null
