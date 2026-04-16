@@ -42,6 +42,7 @@ import Logo from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { USER_ROLES } from '@/constants/roles';
 import SupportTicketModal from '@/components/shared/SupportTicketModal';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import logger from '@/lib/utils/logger';
 
 const SidebarItem = ({ item, isSubItem = false, onClick, onAction }) => {
@@ -124,8 +125,9 @@ const SidebarItem = ({ item, isSubItem = false, onClick, onAction }) => {
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { effectiveRole: effectiveOrgRole } = useCurrentOrganization();
 
-  const userRole = profile?.role || user?.role || 'patient';
+  const userRole = effectiveOrgRole || profile?.role || user?.role || 'patient';
 
   const handleLogout = async () => {
     try {
@@ -179,6 +181,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Mi Progreso', icon: TrendingUp, path: '/dashboard/patient/my-progress' },
               { name: 'Mis Preguntas', icon: MessageCircleQuestion, path: '/dashboard/questions' },
               { name: 'Mi Ficha Clínica', icon: FileText, path: '/dashboard/patient/clinical-file' },
+              { name: 'Historial de Accesos', icon: ShieldCheck, path: '/dashboard/patient/access-history' },
               { name: 'Asistente Virtual', icon: MessageSquare, path: '/dashboard/chatbot' },
             ],
           },
@@ -204,6 +207,17 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Membresía', icon: DollarSign, path: '/dashboard/membership' },
               { name: 'Asistente Virtual', icon: MessageSquare, path: '/dashboard/chatbot' },
               { name: 'Reportar problema', icon: AlertCircle, path: '#support', isAction: true },
+            ],
+          },
+        ];
+      case USER_ROLES.ASSISTANT:
+        return [
+          {
+            section: 'Recepción',
+            items: [
+              { name: 'Panel', icon: Home, path: '/dashboard/assistant' },
+              { name: 'Agenda', icon: Calendar, path: '/dashboard/assistant/agenda' },
+              { name: 'Pacientes', icon: Users, path: '/dashboard/assistant/patients' },
             ],
           },
         ];

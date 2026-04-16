@@ -94,11 +94,11 @@ export const useReportGeneration = () => {
             phone
           )
         `)
-        .eq('therapist_id', user.id)
         .eq('status', 'active');
+        // RLS filtra por care_team + org membership
 
       if (error) throw error;
-      
+
       const formattedPatients = data.map(p => ({
         id: p.id,
         profileId: p.profiles?.id,

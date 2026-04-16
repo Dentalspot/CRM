@@ -19,6 +19,8 @@ const useCurrentOrganization = () => {
       isMultiOrg: false,
       loading: false,
       setCurrentOrganizationId: () => {},
+      userOrgRoles: [],
+      effectiveRole: null,
     };
   }
 };

@@ -76,12 +76,18 @@ const SensorialEvaluationPage = lazy(() => import('@/features/sensorial-profile/
 const PatientDashboardPage = lazy(() => import('@/features/patient-dashboard/PatientDashboardPageV2.jsx'));
 const MyProgressPage = lazy(() => import('@/features/patient/pages/MyProgressPage.jsx'));
 const PatientClinicalFilePage = lazy(() => import('@/features/patient-file/pages/PatientClinicalFilePage.jsx'));
+const PatientAccessHistoryPage = lazy(() => import('@/features/patient-dashboard/pages/PatientAccessHistoryPage.jsx'));
 const PatientQuestionsPage = lazy(() => import('@/features/patient-questions/pages/PatientQuestionsPage.jsx'));
 const PatientAgendaPage = lazy(() => import('@/features/patient-agenda/pages/PatientAgendaPage.jsx'));
 const MarketplaceListingDetailPage = lazy(() => import('@/features/marketplace/pages/MarketplaceListingDetailPage.jsx'));
 const PurchaseSuccessPage = lazy(() => import('@/features/marketplace/pages/PurchaseSuccessPage.jsx'));
 const MyPlanningsPage = lazy(() => import('@/features/marketplace/pages/MyPlanningsPage.jsx'));
 const PlanDetailPage = lazy(() => import('@/features/marketplace/pages/PlanDetailPage.jsx'));
+
+// Assistant Pages
+const AssistantDashboard = lazy(() => import('@/features/assistant/pages/AssistantDashboard.jsx'));
+const AssistantAgendaPage = lazy(() => import('@/features/assistant/pages/AssistantAgendaPage.jsx'));
+const AssistantPatientsPage = lazy(() => import('@/features/assistant/pages/AssistantPatientsPage.jsx'));
 
 // Clinic Pages
 const ClinicDashboardPage = lazy(() => import('@/features/clinic-dashboard/ClinicDashboardPageV2.jsx'));
@@ -215,11 +221,19 @@ const DashboardRouter = () => {
             <Route index element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientDashboardPage /></RoleGuard>} />
             <Route path="my-progress" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><MyProgressPage /></RoleGuard>} />
             <Route path="clinical-file" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientClinicalFilePage /></RoleGuard>} />
+            <Route path="access-history" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientAccessHistoryPage /></RoleGuard>} />
             <Route path="my-passport" element={<Navigate to="/dashboard/patient/clinical-file" replace />} />
           </Route>
           <Route path="my-activities" element={<Navigate to="/dashboard/patient/my-progress" replace />} />
           <Route path="questions" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientQuestionsPage /></RoleGuard>} />
           <Route path="my-agenda" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientAgendaPage /></RoleGuard>} />
+
+          {/* ======================= ASSISTANT ROUTES ======================= */}
+          <Route path="assistant">
+            <Route index element={<AuthGuard><AssistantDashboard /></AuthGuard>} />
+            <Route path="agenda" element={<AuthGuard><AssistantAgendaPage /></AuthGuard>} />
+            <Route path="patients" element={<AuthGuard><AssistantPatientsPage /></AuthGuard>} />
+          </Route>
 
           {/* ======================= CLINIC ROUTES ======================= */}
           <Route path="clinic">

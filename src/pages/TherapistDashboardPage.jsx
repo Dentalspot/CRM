@@ -125,10 +125,10 @@ const TherapistDashboardPage = () => {
       const monthEnd = endOfMonth(today);
 
       const [patientsRes, attendedRes, incomeRes, upcomingRes] = await Promise.all([
+        // RLS filtra por care_team + org membership. No se filtra por therapist_id.
         supabase
           .from('patients')
           .select('id', { count: 'exact', head: true })
-          .eq('therapist_id', user.id)
           .eq('status', 'active'),
 
         supabase
@@ -261,10 +261,10 @@ const TherapistDashboardPage = () => {
         }
 
         // Pacientes activos sin próxima cita
+        // RLS filtra por care_team + org membership. No se filtra por therapist_id.
         const { data: activePatientsList } = await supabase
           .from('patients')
           .select('id, profile:profiles!patients_profile_id_fkey(full_name)')
-          .eq('therapist_id', user.id)
           .eq('status', 'active');
 
         if (activePatientsList?.length > 0) {

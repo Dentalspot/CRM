@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDashboardPathByRole } from '@/utils/roleRouting';
 import { USER_ROLES } from '@/constants/roles';
 import { Loader2, ArrowRight, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabaseClient';
 
 /**
  * Current app identifier — must match what's stored in user_metadata.origin_app
@@ -37,8 +38,39 @@ const APP_NAMES = {
 
 const RoleLandingRedirect = () => {
   const { profile, user, loading } = useAuth();
+  const [orgRole, setOrgRole] = useState(null);
+  const [orgLoading, setOrgLoading] = useState(true);
 
-  if (loading) {
+  // Consultar organization_members para determinar rol operativo real
+  useEffect(() => {
+    if (!user?.id || loading) return;
+
+    const fetchOrgRole = async () => {
+      const { data } = await supabase
+        .from('organization_members')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      const roles = (data || []).map(r => r.role);
+
+      // Prioridad explícita: dentist > clinic_admin > assistant
+      if (roles.includes('dentist')) {
+        setOrgRole(USER_ROLES.THERAPIST);
+      } else if (roles.includes('clinic_admin')) {
+        setOrgRole(USER_ROLES.CLINIC);
+      } else if (roles.includes('assistant')) {
+        setOrgRole(USER_ROLES.ASSISTANT);
+      } else {
+        setOrgRole(null); // sin membresía → fallback a profiles.role
+      }
+      setOrgLoading(false);
+    };
+
+    fetchOrgRole();
+  }, [user?.id, loading]);
+
+  if (loading || orgLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -58,7 +90,9 @@ const RoleLandingRedirect = () => {
   if (role === USER_ROLES.THERAPIST || role === USER_ROLES.CLINIC || role === USER_ROLES.LAB) {
     // No origin_app = legacy user or registered before multi-app, let them through
     if (!originApp || originApp === CURRENT_APP) {
-      return <Navigate to={getDashboardPathByRole(role)} replace />;
+      // Si org_members define un rol operativo, usarlo. Si no, fallback a profiles.role.
+      const effectiveRole = orgRole || role;
+      return <Navigate to={getDashboardPathByRole(effectiveRole)} replace />;
     }
 
     // Professional registered on a DIFFERENT app — show redirect message

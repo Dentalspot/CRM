@@ -3,7 +3,8 @@ export const USER_ROLES = {
   THERAPIST: 'therapist', // Mantiene 'therapist' en DB para evitar migracion
   PATIENT: 'patient',
   CLINIC: 'clinic',
-  LAB: 'lab'
+  LAB: 'lab',
+  ASSISTANT: 'assistant' // Rol operativo determinado por organization_members, no por profiles.role
 };
 
 export const ROLE_LABELS = {
@@ -11,7 +12,8 @@ export const ROLE_LABELS = {
   [USER_ROLES.THERAPIST]: 'Dentista',
   [USER_ROLES.PATIENT]: 'Paciente',
   [USER_ROLES.CLINIC]: 'Clínica',
-  [USER_ROLES.LAB]: 'Laboratorio'
+  [USER_ROLES.LAB]: 'Laboratorio',
+  [USER_ROLES.ASSISTANT]: 'Asistente'
 };
 
 export const getPublicRoles = () => [

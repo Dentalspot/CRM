@@ -12,6 +12,8 @@ export const getDashboardPathByRole = (role) => {
       return '/admin';
     case USER_ROLES.CLINIC:
       return '/dashboard/clinic';
+    case USER_ROLES.ASSISTANT:
+      return '/dashboard/assistant';
     default:
       return '/dashboard';
   }

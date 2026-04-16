@@ -13,12 +13,12 @@ import {
   NextSessionHero,
   TodayPlan,
   MicroProgress,
-  MyTherapistCard,
   RecentDocuments,
   MyQuestionsBlock,
   SupportBlock,
   TreatmentStatusBadge,
 } from './components';
+import MyCareTeam from './components/MyCareTeam';
 import PendingReferrals from './components/PendingReferrals';
 import { acceptReferral, rejectReferral } from '@/features/referrals/api/referralsApi';
 
@@ -47,7 +47,7 @@ const PatientDashboardPageV2 = () => {
   const [appointments, setAppointments] = useState([]);
   const [todayActivities, setTodayActivities] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [myTherapist, setMyTherapist] = useState(null);
+  const [careTeam, setCareTeam] = useState([]);
   const [lastSessionDate, setLastSessionDate] = useState(null);
 
   // Referrals
@@ -91,7 +91,7 @@ const PatientDashboardPageV2 = () => {
 
       // Run all queries in parallel
       await Promise.all([
-        loadTherapist(patientData.therapist_id),
+        loadCareTeam(patientData.id),
         loadAppointments(patientData.id),
         loadTodayActivities(patientData.id),
         loadDocuments(patientData.id),
@@ -112,40 +112,27 @@ const PatientDashboardPageV2 = () => {
     }
   };
 
-  // ---------- Therapist ----------
-  const loadTherapist = async (therapistId) => {
-    if (!therapistId) return;
-
-    const { data: therapist, error } = await supabase
-      .from('profiles')
+  // ---------- Care Team ----------
+  const loadCareTeam = async (pId) => {
+    const { data, error } = await supabase
+      .from('patient_care_team')
       .select(`
-        id, full_name, email, phone,
-        therapist_details!therapist_details_user_id_fkey(specialization_areas, slug),
-        therapist_branding(avatar_url)
+        id, role, specialty, is_active,
+        dentist:profiles!patient_care_team_dentist_id_fkey(
+          id, full_name, email, phone,
+          therapist_branding(avatar_url)
+        )
       `)
-      .eq('id', therapistId)
-      .maybeSingle();
+      .eq('patient_id', pId)
+      .eq('is_active', true)
+      .order('role');
 
     if (error) {
-      logger.warn('Therapist fetch warning:', error);
+      logger.warn('Care team fetch warning:', error);
       return;
     }
 
-    if (therapist) {
-      const branding = Array.isArray(therapist.therapist_branding)
-        ? therapist.therapist_branding[0]
-        : therapist.therapist_branding;
-      const details = Array.isArray(therapist.therapist_details)
-        ? therapist.therapist_details[0]
-        : therapist.therapist_details;
-
-      setMyTherapist({
-        ...therapist,
-        avatar_url: branding?.avatar_url,
-        specialty: details?.specialization_areas?.[0] || 'Fonoaudiólogo/a',
-        slug: details?.slug,
-      });
-    }
+    setCareTeam(data || []);
   };
 
   // ---------- Appointments ----------
@@ -395,12 +382,15 @@ const PatientDashboardPageV2 = () => {
   }, [navigate]);
 
   const handleContactTherapist = useCallback(() => {
-    if (myTherapist?.phone) {
-      window.open(`https://wa.me/56${myTherapist.phone.replace(/\D/g, '')}`, '_blank');
-    } else if (myTherapist?.email) {
-      window.open(`mailto:${myTherapist.email}`, '_blank');
+    // Contactar al primary del equipo tratante
+    const primary = careTeam.find(m => m.role === 'primary');
+    const dentist = primary?.dentist;
+    if (dentist?.phone) {
+      window.open(`https://wa.me/56${dentist.phone.replace(/\D/g, '')}`, '_blank');
+    } else if (dentist?.email) {
+      window.open(`mailto:${dentist.email}`, '_blank');
     }
-  }, [myTherapist]);
+  }, [careTeam]);
 
   // =====================================================
   // LOADING STATE
@@ -503,7 +493,7 @@ const PatientDashboardPageV2 = () => {
             Todo en orden, esto es lo que viene.
           </p>
         </div>
-        <TreatmentStatusBadge appointments={appointments} therapist={myTherapist} />
+        <TreatmentStatusBadge appointments={appointments} therapist={careTeam.find(m => m.role === 'primary')?.dentist || null} />
       </motion.div>
 
       {/* ========== LAYOUT: Main + Sidebar ========== */}
@@ -522,7 +512,7 @@ const PatientDashboardPageV2 = () => {
           {/* Bloque 1: Hero — Próxima sesión */}
           <NextSessionHero
             appointment={nextAppointment}
-            therapist={myTherapist}
+            therapist={careTeam.find(m => m.role === 'primary')?.dentist || null}
             onConfirm={handleConfirmAppointment}
             onReschedule={handleReschedule}
           />
@@ -545,12 +535,8 @@ const PatientDashboardPageV2 = () => {
         {/* ===== SIDEBAR (30%) ===== */}
         <div className="lg:col-span-1 space-y-5">
 
-          {/* Bloque 4: Mi terapeuta */}
-          <MyTherapistCard
-            therapist={myTherapist}
-            lastSessionDate={lastSessionDate}
-            onContact={handleContactTherapist}
-          />
+          {/* Bloque 4: Mi equipo tratante */}
+          <MyCareTeam careTeam={careTeam} loading={loading} />
 
           {/* Bloque 5: Documentos recientes */}
           <RecentDocuments documents={documents} />

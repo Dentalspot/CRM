@@ -18,6 +18,7 @@ export const OrganizationProvider = ({ children }) => {
   const { user } = useAuth();
   const [organizations, setOrganizations] = useState([]);
   const [currentOrganizationId, setCurrentOrgId] = useState(null);
+  const [userOrgRoles, setUserOrgRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const storageKey = user?.id ? `${STORAGE_PREFIX}${user.id}` : null;
@@ -49,6 +50,10 @@ export const OrganizationProvider = ({ children }) => {
           });
         }
       }
+
+      // Guardar todos los roles del usuario (deduplicados)
+      const allRoles = [...new Set((data || []).map(r => r.role))];
+      setUserOrgRoles(allRoles);
 
       setOrganizations(uniqueOrgs);
 
@@ -85,6 +90,15 @@ export const OrganizationProvider = ({ children }) => {
   const isMultiOrg = organizations.length > 1;
   const currentOrganization = organizations.find(o => o.id === currentOrganizationId) || null;
 
+  // Rol operativo efectivo: dentist > clinic_admin > assistant
+  const effectiveRole = userOrgRoles.includes('dentist')
+    ? 'therapist'
+    : userOrgRoles.includes('clinic_admin')
+      ? 'clinic'
+      : userOrgRoles.includes('assistant')
+        ? 'assistant'
+        : null;
+
   const value = {
     currentOrganizationId,
     currentOrganization,
@@ -92,6 +106,8 @@ export const OrganizationProvider = ({ children }) => {
     isMultiOrg,
     loading,
     setCurrentOrganizationId,
+    userOrgRoles,
+    effectiveRole,
   };
 
   return (

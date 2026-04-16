@@ -45,12 +45,18 @@ export const importPatients = async ({ validRows, fieldMap, userId, organization
         }
       }
 
-      // Check if patient already linked to this therapist
+      // Check if patient already exists in this organization
+      if (!organizationId) {
+        results.errors.push({ row: i + 1, name: row[fieldMap.full_name] || 'Desconocido', error: 'No se pudo determinar la organización' });
+        onProgress(i + 1, total);
+        continue;
+      }
+
       const { data: existingPatient } = await supabase
         .from('patients')
         .select('id')
         .eq('profile_id', profileId)
-        .eq('therapist_id', userId)
+        .eq('organization_id', organizationId)
         .maybeSingle();
 
       if (existingPatient) { results.skipped++; onProgress(i + 1, total); continue; }

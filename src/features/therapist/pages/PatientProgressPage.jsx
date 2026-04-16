@@ -43,8 +43,8 @@ const PatientProgressPage = () => {
           profile_id,
           profile:profiles(full_name)
         `)
-        .eq('therapist_id', user.id)
         .eq('status', 'active');
+        // RLS filtra por care_team + org membership
 
       if (error) throw error;
       setPatients(data || []);

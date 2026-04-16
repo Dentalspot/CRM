@@ -372,16 +372,19 @@ export const downloadPatientDocument = async (filePath) => {
 };
 
 export const getTherapistPatients = async (therapistId, searchTerm) => {
+  // RLS filtra automáticamente por care_team + org membership.
+  // No se filtra por therapist_id en el frontend — la seguridad la da RLS.
   let query = supabase
     .from('patients')
     .select(`
       *,
       profile:profiles (id, full_name, email, phone, rut, birthdate)
     `)
-    .eq('therapist_id', therapistId)
     .eq('status', 'active');
 
   if (searchTerm) {
+    // RPC legacy: sigue usando therapist_id internamente.
+    // Se mantendrá hasta que el RPC se adapte al modelo nuevo.
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_therapist_patients_with_details', {
       p_therapist_id: therapistId,
       p_search_term: searchTerm || null
@@ -389,10 +392,10 @@ export const getTherapistPatients = async (therapistId, searchTerm) => {
     if (rpcError) throw rpcError;
     return rpcData;
   }
-  
+
   const { data, error } = await query;
   if (error) throw error;
-  
+
   return data.map(p => ({
     ...p,
     full_name: p.profile?.full_name,

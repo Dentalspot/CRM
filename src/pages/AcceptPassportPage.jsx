@@ -83,11 +83,11 @@ const AcceptPassportPage = () => {
       // 2. Link patient to therapist if not already linked
       const patientId = grantData.patient_id;
 
+      // RLS filtra por care_team + org membership
       const { data: existingLink } = await supabase
         .from('patients')
         .select('id')
         .eq('id', patientId)
-        .eq('therapist_id', user.id)
         .maybeSingle();
 
       if (!existingLink) {

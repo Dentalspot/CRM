@@ -148,7 +148,11 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     if (isOpen && user?.id) {
       const fetchPatients = async () => {
         setLoadingPatients(true);
-        let query = supabase.from('patients').select('id, attention_type, clinic_id, profile:profiles(full_name)').eq('therapist_id', user.id).eq('status', 'active');
+        // Filtrar pacientes por organización activa (no por therapist_id)
+        let query = supabase.from('patients').select('id, attention_type, clinic_id, organization_id, profile:profiles(full_name)').eq('status', 'active');
+        if (currentOrganizationId) {
+          query = query.eq('organization_id', currentOrganizationId);
+        }
         
         const selectedClinicObj = clinics.find(c => c.id === formData.clinic_id);
         if (selectedClinicObj?.type === 'colegio') {
