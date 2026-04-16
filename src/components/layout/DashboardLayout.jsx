@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { USER_ROLES } from '@/constants/roles';
 import {
@@ -73,29 +74,31 @@ const DashboardLayout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar
-        navLinks={navLinks}
-        commonLinks={commonLinks}
-        isOpen={sidebarOpen}
-        onClose={handleSidebarClose}
-      />
-
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-20 bg-black/50 md:hidden"
-          onClick={handleSidebarClose}
+    <OrganizationProvider>
+      <div className="flex h-screen bg-background">
+        <Sidebar
+          navLinks={navLinks}
+          commonLinks={commonLinks}
+          isOpen={sidebarOpen}
+          onClose={handleSidebarClose}
         />
-      )}
 
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <DashboardHeader onMenuToggle={handleMenuToggle} />
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-20 bg-black/50 md:hidden"
+            onClick={handleSidebarClose}
+          />
+        )}
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-muted/5">
-          <Outlet />
-        </main>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <DashboardHeader onMenuToggle={handleMenuToggle} />
+
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-muted/5">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </OrganizationProvider>
   );
 };
 

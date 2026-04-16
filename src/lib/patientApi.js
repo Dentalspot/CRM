@@ -38,11 +38,16 @@ export const fetchPatientPrivateNotes = apiHandler('fetchPatientPrivateNotes', a
  * Save patient private notes
  */
 export const savePrivateNotes = apiHandler.mutation('savePrivateNotes', async (patientId, therapistId, content) => {
+  // Heredar organization_id del paciente
+  const { data: pat } = await supabase
+    .from('patients').select('organization_id').eq('id', patientId).maybeSingle();
+
   const { data, error } = await supabase
     .from('patient_private_notes')
     .upsert({
       patient_id: patientId,
       therapist_id: therapistId,
+      organization_id: pat?.organization_id || null,
       content: content,
       updated_at: new Date().toISOString()
     }, {
@@ -306,20 +311,25 @@ export const validatePhoneForPassword = (phone) => {
 };
 
 export const uploadPatientDocument = async (patientId, therapistId, file, description) => {
+  // Heredar organization_id del paciente
+  const { data: pat } = await supabase
+    .from('patients').select('organization_id').eq('id', patientId).maybeSingle();
+
   const fileName = `${Date.now()}_${file.name}`;
   const filePath = `${patientId}/${fileName}`;
-  
+
   const { error: uploadError } = await supabase.storage
     .from('patient-documents')
     .upload(filePath, file);
-    
+
   if (uploadError) throw uploadError;
-  
+
   const { data, error: dbError } = await supabase
     .from('patient_documents')
     .insert({
       patient_id: patientId,
       therapist_id: therapistId,
+      organization_id: pat?.organization_id || null,
       file_name: file.name,
       file_path: filePath,
       file_type: file.type,

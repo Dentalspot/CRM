@@ -13,6 +13,11 @@ export const createSessionRecord = async ({
   objectives,
   nextSteps,
 }) => {
+  // Heredar organization_id del paciente
+  const { data: pat } = await supabase
+    .from('patients').select('organization_id').eq('id', patientId).maybeSingle();
+  const orgId = pat?.organization_id || null;
+
   const summary = (sessionNotes || '').slice(0, 200);
 
   // Check if entry already exists for this appointment
@@ -48,6 +53,7 @@ export const createSessionRecord = async ({
       .insert({
         patient_id: patientId,
         therapist_id: therapistId,
+        organization_id: orgId,
         appointment_id: appointmentId,
         entry_type: 'sesion',
         entry_date: new Date().toISOString(),
@@ -78,11 +84,16 @@ export const registerSessionPayment = async ({
   amount,
   method,
 }) => {
+  // Heredar organization_id del paciente
+  const { data: pat } = await supabase
+    .from('patients').select('organization_id').eq('id', patientId).maybeSingle();
+
   const { data, error } = await supabase
     .from('patient_payments')
     .insert({
       patient_id: patientId,
       therapist_id: therapistId,
+      organization_id: pat?.organization_id || null,
       appointment_id: appointmentId,
       amount: parseInt(amount, 10),
       payment_method: method,

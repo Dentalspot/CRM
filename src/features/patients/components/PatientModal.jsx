@@ -12,11 +12,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { createPatientAccount } from '@/services/patientAccountService';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 
 const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
   const { toast } = useToast();
   const { handleUpsertPatient } = usePatients();
   const { user } = useAuth();
+  const { currentOrganizationId, isMultiOrg } = useCurrentOrganization();
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -156,8 +158,15 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
     } else {
       // Modo crear: usar createPatientAccount
       try {
+        if (isMultiOrg && !currentOrganizationId) {
+          toast({ variant: 'destructive', title: 'Organización requerida', description: 'Selecciona una organización antes de crear pacientes.' });
+          setLoading(false);
+          return;
+        }
+
         const result = await createPatientAccount({
           therapistId: user.id,
+          organizationId: currentOrganizationId,
           email: formData.email,
           fullName: formData.full_name,
           rut: formData.rut,

@@ -56,6 +56,13 @@ export const fetchEvaluationById = async (id) => {
 };
 
 export const createEvaluation = async (evalData) => {
+  // Lookup defensivo: si no viene organization_id, heredar del paciente
+  if (!evalData.organization_id && evalData.patient_id) {
+    const { data: pat } = await supabase
+      .from('patients').select('organization_id').eq('id', evalData.patient_id).maybeSingle();
+    evalData = { ...evalData, organization_id: pat?.organization_id || null };
+  }
+
   const { data, error } = await supabase
     .from('odontogram_evaluations')
     .insert(evalData)
@@ -92,7 +99,7 @@ export const deleteEvaluation = async (id) => {
 // REPORT TO CLINICAL HISTORY
 // ============================================================
 
-export const saveReportToFicha = async ({ evaluationId, patientId, therapistId, evaluation, treatments }) => {
+export const saveReportToFicha = async ({ evaluationId, patientId, therapistId, organizationId, evaluation, treatments }) => {
   // Build markdown summary
   const treatmentLines = (treatments || [])
     .map((t) => `- Diente ${t.tooth}: ${t.procedure} — $${(t.price || 0).toLocaleString('es-CL')}`)
@@ -142,6 +149,7 @@ export const saveReportToFicha = async ({ evaluationId, patientId, therapistId, 
     .insert({
       patient_id: patientId,
       therapist_id: therapistId,
+      organization_id: organizationId || null,
       entry_type: 'informe_odontograma',
       entry_date: evaluation.evaluation_date,
       summary: `Odontograma ${evaluation.evaluation_type} - ${treatments?.length || 0} procedimientos`,

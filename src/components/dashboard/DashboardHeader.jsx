@@ -2,6 +2,7 @@ import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import OrganizationSelector from '@/components/dashboard/OrganizationSelector';
 
 const DashboardHeader = ({ title, subtitle, children, onMenuToggle }) => {
   return (
@@ -22,7 +23,8 @@ const DashboardHeader = ({ title, subtitle, children, onMenuToggle }) => {
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
+          <OrganizationSelector />
           {children}
         </div>
       </div>

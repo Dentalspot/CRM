@@ -16,6 +16,7 @@ export const useOdontogram = (patientId, odontogramType = 'diagnostico', { onSav
   const [saving, setSaving] = useState(false);
   const [odontogramId, setOdontogramId] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
+  const [patientOrgId, setPatientOrgId] = useState(null);
 
   // Inicializar dientes con estado por defecto
   const initializeTeeth = useCallback((type) => {
@@ -33,6 +34,14 @@ export const useOdontogram = (patientId, odontogramType = 'diagnostico', { onSav
     if (!patientId) return;
     setLoading(true);
     try {
+      // Cargar organization_id del paciente para heredar en escrituras
+      const { data: patientRow } = await supabase
+        .from('patients')
+        .select('organization_id')
+        .eq('id', patientId)
+        .maybeSingle();
+      setPatientOrgId(patientRow?.organization_id || null);
+
       const { data, error } = await supabase
         .from('odontograms')
         .select('*')
@@ -90,6 +99,7 @@ export const useOdontogram = (patientId, odontogramType = 'diagnostico', { onSav
       const payload = {
         patient_id: patientId,
         therapist_id: user?.id || null,
+        organization_id: patientOrgId,
         tooth_type: toothType,
         teeth_data: teethData,
         odontogram_type: odontogramType,

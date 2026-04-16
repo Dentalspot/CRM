@@ -20,11 +20,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import BlockTimeForm from './BlockTimeForm';
 import PatientModal from '@/features/patients/components/PatientModal';
 import logger from '@/lib/utils/logger';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 
 const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: propSelectedClinic, onAppointmentCreated, onAppointmentUpdated, onSessionCompleted }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { currentOrganizationId } = useCurrentOrganization();
 
   const [activeTab, setActiveTab] = useState('cita');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,8 +69,8 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         setLoadingClinics(false);
       };
       fetchClinics();
-      
-      // Fetch services 
+
+      // Fetch services
       supabase.from('therapist_services').select('*').eq('therapist_id', user.id).eq('is_active', true)
         .then(({data}) => setServices(data || []));
     }
@@ -259,6 +261,12 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     e?.preventDefault();
     setIsSubmitting(true);
     try {
+      if (!currentOrganizationId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo determinar la organización. Selecciona una clínica.' });
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload = {
         therapist_id: user.id,
         patient_id: formData.patient_id,
@@ -266,6 +274,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         start_time: formData.start_time,
         end_time: formData.end_time,
         clinic_id: formData.clinic_id || null,
+        organization_id: currentOrganizationId,
         block_type: formData.block_type || null,
         service_id: formData.service_id || null,
         notes: formData.notes,

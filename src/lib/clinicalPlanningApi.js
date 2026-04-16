@@ -17,11 +17,20 @@ import { apiHandler } from '@/lib/api/apiHandler';
  * Create a new clinical history entry
  */
 export const createClinicalEntry = apiHandler.mutation('createClinicalEntry', async (entryData) => {
+  // Heredar organization_id del paciente
+  let orgId = entryData.organization_id || null;
+  if (!orgId && entryData.patient_id) {
+    const { data: pat } = await supabase
+      .from('patients').select('organization_id').eq('id', entryData.patient_id).maybeSingle();
+    orgId = pat?.organization_id || null;
+  }
+
   const { data, error } = await supabase
     .from('clinical_history')
     .insert({
       patient_id: entryData.patient_id,
       therapist_id: entryData.therapist_id,
+      organization_id: orgId,
       entry_type: entryData.entry_type,
       entry_date: entryData.entry_date || new Date().toISOString(),
       summary: entryData.summary,
@@ -267,11 +276,20 @@ export const getPatientAssignedPlans = apiHandler.mutation('getPatientAssignedPl
  * Assign a plan to a patient
  */
 export const assignPlanToPatient = apiHandler.mutation('assignPlanToPatient', async (assignmentData) => {
+  // Heredar organization_id del paciente
+  let orgId = assignmentData.organization_id || null;
+  if (!orgId && assignmentData.patient_id) {
+    const { data: pat } = await supabase
+      .from('patients').select('organization_id').eq('id', assignmentData.patient_id).maybeSingle();
+    orgId = pat?.organization_id || null;
+  }
+
   const { data, error } = await supabase
     .from('patient_assigned_plans')
     .insert({
       patient_id: assignmentData.patient_id,
       therapist_id: assignmentData.therapist_id,
+      organization_id: orgId,
       plan_template_id: assignmentData.plan_template_id,
       name: assignmentData.name,
       start_date: assignmentData.start_date,

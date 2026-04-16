@@ -387,6 +387,11 @@ const TreatmentPlanBuilderModal = ({
       return;
     }
 
+    // Obtener organization_id del paciente
+    const { data: patOrg } = await supabase
+      .from('patients').select('organization_id').eq('id', patientId).maybeSingle();
+    const orgId = patOrg?.organization_id || null;
+
     setLoadingAction('assign');
     try {
       // 1. Save/Update template first
@@ -492,6 +497,7 @@ const TreatmentPlanBuilderModal = ({
             patient_id: patientId,
             therapist_id: user.id,
             clinic_id: assignmentConfig.clinicId || null,
+            organization_id: orgId,
             date: format(currentDate, 'yyyy-MM-dd'),
             start_time: assignmentConfig.preferredTime,
             end_time: endTime,

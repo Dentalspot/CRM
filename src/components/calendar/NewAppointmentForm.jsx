@@ -13,6 +13,7 @@ import { Loader2, UserPlus, Phone, Mail, User, Info } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import useDebounce from '@/hooks/useDebounce';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import logger from "@/lib/utils/logger";
 import {
   searchPatientsForAgenda,
@@ -24,6 +25,7 @@ import {
 const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { currentOrganizationId } = useCurrentOrganization();
 
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
@@ -171,6 +173,11 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
       const validServiceId = serviceId && serviceId !== 'none' ? serviceId : null;
       const clinicId = slotInfo.clinicId || (clinics.length > 0 ? clinics[0].id : null);
 
+      if (!currentOrganizationId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo determinar la organización. Selecciona una en el menú superior.' });
+        return;
+      }
+
       const appointmentsToInsert = [];
       const numAppointments = isRecurring ? recurrenceWeeks : 1;
 
@@ -182,6 +189,7 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
           patient_id: selectedPatient.id,
           therapist_id: user.id,
           clinic_id: clinicId,
+          organization_id: currentOrganizationId,
           service_id: validServiceId,
           date: format(appointmentDate, 'yyyy-MM-dd'),
           start_time: slotInfo.startTime,

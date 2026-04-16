@@ -69,11 +69,20 @@ export const processNotizSession = async (audioBlob, therapistId, patientId, pat
       }
     }
 
+    // Heredar organization_id del paciente
+    let orgId = null;
+    if (patientId) {
+      const { data: pat } = await supabase
+        .from('patients').select('organization_id').eq('id', patientId).maybeSingle();
+      orgId = pat?.organization_id || null;
+    }
+
     // Save to database
     onProgress?.('Guardando nota...');
     const sessionData = {
       therapist_id: therapistId,
       patient_id: patientId || null,
+      organization_id: orgId,
       transcription,
       summary: analysis?.summary || transcription.slice(0, 200),
       key_points: analysis?.key_points || [],
@@ -148,10 +157,19 @@ export const updateNotizSession = async (sessionId, updates) => {
  */
 export const saveNotizToClinicalHistory = async (sessionData, clinicalEntryType = 'nota_clinica') => {
   try {
+    // Heredar organization_id del paciente
+    let orgId = null;
+    if (sessionData.patient_id) {
+      const { data: pat } = await supabase
+        .from('patients').select('organization_id').eq('id', sessionData.patient_id).maybeSingle();
+      orgId = pat?.organization_id || null;
+    }
+
     // 1. Construct the clinical entry payload
     const clinicalData = {
       patient_id: sessionData.patient_id,
       therapist_id: sessionData.therapist_id,
+      organization_id: orgId,
       entry_type: clinicalEntryType,
       entry_date: new Date().toISOString(), // Or the recording date
       summary: sessionData.summary,

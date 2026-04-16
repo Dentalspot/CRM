@@ -52,6 +52,7 @@ const OdontogramEvaluationPage = () => {
   // Step 2: Odontogram data (managed by Odontogram component via ref pattern)
   const [teethData, setTeethData] = useState({});
   const [evaluationId, setEvaluationId] = useState(null);
+  const [patientOrgId, setPatientOrgId] = useState(null);
 
   // Step 3: Treatments & Budget
   const [treatments, setTreatments] = useState([]);
@@ -105,6 +106,7 @@ const OdontogramEvaluationPage = () => {
     }
 
     setEvaluationId(data.id);
+    setPatientOrgId(data.organization_id || null);
     setSetup({
       patient_id: data.patient_id,
       evaluation_type: data.evaluation_type,
@@ -135,9 +137,20 @@ const OdontogramEvaluationPage = () => {
 
     setSaving(true);
     try {
+      // Heredar organization_id del paciente
+      const { data: patientData } = await supabase
+        .from('patients')
+        .select('organization_id')
+        .eq('id', setup.patient_id)
+        .maybeSingle();
+
+      const orgId = patientData?.organization_id || null;
+      setPatientOrgId(orgId);
+
       const { data, error } = await createEvaluation({
         therapist_id: user.id,
         patient_id: setup.patient_id,
+        organization_id: orgId,
         evaluation_type: setup.evaluation_type,
         evaluation_date: setup.evaluation_date,
         notes: setup.notes,
@@ -292,6 +305,7 @@ const OdontogramEvaluationPage = () => {
         evaluationId,
         patientId: setup.patient_id,
         therapistId: user.id,
+        organizationId: patientOrgId,
         evaluation,
         treatments,
       });

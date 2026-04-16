@@ -54,7 +54,7 @@ const isValidEmail = (email) => {
  * @param {string} params.phone - Teléfono (opcional)
  * @returns {Promise<Object>}
  */
-export const createPatientAccount = async ({ therapistId, email, fullName, rut, phone }) => {
+export const createPatientAccount = async ({ therapistId, organizationId, email, fullName, rut, phone }) => {
   try {
     // =========================================
     // 1. VALIDACIONES
@@ -111,6 +111,7 @@ export const createPatientAccount = async ({ therapistId, email, fullName, rut, 
         .insert({
           profile_id: existingProfile.id,
           therapist_id: therapistId,
+          organization_id: organizationId || null,
           status: 'active'
         })
         .select()
@@ -227,6 +228,7 @@ export const createPatientAccount = async ({ therapistId, email, fullName, rut, 
         .insert({
           profile_id: patientUserId,
           therapist_id: therapistId,
+          organization_id: organizationId || null,
           status: 'active'
         })
         .select()

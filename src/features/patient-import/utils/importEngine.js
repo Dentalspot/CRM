@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabaseClient';
 
-export const importPatients = async ({ validRows, fieldMap, userId, onProgress }) => {
+export const importPatients = async ({ validRows, fieldMap, userId, organizationId, onProgress }) => {
   const results = { created: 0, skipped: 0, errors: [] };
   const total = validRows.length;
 
@@ -58,6 +58,7 @@ export const importPatients = async ({ validRows, fieldMap, userId, onProgress }
       // Create patient
       const patientData = {
         therapist_id: userId,
+        organization_id: organizationId || null,
         profile_id: profileId,
         status: 'active',
         admission_date: new Date().toISOString().split('T')[0],

@@ -1,11 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { parseFile, autoMapColumns } from '../utils/fileParser';
 import { importPatients } from '../utils/importEngine';
 
 const usePatientImport = () => {
   const { user } = useAuth();
+  const { currentOrganizationId } = useCurrentOrganization();
   const { toast } = useToast();
 
   const [step, setStep] = useState(0);
@@ -75,6 +77,7 @@ const usePatientImport = () => {
       validRows,
       fieldMap,
       userId: user.id,
+      organizationId: currentOrganizationId,
       onProgress: (current, total) => setImportProgress(Math.round((current / total) * 100)),
     });
 
