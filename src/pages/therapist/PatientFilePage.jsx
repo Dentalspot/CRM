@@ -21,6 +21,7 @@ import PaymentStatusTab from '@/features/patient-file/components/PaymentStatusTa
 
 // Import PIE Components
 import logger from '@/lib/utils/logger';
+import useClinicalAccessLogger from '@/lib/audit/useClinicalAccessLogger';
 import { PieDataTab, PiePaciTab, PieSessionsTab, PieReportsTab } from '@/features/pie';
 
 const PatientFilePage = () => {
@@ -131,6 +132,13 @@ const PatientFilePage = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useClinicalAccessLogger({
+    patientId: patientData?.patient?.id || null,
+    action: 'view_record',
+    resourceType: 'clinical_record',
+    resourceId: patientData?.patient?.id || null,
+  });
 
   const handleRefresh = () => {
     loadData();

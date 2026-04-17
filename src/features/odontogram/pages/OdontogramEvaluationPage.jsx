@@ -21,6 +21,7 @@ import {
   saveReportToFicha, fetchTherapistServices
 } from '../api/odontogramEvalApi';
 import logger from '@/lib/utils/logger';
+import useClinicalAccessLogger from '@/lib/audit/useClinicalAccessLogger';
 
 const STEPS = [
   { key: 'config', label: 'Configuración', icon: ClipboardCheck },
@@ -76,6 +77,13 @@ const OdontogramEvaluationPage = () => {
   useEffect(() => {
     if (isEditing) loadEvaluation();
   }, [id]);
+
+  useClinicalAccessLogger({
+    patientId: isEditing && evaluationId ? setup.patient_id || null : null,
+    action: 'view_record',
+    resourceType: 'odontogram',
+    resourceId: evaluationId || null,
+  });
 
   const loadPatients = async () => {
     const { data } = await supabase
