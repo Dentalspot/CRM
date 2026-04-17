@@ -520,7 +520,7 @@ const AuthForm = ({ isLogin }) => {
                 onChange={handleChange('password')}
                 className="pl-10 pr-10"
                 required
-                minLength={8}
+                minLength={isLogin ? undefined : 8}
                 disabled={isLoading}
               />
               <button
