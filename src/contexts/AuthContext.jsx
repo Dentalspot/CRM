@@ -226,39 +226,57 @@ export const AuthProvider = ({ children }) => {
         const currentUser = userRef.current;
         const isSameUser = currentUser?.id === newSession.user.id;
 
-        // If we already have this user loaded with role, just update session data
+        // Fast path: same user already hydrated with role — only refresh session data
         if (isSameUser && currentUser?.role) {
           setUser(prev => ({ ...newSession.user, ...prev, id: newSession.user.id }));
           setLoading(false);
           return;
         }
 
-        // Avoid duplicate fetch — but never leave loading stuck
-        if (fetchingProfileRef.current) {
-          return; // First fetch will call setLoading(false) in its finally block
+        // New or different user: drop stale profile before anything else
+        if (!isSameUser) {
+          setProfile(null);
         }
 
-        // Fetch profile for new or initial session
+        // Set a minimal fallback user synchronously so navigation is not blocked
+        // by the profile fetch. The profile will be merged in when it resolves.
+        const fallbackUser = {
+          ...newSession.user,
+          role: newSession.user.user_metadata?.role || USER_ROLES.PATIENT,
+        };
+        if (mounted) {
+          setUser(fallbackUser);
+          userRef.current = fallbackUser;
+          setLoading(false);
+        }
+
+        // Enrich with full profile in background. Failures must not keep the user
+        // stuck at login — the fallbackUser above already grants navigation.
+        if (fetchingProfileRef.current) return;
         fetchingProfileRef.current = true;
 
-        try {
-          const userProfile = await fetchProfile(newSession.user.id);
-          if (mounted) {
+        fetchProfile(newSession.user.id)
+          .then((userProfile) => {
+            if (!mounted) return;
+            if (userRef.current?.id !== newSession.user.id) return;
             setProfile(userProfile);
-            const fullUser = {
-              ...newSession.user,
-              ...userProfile,
-              role: userProfile?.role || newSession.user.user_metadata?.role || USER_ROLES.PATIENT
-            };
-            setUser(fullUser);
-            userRef.current = fullUser;
-          }
-        } catch (err) {
-          logger.warn('Error fetching profile during auth change:', err.message);
-        } finally {
-          fetchingProfileRef.current = false;
-          if (mounted) setLoading(false);
-        }
+            setUser((prev) => {
+              if (!prev || prev.id !== newSession.user.id) return prev;
+              const merged = {
+                ...prev,
+                ...(userProfile || {}),
+                role: userProfile?.role || prev.role,
+              };
+              userRef.current = merged;
+              return merged;
+            });
+          })
+          .catch((err) => {
+            logger.warn('Error fetching profile during auth change:', err?.message);
+          })
+          .finally(() => {
+            fetchingProfileRef.current = false;
+          });
       } else {
         if (mounted) {
           setUser(null);

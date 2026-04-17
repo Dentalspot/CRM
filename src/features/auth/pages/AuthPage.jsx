@@ -72,7 +72,7 @@ export default function AuthPage() {
   const { action } = useParams();
   const navigate = useNavigate();
   const isLogin = action === 'login';
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { trackEvent } = useMetaTracking();
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [exitPopupShown, setExitPopupShown] = useState(false);
@@ -117,7 +117,7 @@ export default function AuthPage() {
     };
   }, [handleMouseLeave, isLogin, user, exitPopupShown]);
 
-  if (user) return null;
+  if (authLoading || user) return null;
 
   // Login: simple centered layout
   if (isLogin) {
