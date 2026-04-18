@@ -1,12 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabaseClient';
 import ClinicalConsentModal from './ClinicalConsentModal';
 
 export default function ConsentRequiredBanner({ patient, therapistName, onConsentSigned }) {
   const [showModal, setShowModal] = useState(false);
+  // null = cargando, true = firmado, false = no firmado (o estado conservador por error/null).
+  const [signedStatus, setSignedStatus] = useState(null);
 
-  if (patient?.clinical_consent_signed) return null;
+  useEffect(() => {
+    if (!patient?.id) return;
+    let mounted = true;
+    (async () => {
+      const { data, error } = await supabase.rpc('get_patient_consent_status', {
+        p_patient_id: patient.id,
+      });
+      if (!mounted) return;
+      // Conservador: si error o data null (no autorizado / paciente inexistente),
+      // tratamos como NO firmado para no ocultar el banner por incertidumbre.
+      if (error || data === null) {
+        setSignedStatus(false);
+        return;
+      }
+      setSignedStatus(data?.signed === true);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [patient?.id]);
+
+  // Mientras carga: no renderizar banner (evita flash).
+  if (signedStatus === null) return null;
+  // Firmado confirmado por la fuente de verdad real: ocultar banner.
+  if (signedStatus === true) return null;
 
   return (
     <>
