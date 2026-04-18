@@ -1,0 +1,32 @@
+-- =============================================================================
+-- Revoke EXECUTE sobre public.get_patient_consent_status(uuid) para anon.
+-- =============================================================================
+-- Contexto:
+-- - La migracion 20260418000001 creo la funcion con
+--   GRANT EXECUTE ... TO authenticated
+--   y REVOKE ALL ... FROM PUBLIC.
+-- - Verificacion posterior (information_schema.routine_privileges) mostro
+--   que ademas de authenticated, postgres y service_role, el rol anon
+--   tambien quedo con EXECUTE. Esto se debe a defaults de Supabase que
+--   conceden EXECUTE a los tres roles del cliente (anon, authenticated,
+--   service_role) sobre funciones nuevas en el schema public.
+--
+-- Riesgo: aunque la autorizacion interna de la funcion (is_in_care_team
+-- OR is_admin) retornaria NULL a un caller anon por falta de auth.uid(),
+-- defensa en profundidad exige cerrar tambien la capa de grants. Sin
+-- autenticacion no debe siquiera poder invocarse la RPC.
+--
+-- Decision conservadora:
+-- - REVOKE EXECUTE FROM anon (cierra el agujero).
+-- - REVOKE EXECUTE FROM PUBLIC (defensivo, idempotente; declara contrato
+--   completo en esta migracion).
+-- - Se MANTIENE EXECUTE para authenticated (path normal del frontend).
+-- - Se MANTIENE EXECUTE para service_role (procesos server-side legitimos).
+-- - Se MANTIENE EXECUTE para postgres (owner del schema).
+--
+-- Reversible:
+--   GRANT EXECUTE ON FUNCTION public.get_patient_consent_status(uuid) TO anon;
+-- =============================================================================
+
+REVOKE EXECUTE ON FUNCTION public.get_patient_consent_status(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_patient_consent_status(uuid) FROM anon;
