@@ -202,7 +202,7 @@ const PatientClinicalFilePage = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: personalForm.full_name,
@@ -211,8 +211,12 @@ const PatientClinicalFilePage = () => {
           birthdate: personalForm.birthdate || null,
           gender: personalForm.gender || null,
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select('id');
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('No se pudo confirmar el guardado: ninguna fila fue actualizada.');
+      }
 
       await refreshProfile();
       setProfileData({ ...profileData, ...personalForm });
