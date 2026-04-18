@@ -196,9 +196,22 @@ const PatientClinicalFilePage = () => {
     const newErrors = {};
     if (!personalForm.full_name) newErrors.full_name = 'El nombre es obligatorio';
     if (!isValidEmail(personalForm.email)) newErrors.email = 'Email inválido';
-    if (personalForm.rut && !validateRut(personalForm.rut)) newErrors.rut = 'RUT inválido';
+    // Solo validar RUT si el usuario lo modificó respecto al valor original.
+    // Esto evita que un RUT legacy inválido en BD bloquee la edición de otros campos.
+    const rutChanged = (personalForm.rut || '') !== (profileData.rut || '');
+    if (rutChanged && personalForm.rut && !validateRut(personalForm.rut)) {
+      newErrors.rut = 'RUT inválido';
+    }
 
-    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return; }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast({
+        title: 'Revisa los datos ingresados',
+        description: 'Hay campos marcados como inválidos. Corrígelos para continuar.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setSaving(true);
     try {
