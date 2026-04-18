@@ -47,7 +47,6 @@ const PatientClinicalFilePage = () => {
 
   // Edit Modes
   const [editPersonal, setEditPersonal] = useState(false);
-  const [editEmergency, setEditEmergency] = useState(false);
 
   // Form States
   const [personalForm, setPersonalForm] = useState({});
@@ -215,42 +214,12 @@ const PatientClinicalFilePage = () => {
         .eq('id', user.id);
       if (error) throw error;
 
-      // Also update patient-specific fields
-      if (patientId) {
-        await supabase
-          .from('patients')
-          .update({
-            patient_type: personalForm.patient_type || null,
-            responsible_name: personalForm.responsible_name || null,
-            responsible_rut: personalForm.responsible_rut || null,
-          })
-          .eq('id', patientId);
-      }
-
       await refreshProfile();
       setProfileData({ ...profileData, ...personalForm });
       setEditPersonal(false);
       toast({ title: "Guardado", description: "Tus datos personales han sido actualizados." });
     } catch (error) {
       toast({ title: "Error", description: "No se pudieron guardar los cambios.", variant: "destructive" });
-    } finally { setSaving(false); }
-  };
-
-  const handleEmergencySave = async () => {
-    if (!medicalData.id) return;
-    setSaving(true);
-    try {
-      const updatedAlerts = { ...medicalData.alerts, emergency_contact: emergencyForm };
-      const { error } = await supabase
-        .from('patients')
-        .update({ alerts: updatedAlerts })
-        .eq('id', medicalData.id);
-      if (error) throw error;
-      setMedicalData({ ...medicalData, alerts: updatedAlerts });
-      setEditEmergency(false);
-      toast({ title: "Guardado", description: "Contacto de emergencia actualizado." });
-    } catch (error) {
-      toast({ title: "Error", description: "Error al guardar contacto.", variant: "destructive" });
     } finally { setSaving(false); }
   };
 
@@ -397,31 +366,6 @@ const PatientClinicalFilePage = () => {
                         <p className="text-sm py-2 capitalize">{personalForm.gender || 'No especificado'}</p>
                       )}
                     </div>
-                    <div className="space-y-2">
-                      <Label>Tipo de Paciente</Label>
-                      {editPersonal ? (
-                        <RadioGroup value={personalForm.patient_type || 'privado'} onValueChange={(val) => setPersonalForm({...personalForm, patient_type: val})} className="flex gap-6 h-10 items-center">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="privado" id="p-privado" />
-                            <Label htmlFor="p-privado" className="font-normal cursor-pointer">Privado</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="aseguradora" id="p-aseguradora" />
-                            <Label htmlFor="p-aseguradora" className="font-normal cursor-pointer">Aseguradora</Label>
-                          </div>
-                        </RadioGroup>
-                      ) : (
-                        <p className="text-sm py-2 capitalize">{personalForm.patient_type || 'Privado'}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Responsable del tratamiento</Label>
-                      <Input disabled={!editPersonal} value={personalForm.responsible_name || ''} onChange={(e) => setPersonalForm({...personalForm, responsible_name: e.target.value})} placeholder="Nombre del responsable (si aplica)" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>RUT del responsable</Label>
-                      <Input disabled={!editPersonal} value={personalForm.responsible_rut || ''} onChange={(e) => setPersonalForm({...personalForm, responsible_rut: formatRut(e.target.value)})} placeholder="12.345.678-9" />
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -512,46 +456,26 @@ const PatientClinicalFilePage = () => {
           {/* Emergency Contact */}
           <Card className="border-l-4 border-l-red-500 shadow-sm">
             <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                  Contacto Emergencia
-                </CardTitle>
-                {!editEmergency ? (
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditEmergency(true)}>
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600" onClick={handleEmergencySave}>
-                    <Save className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-red-500" />
+                Contacto Emergencia
+              </CardTitle>
+              <CardDescription className="text-xs mt-1">
+                Esta información solo puede ser editada por tu profesional tratante.
+              </CardDescription>
             </CardHeader>
             <CardContent className="text-sm space-y-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Nombre</Label>
-                {editEmergency ? (
-                  <Input value={emergencyForm.name} onChange={(e) => setEmergencyForm({...emergencyForm, name: e.target.value})} className="h-8" />
-                ) : (
-                  <p className="font-medium">{emergencyForm.name || 'No registrado'}</p>
-                )}
+                <p className="font-medium">{emergencyForm.name || 'No registrado'}</p>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Teléfono</Label>
-                {editEmergency ? (
-                  <Input value={emergencyForm.phone} onChange={(e) => setEmergencyForm({...emergencyForm, phone: formatPhone(e.target.value)})} className="h-8" />
-                ) : (
-                  <p className="font-medium">{emergencyForm.phone || '-'}</p>
-                )}
+                <p className="font-medium">{emergencyForm.phone || '-'}</p>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Parentesco</Label>
-                {editEmergency ? (
-                  <Input value={emergencyForm.relationship} onChange={(e) => setEmergencyForm({...emergencyForm, relationship: e.target.value})} className="h-8" />
-                ) : (
-                  <p className="font-medium">{emergencyForm.relationship || '-'}</p>
-                )}
+                <p className="font-medium">{emergencyForm.relationship || '-'}</p>
               </div>
             </CardContent>
           </Card>
