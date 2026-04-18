@@ -46,3 +46,6 @@ dist/
 dist/
 
 supabase/.temp/
+
+# Playwright MCP session artifacts (logs/snapshots)
+.playwright-mcp/
