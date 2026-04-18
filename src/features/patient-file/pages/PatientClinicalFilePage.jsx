@@ -47,7 +47,6 @@ const PatientClinicalFilePage = () => {
 
   // Edit Modes
   const [editPersonal, setEditPersonal] = useState(false);
-  const [editMedical, setEditMedical] = useState(false);
   const [editEmergency, setEditEmergency] = useState(false);
 
   // Form States
@@ -234,23 +233,6 @@ const PatientClinicalFilePage = () => {
       toast({ title: "Guardado", description: "Tus datos personales han sido actualizados." });
     } catch (error) {
       toast({ title: "Error", description: "No se pudieron guardar los cambios.", variant: "destructive" });
-    } finally { setSaving(false); }
-  };
-
-  const handleMedicalSave = async () => {
-    if (!medicalData.id) return;
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('patients')
-        .update({ allergies: medicalForm.allergies, medical_history: medicalForm.medical_history, other_info: medicalForm.other_info })
-        .eq('id', medicalData.id);
-      if (error) throw error;
-      setMedicalData({ ...medicalData, ...medicalForm });
-      setEditMedical(false);
-      toast({ title: "Guardado", description: "Información médica actualizada." });
-    } catch (error) {
-      toast({ title: "Error", description: "Error al guardar información médica.", variant: "destructive" });
     } finally { setSaving(false); }
   };
 
@@ -448,36 +430,24 @@ const PatientClinicalFilePage = () => {
             {/* Medical Info Tab */}
             <TabsContent value="medical">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                  <div>
-                    <CardTitle>Información Médica</CardTitle>
-                    <CardDescription>Antecedentes relevantes para tu tratamiento</CardDescription>
-                  </div>
-                  {!editMedical ? (
-                    <Button variant="outline" size="sm" onClick={() => setEditMedical(true)}>
-                      <Edit2 className="h-4 w-4 mr-2" /> Editar
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setEditMedical(false)} disabled={saving}><X className="h-4 w-4" /></Button>
-                      <Button size="sm" onClick={handleMedicalSave} disabled={saving}>
-                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4 mr-2" />} Guardar
-                      </Button>
-                    </div>
-                  )}
+                <CardHeader className="space-y-0 pb-4">
+                  <CardTitle>Información Médica</CardTitle>
+                  <CardDescription>
+                    Esta información solo puede ser editada por tu profesional tratante.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2 text-amber-600 font-medium"><AlertTriangle className="h-4 w-4" /> Alergias</Label>
-                    <Textarea disabled={!editMedical} value={medicalForm.allergies} onChange={(e) => setMedicalForm({...medicalForm, allergies: e.target.value})} placeholder="Lista de alergias conocidas..." className="min-h-[80px]" />
+                    <Textarea disabled value={medicalForm.allergies} placeholder="Sin información registrada." className="min-h-[80px]" />
                   </div>
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2"><History className="h-4 w-4 text-muted-foreground" /> Antecedentes Médicos</Label>
-                    <Textarea disabled={!editMedical} value={medicalForm.medical_history} onChange={(e) => setMedicalForm({...medicalForm, medical_history: e.target.value})} placeholder="Enfermedades previas, cirugías..." className="min-h-[100px]" />
+                    <Textarea disabled value={medicalForm.medical_history} placeholder="Sin información registrada." className="min-h-[100px]" />
                   </div>
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2"><Activity className="h-4 w-4 text-muted-foreground" /> Otros Tratamientos / Medicamentos</Label>
-                    <Textarea disabled={!editMedical} value={medicalForm.other_info} onChange={(e) => setMedicalForm({...medicalForm, other_info: e.target.value})} placeholder="Medicamentos actuales, terapias complementarias..." className="min-h-[100px]" />
+                    <Textarea disabled value={medicalForm.other_info} placeholder="Sin información registrada." className="min-h-[100px]" />
                   </div>
                 </CardContent>
               </Card>
