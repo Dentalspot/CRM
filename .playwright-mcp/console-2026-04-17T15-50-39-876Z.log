@@ -1,3 +1,0 @@
-[     471ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/node_modules/.vite/deps/chunk-V5LT2MCF.js?v=d6d73798:21579
-[     785ms] [LOG] [AUTH] [AUTH EVENT] INITIAL_SESSION @ http://localhost:3000/src/lib/utils/logger.js:18
-[    1146ms] [WARNING] [DENTALSPOT] Meta Pixel not initialized or blocked @ http://localhost:3000/src/lib/utils/logger.js:6
