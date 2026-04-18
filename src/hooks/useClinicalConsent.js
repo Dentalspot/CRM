@@ -47,11 +47,18 @@ export const useClinicalConsent = () => {
     }
   };
 
+  // Nota: el parametro `notizConsent` se mantiene en la firma por compatibilidad
+  // con el caller (ClinicalConsentGate.handleSign) pero hoy no se persiste.
+  // El UPDATE a `patients` para `clinical_consent_signed`/`clinical_consent_date`/
+  // `notiz_consent` fue removido porque el rol patient no tiene UPDATE sobre
+  // patients en el modelo Phase 1 (silent fail). La fuente de verdad de la firma
+  // es `legal_signatures`, leida via checkConsent y via la RPC del lado dentist.
+  // Si Notiz requiere persistir su consent, debe abordarse en bloque dedicado.
+  // eslint-disable-next-line no-unused-vars
   const signConsent = async (notizConsent = false) => {
     if (!user || !consentDoc) return false;
 
     try {
-      // Record signature
       const { error: sigError } = await supabase.from('legal_signatures').insert({
         user_id: user.id,
         document_id: consentDoc.id,
@@ -61,21 +68,6 @@ export const useClinicalConsent = () => {
       });
 
       if (sigError) throw sigError;
-
-      // Update patient record
-      const { data: patient } = await supabase
-        .from('patients')
-        .select('id')
-        .eq('profile_id', user.id)
-        .maybeSingle();
-
-      if (patient) {
-        await supabase.from('patients').update({
-          clinical_consent_signed: true,
-          clinical_consent_date: new Date().toISOString(),
-          notiz_consent: notizConsent,
-        }).eq('id', patient.id);
-      }
 
       setHasSigned(true);
       return true;
