@@ -1,0 +1,468 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link:
+            - /url: /
+            - generic:
+              - img
+              - generic: DentalSpot
+        - navigation:
+          - generic:
+            - heading [level=3]: General
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist
+                    - generic:
+                      - img
+                      - generic: Dashboard
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/profile
+                    - generic:
+                      - img
+                      - generic: Mi Perfil
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/calendar
+                    - generic:
+                      - img
+                      - generic: Calendario
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/patients
+                    - generic:
+                      - img
+                      - generic: Mis Pacientes
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/marketplace
+                    - generic:
+                      - img
+                      - generic: Tienda
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/questions
+                    - generic:
+                      - img
+                      - generic: Blog & Preguntas
+          - generic:
+            - heading [level=3]: Evaluaciones Clínicas
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/odontograma
+                    - generic:
+                      - img
+                      - generic: Odontograma
+          - generic:
+            - heading [level=3]: Herramientas IA
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/notiz
+                    - generic:
+                      - img
+                      - generic: Notiz - Notas Auto.
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/create-template
+                    - generic:
+                      - img
+                      - generic: Crear Plantilla
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/evidence-search
+                    - generic:
+                      - img
+                      - generic: Evidencia Científica
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/chatbot
+                    - generic:
+                      - img
+                      - generic: Asistente Virtual
+        - generic:
+          - button:
+            - img
+            - generic: Cerrar Sesión
+          - generic:
+            - generic: © 2026 DentalSpot
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - combobox [expanded]:
+                - img
+                - generic: Seleccionar organización
+                - img
+        - main:
+          - generic:
+            - main:
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=3]:
+                      - img
+                      - text: Comienza tu viaje en DentalSpot
+                    - paragraph:
+                      - text: Completa estos pasos y gana
+                      - strong: $500
+                      - text: en tu wallet por cada uno.
+                  - generic:
+                    - generic:
+                      - img
+                      - text: $1.000 ganados
+                    - generic: Principiante
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic: Progreso
+                      - generic: 29%
+                    - progressbar
+                  - paragraph:
+                    - img
+                    - text: 2 pasos completados — $1.000 ganados
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - heading [level=4]: Personaliza tu perfil
+                          - paragraph: Sube tu foto de perfil o logo profesional
+                      - generic:
+                        - generic: +$500
+                        - button:
+                          - text: Subir foto
+                          - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - heading [level=4]: Define tus especialidades
+                          - paragraph: Selecciona las áreas clínicas en las que trabajas
+                      - generic:
+                        - generic: +$500
+                        - button:
+                          - text: Agregar
+                          - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - heading [level=4]: Invita a tus colegas
+                          - paragraph: Gana dinero en tu wallet para comprar planificaciones, talleres, cursos y más en el Marketplace
+                      - generic:
+                        - generic: +$500
+                        - button:
+                          - text: Invitar
+                          - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - heading [level=4]: Revisa materiales
+                          - paragraph: Explora materiales que pueden facilitar tu día a día
+                      - generic:
+                        - generic: +$500
+                        - button:
+                          - text: Explorar
+                          - img
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic:
+                          - heading [level=4]: Responde preguntas
+                          - paragraph: Responde preguntas de pacientes y posiciónate como experto
+                      - generic:
+                        - generic: +$500
+                        - button:
+                          - text: Responder
+                          - img
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                    - generic:
+                      - heading [level=1]: ¡Hola, Cristóbal! 👋
+                      - generic:
+                        - generic: "🌱 DentalLevel: Principiante"
+                  - generic:
+                    - link:
+                      - /url: /dashboard/calendar
+                      - img
+                      - generic: Calendario
+                    - link:
+                      - /url: /dashboard/patients
+                      - img
+                      - generic: Pacientes
+                - generic:
+                  - generic:
+                    - generic: Perfil profesional
+                    - generic: 7/11 completadas
+                  - generic:
+                    - progressbar
+                  - paragraph:
+                    - text: Completa tu perfil para mejorar tu DentalLevel y que más pacientes te encuentren →
+                    - link:
+                      - /url: /dashboard/profile
+                      - text: Completar perfil
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - generic: 🌱
+                      - generic: Principiante
+                      - generic: DentalLevel
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - img
+                      - generic: "3"
+                      - generic: Pacientes Activos
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - img
+                      - generic: "2"
+                      - generic: Atendidos este mes
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - img
+                      - generic: $0
+                      - generic: Ingresos del mes
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - heading [level=2]:
+                          - img
+                          - text: Próximas Citas
+                        - link:
+                          - /url: /dashboard/calendar
+                          - text: Ver todas
+                          - img
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: Hoy
+                                  - generic: 16:00
+                                - generic:
+                                  - generic:
+                                    - heading [level=4]: Danissa Klagges Romero
+                                    - generic:
+                                      - img
+                                      - text: Presencial
+                                  - paragraph:
+                                    - img
+                                    - text: Agendado
+                                - link:
+                                  - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                                  - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: lunes 20
+                                  - generic: 12:00
+                                - generic:
+                                  - generic:
+                                    - heading [level=4]: Danissa Klagges Romero
+                                    - generic:
+                                      - img
+                                      - text: Presencial
+                                  - paragraph:
+                                    - img
+                                    - text: Agendado
+                                - link:
+                                  - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                                  - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: lunes 20
+                                  - generic: 14:00
+                                - generic:
+                                  - generic:
+                                    - heading [level=4]: Danissa Klagges Romero
+                                    - generic:
+                                      - img
+                                      - text: Presencial
+                                  - paragraph:
+                                    - img
+                                    - text: Agendado
+                                - link:
+                                  - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                                  - img
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic: sábado 2
+                                  - generic: 12:00
+                                - generic:
+                                  - generic:
+                                    - heading [level=4]: Danissa Klagges Romero
+                                    - generic:
+                                      - img
+                                      - text: Presencial
+                                  - paragraph:
+                                    - img
+                                    - text: Agendado
+                                - link:
+                                  - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                                  - img
+                  - generic:
+                    - heading [level=3]: Acceso Rápido
+                    - generic:
+                      - generic:
+                        - link:
+                          - /url: /dashboard/calendar
+                          - generic:
+                            - img
+                          - generic: Mi Agenda
+                          - generic: Gestionar citas
+                      - generic:
+                        - link:
+                          - /url: /dashboard/patients
+                          - generic:
+                            - img
+                          - generic: Mis Pacientes
+                          - generic: Ver expedientes
+                      - generic:
+                        - link:
+                          - /url: /crst-bal-tagle-morales
+                          - generic:
+                            - img
+                          - generic: Perfil Público
+                          - generic: Ver mi landing
+                      - generic:
+                        - link:
+                          - /url: /dashboard/reports
+                          - generic:
+                            - img
+                          - generic: Reportes
+                          - generic: Generar informes
+                      - generic:
+                        - link:
+                          - /url: /dashboard/profile?tab=docs
+                          - generic:
+                            - img
+                          - generic: Materiales
+                          - generic: Mis recursos
+                      - generic:
+                        - link:
+                          - /url: /dashboard/profile?tab=dentallevel
+                          - generic:
+                            - img
+                          - generic: DentalLevel
+                          - generic: Mi reputación
+                      - generic:
+                        - link:
+                          - /url: /dashboard/profile?tab=invitations
+                          - generic:
+                            - img
+                          - generic: Invitaciones
+                          - generic: Invitar colegas
+                      - generic:
+                        - button:
+                          - generic:
+                            - img
+                          - generic: Reportar problema
+                          - generic: Soporte técnico
+                - generic:
+                  - generic:
+                    - generic:
+                      - heading [level=3]:
+                        - img
+                        - text: Pendientes (2)
+                    - generic:
+                      - generic:
+                        - button:
+                          - generic:
+                            - img
+                          - generic: 2 pacientes sin próxima cita
+                          - img
+                  - generic:
+                    - generic:
+                      - generic:
+                        - heading [level=3]:
+                          - img
+                          - text: Blog y Comunidad
+                        - generic: Visibilidad
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - img
+                            - generic: "0"
+                            - generic: Preguntas Nuevas
+                          - generic:
+                            - img
+                            - generic: "0"
+                            - generic: En Revisión
+                          - generic:
+                            - img
+                            - generic: "0"
+                            - generic: Publicados
+                        - generic:
+                          - button:
+                            - generic:
+                              - img
+                              - text: Responder Preguntas
+                            - img
+                          - button:
+                            - generic:
+                              - img
+                              - text: Mis Artículos
+                            - img
+                      - generic:
+                        - img
+                        - paragraph: "\"Tu dedicación transforma vidas\""
+                        - paragraph: Cada sesión es un paso hacia el bienestar de tus pacientes.
+    - button [ref=e47] [cursor=pointer]:
+      - img [ref=e49]
+    - list
+  - listbox [ref=e858]:
+    - option "Odontología Los Álamos" [active] [ref=e859]:
+      - generic [ref=e861]: Odontología Los Álamos
+    - option "Odontologia Bulnes" [ref=e862]:
+      - generic [ref=e864]: Odontologia Bulnes

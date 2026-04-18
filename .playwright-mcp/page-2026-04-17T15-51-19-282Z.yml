@@ -1,0 +1,451 @@
+- generic [ref=e2]:
+  - generic [ref=e147]:
+    - complementary [ref=e148]:
+      - link "DentalSpot DentalSpot" [ref=e150] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e151]:
+          - img "DentalSpot" [ref=e152]
+          - generic [ref=e153]: DentalSpot
+      - navigation [ref=e154]:
+        - generic [ref=e155]:
+          - heading "General" [level=3] [ref=e156]
+          - list [ref=e157]:
+            - listitem [ref=e158]:
+              - link "Dashboard" [ref=e160] [cursor=pointer]:
+                - /url: /dashboard/therapist
+                - generic [ref=e161]:
+                  - img [ref=e162]
+                  - generic [ref=e165]: Dashboard
+            - listitem [ref=e166]:
+              - link "Mi Perfil" [ref=e168] [cursor=pointer]:
+                - /url: /dashboard/profile
+                - generic [ref=e169]:
+                  - img [ref=e170]
+                  - generic [ref=e173]: Mi Perfil
+            - listitem [ref=e174]:
+              - link "Calendario" [ref=e176] [cursor=pointer]:
+                - /url: /dashboard/calendar
+                - generic [ref=e177]:
+                  - img [ref=e178]
+                  - generic [ref=e180]: Calendario
+            - listitem [ref=e181]:
+              - link "Mis Pacientes" [ref=e183] [cursor=pointer]:
+                - /url: /dashboard/patients
+                - generic [ref=e184]:
+                  - img [ref=e185]
+                  - generic [ref=e190]: Mis Pacientes
+            - listitem [ref=e191]:
+              - link "Tienda" [ref=e193] [cursor=pointer]:
+                - /url: /dashboard/marketplace
+                - generic [ref=e194]:
+                  - img [ref=e195]
+                  - generic [ref=e200]: Tienda
+            - listitem [ref=e201]:
+              - link "Blog & Preguntas" [ref=e203] [cursor=pointer]:
+                - /url: /dashboard/therapist/questions
+                - generic [ref=e204]:
+                  - img [ref=e205]
+                  - generic [ref=e208]: Blog & Preguntas
+        - generic [ref=e209]:
+          - heading "Evaluaciones Clínicas" [level=3] [ref=e210]
+          - list [ref=e211]:
+            - listitem [ref=e212]:
+              - link "Odontograma" [ref=e214] [cursor=pointer]:
+                - /url: /dashboard/odontograma
+                - generic [ref=e215]:
+                  - img [ref=e216]
+                  - generic [ref=e220]: Odontograma
+        - generic [ref=e221]:
+          - heading "Herramientas IA" [level=3] [ref=e222]
+          - list [ref=e223]:
+            - listitem [ref=e224]:
+              - link "Notiz - Notas Auto." [ref=e226] [cursor=pointer]:
+                - /url: /dashboard/therapist/notiz
+                - generic [ref=e227]:
+                  - img [ref=e228]
+                  - generic [ref=e231]: Notiz - Notas Auto.
+            - listitem [ref=e232]:
+              - link "Crear Plantilla" [ref=e234] [cursor=pointer]:
+                - /url: /dashboard/therapist/create-template
+                - generic [ref=e235]:
+                  - img [ref=e236]
+                  - generic [ref=e238]: Crear Plantilla
+            - listitem [ref=e239]:
+              - link "Evidencia Científica" [ref=e241] [cursor=pointer]:
+                - /url: /dashboard/therapist/evidence-search
+                - generic [ref=e242]:
+                  - img [ref=e243]
+                  - generic [ref=e246]: Evidencia Científica
+            - listitem [ref=e247]:
+              - link "Asistente Virtual" [ref=e249] [cursor=pointer]:
+                - /url: /dashboard/chatbot
+                - generic [ref=e250]:
+                  - img [ref=e251]
+                  - generic [ref=e253]: Asistente Virtual
+      - generic [ref=e254]:
+        - button "Cerrar Sesión" [ref=e255] [cursor=pointer]:
+          - img [ref=e256]
+          - generic [ref=e259]: Cerrar Sesión
+        - generic [ref=e261]: © 2026 DentalSpot
+    - generic [ref=e262]:
+      - generic [ref=e264]:
+        - generic:
+          - generic:
+            - heading [level=2]
+        - combobox [ref=e266] [cursor=pointer]:
+          - img [ref=e267]
+          - generic: Seleccionar organización
+          - img [ref=e271]
+      - main [ref=e273]:
+        - main [ref=e275]:
+          - generic [ref=e276]:
+            - generic [ref=e278]:
+              - generic [ref=e279]:
+                - heading "Comienza tu viaje en DentalSpot" [level=3] [ref=e280]:
+                  - img [ref=e281]
+                  - text: Comienza tu viaje en DentalSpot
+                - paragraph [ref=e287]:
+                  - text: Completa estos pasos y gana
+                  - strong [ref=e288]: $500
+                  - text: en tu wallet por cada uno.
+              - generic [ref=e289]:
+                - generic [ref=e290]:
+                  - img [ref=e291]
+                  - text: $1.000 ganados
+                - generic [ref=e295]: Principiante
+            - generic [ref=e296]:
+              - generic [ref=e297]:
+                - generic [ref=e298]:
+                  - generic [ref=e299]: Progreso
+                  - generic [ref=e300]: 29%
+                - progressbar [ref=e301]
+              - paragraph [ref=e303]:
+                - img [ref=e304]
+                - text: 2 pasos completados — $1.000 ganados
+              - generic [ref=e307]:
+                - generic [ref=e308]:
+                  - generic [ref=e309]:
+                    - img [ref=e311]
+                    - generic [ref=e315]:
+                      - heading "Personaliza tu perfil" [level=4] [ref=e316]
+                      - paragraph [ref=e317]: Sube tu foto de perfil o logo profesional
+                  - generic [ref=e318]:
+                    - generic [ref=e319]: +$500
+                    - button "Subir foto" [ref=e320] [cursor=pointer]:
+                      - text: Subir foto
+                      - img [ref=e321]
+                - generic [ref=e323]:
+                  - generic [ref=e324]:
+                    - img [ref=e326]
+                    - generic [ref=e330]:
+                      - heading "Define tus especialidades" [level=4] [ref=e331]
+                      - paragraph [ref=e332]: Selecciona las áreas clínicas en las que trabajas
+                  - generic [ref=e333]:
+                    - generic [ref=e334]: +$500
+                    - button "Agregar" [ref=e335] [cursor=pointer]:
+                      - text: Agregar
+                      - img [ref=e336]
+                - generic [ref=e338]:
+                  - generic [ref=e339]:
+                    - img [ref=e341]
+                    - generic [ref=e346]:
+                      - heading "Invita a tus colegas" [level=4] [ref=e347]
+                      - paragraph [ref=e348]: Gana dinero en tu wallet para comprar planificaciones, talleres, cursos y más en el Marketplace
+                  - generic [ref=e349]:
+                    - generic [ref=e350]: +$500
+                    - button "Invitar" [ref=e351] [cursor=pointer]:
+                      - text: Invitar
+                      - img [ref=e352]
+                - generic [ref=e354]:
+                  - generic [ref=e355]:
+                    - img [ref=e357]
+                    - generic [ref=e360]:
+                      - heading "Revisa materiales" [level=4] [ref=e361]
+                      - paragraph [ref=e362]: Explora materiales que pueden facilitar tu día a día
+                  - generic [ref=e363]:
+                    - generic [ref=e364]: +$500
+                    - button "Explorar" [ref=e365] [cursor=pointer]:
+                      - text: Explorar
+                      - img [ref=e366]
+                - generic [ref=e368]:
+                  - generic [ref=e369]:
+                    - img [ref=e371]
+                    - generic [ref=e374]:
+                      - heading "Responde preguntas" [level=4] [ref=e375]
+                      - paragraph [ref=e376]: Responde preguntas de pacientes y posiciónate como experto
+                  - generic [ref=e377]:
+                    - generic [ref=e378]: +$500
+                    - button "Responder" [ref=e379] [cursor=pointer]:
+                      - text: Responder
+                      - img [ref=e380]
+          - generic [ref=e382]:
+            - generic [ref=e387]:
+              - generic [ref=e388]:
+                - img "Cristóbal Tagle Morales" [ref=e391]
+                - generic [ref=e392]:
+                  - heading "¡Hola, Cristóbal! 👋" [level=1] [ref=e393]
+                  - generic [ref=e395]: "🌱 DentalLevel: Principiante"
+              - generic [ref=e396]:
+                - link "Calendario" [ref=e397] [cursor=pointer]:
+                  - /url: /dashboard/calendar
+                  - img [ref=e398]
+                  - generic [ref=e400]: Calendario
+                - link "Pacientes" [ref=e401] [cursor=pointer]:
+                  - /url: /dashboard/patients
+                  - img [ref=e402]
+                  - generic [ref=e407]: Pacientes
+            - generic [ref=e408]:
+              - generic [ref=e409]:
+                - generic [ref=e410]: Perfil profesional
+                - generic [ref=e411]: 7/11 completadas
+              - progressbar [ref=e413]
+              - paragraph [ref=e416]:
+                - text: Completa tu perfil para mejorar tu DentalLevel y que más pacientes te encuentren →
+                - link "Completar perfil" [ref=e417] [cursor=pointer]:
+                  - /url: /dashboard/profile
+          - generic [ref=e418]:
+            - generic [ref=e421]:
+              - generic [ref=e422]:
+                - img [ref=e423]
+                - generic [ref=e425]: 🌱
+              - generic [ref=e426]: Principiante
+              - generic [ref=e427]: DentalLevel
+            - generic [ref=e430]:
+              - generic [ref=e431]:
+                - img [ref=e432]
+                - img [ref=e437]
+              - generic [ref=e439]: "2"
+              - generic [ref=e440]: Pacientes Activos
+            - generic [ref=e443]:
+              - generic [ref=e444]:
+                - img [ref=e445]
+                - img [ref=e449]
+              - generic [ref=e451]: "2"
+              - generic [ref=e452]: Atendidos este mes
+            - generic [ref=e455]:
+              - generic [ref=e456]:
+                - img [ref=e457]
+                - img [ref=e459]
+              - generic [ref=e462]: $0
+              - generic [ref=e463]: Ingresos del mes
+          - generic [ref=e464]:
+            - generic [ref=e465]:
+              - generic [ref=e467]:
+                - generic [ref=e468]:
+                  - heading "Próximas Citas" [level=2] [ref=e469]:
+                    - img [ref=e470]
+                    - text: Próximas Citas
+                  - link "Ver todas" [ref=e472] [cursor=pointer]:
+                    - /url: /dashboard/calendar
+                    - text: Ver todas
+                    - img [ref=e473]
+                - generic [ref=e475]:
+                  - generic [ref=e479]:
+                    - generic [ref=e480]:
+                      - generic [ref=e481]: Hoy
+                      - generic [ref=e482]: 16:00
+                    - generic [ref=e483]:
+                      - generic [ref=e484]:
+                        - heading "Danissa Klagges Romero" [level=4] [ref=e485]
+                        - generic [ref=e486]:
+                          - img [ref=e487]
+                          - text: Presencial
+                      - paragraph [ref=e490]:
+                        - img [ref=e491]
+                        - text: Agendado
+                    - link [ref=e494] [cursor=pointer]:
+                      - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                      - img [ref=e495]
+                  - generic [ref=e500]:
+                    - generic [ref=e501]:
+                      - generic [ref=e502]: lunes 20
+                      - generic [ref=e503]: 12:00
+                    - generic [ref=e504]:
+                      - generic [ref=e505]:
+                        - heading "Danissa Klagges Romero" [level=4] [ref=e506]
+                        - generic [ref=e507]:
+                          - img [ref=e508]
+                          - text: Presencial
+                      - paragraph [ref=e511]:
+                        - img [ref=e512]
+                        - text: Agendado
+                    - link [ref=e515] [cursor=pointer]:
+                      - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                      - img [ref=e516]
+                  - generic [ref=e521]:
+                    - generic [ref=e522]:
+                      - generic [ref=e523]: lunes 20
+                      - generic [ref=e524]: 14:00
+                    - generic [ref=e525]:
+                      - generic [ref=e526]:
+                        - heading "Danissa Klagges Romero" [level=4] [ref=e527]
+                        - generic [ref=e528]:
+                          - img [ref=e529]
+                          - text: Presencial
+                      - paragraph [ref=e532]:
+                        - img [ref=e533]
+                        - text: Agendado
+                    - link [ref=e536] [cursor=pointer]:
+                      - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                      - img [ref=e537]
+                  - generic [ref=e542]:
+                    - generic [ref=e543]:
+                      - generic [ref=e544]: sábado 2
+                      - generic [ref=e545]: 12:00
+                    - generic [ref=e546]:
+                      - generic [ref=e547]:
+                        - heading "Danissa Klagges Romero" [level=4] [ref=e548]
+                        - generic [ref=e549]:
+                          - img [ref=e550]
+                          - text: Presencial
+                      - paragraph [ref=e553]:
+                        - img [ref=e554]
+                        - text: Agendado
+                    - link [ref=e557] [cursor=pointer]:
+                      - /url: /dashboard/patients/76b552c3-1b6a-43a1-8b84-16c0a7f6d37b/clinical-history
+                      - img [ref=e558]
+              - generic [ref=e560]:
+                - heading "Acceso Rápido" [level=3] [ref=e561]
+                - generic [ref=e562]:
+                  - link "Mi Agenda Gestionar citas" [ref=e564] [cursor=pointer]:
+                    - /url: /dashboard/calendar
+                    - img [ref=e566]
+                    - generic [ref=e568]: Mi Agenda
+                    - generic [ref=e569]: Gestionar citas
+                  - link "Mis Pacientes Ver expedientes" [ref=e571] [cursor=pointer]:
+                    - /url: /dashboard/patients
+                    - img [ref=e573]
+                    - generic [ref=e578]: Mis Pacientes
+                    - generic [ref=e579]: Ver expedientes
+                  - link "Perfil Público Ver mi landing" [ref=e581] [cursor=pointer]:
+                    - /url: /crst-bal-tagle-morales
+                    - img [ref=e583]
+                    - generic [ref=e586]: Perfil Público
+                    - generic [ref=e587]: Ver mi landing
+                  - link "Reportes Generar informes" [ref=e589] [cursor=pointer]:
+                    - /url: /dashboard/reports
+                    - img [ref=e591]
+                    - generic [ref=e594]: Reportes
+                    - generic [ref=e595]: Generar informes
+                  - link "Materiales Mis recursos" [ref=e597] [cursor=pointer]:
+                    - /url: /dashboard/profile?tab=docs
+                    - img [ref=e599]
+                    - generic [ref=e602]: Materiales
+                    - generic [ref=e603]: Mis recursos
+                  - link "DentalLevel Mi reputación" [ref=e605] [cursor=pointer]:
+                    - /url: /dashboard/profile?tab=dentallevel
+                    - img [ref=e607]
+                    - generic [ref=e610]: DentalLevel
+                    - generic [ref=e611]: Mi reputación
+                  - link "Invitaciones Invitar colegas" [ref=e613] [cursor=pointer]:
+                    - /url: /dashboard/profile?tab=invitations
+                    - img [ref=e615]
+                    - generic [ref=e619]: Invitaciones
+                    - generic [ref=e620]: Invitar colegas
+                  - button "Reportar problema Soporte técnico" [ref=e622] [cursor=pointer]:
+                    - img [ref=e624]
+                    - generic [ref=e626]: Reportar problema
+                    - generic [ref=e627]: Soporte técnico
+            - generic [ref=e628]:
+              - generic [ref=e629]:
+                - heading "Pendientes (1)" [level=3] [ref=e631]:
+                  - img [ref=e632]
+                  - text: Pendientes (1)
+                - button "1 paciente sin próxima cita" [ref=e636] [cursor=pointer]:
+                  - img [ref=e638]
+                  - generic [ref=e640]: 1 paciente sin próxima cita
+                  - img [ref=e641]
+              - generic [ref=e643]:
+                - generic [ref=e645]:
+                  - heading "Blog y Comunidad" [level=3] [ref=e646]:
+                    - img [ref=e647]
+                    - text: Blog y Comunidad
+                  - generic [ref=e652]: Visibilidad
+                - generic [ref=e653]:
+                  - generic [ref=e654]:
+                    - generic [ref=e655]:
+                      - generic [ref=e656]:
+                        - img [ref=e658]
+                        - generic [ref=e660]: "0"
+                        - generic [ref=e661]: Preguntas Nuevas
+                      - generic [ref=e662]:
+                        - img [ref=e663]
+                        - generic [ref=e667]: "0"
+                        - generic [ref=e668]: En Revisión
+                      - generic [ref=e669]:
+                        - img [ref=e670]
+                        - generic [ref=e674]: "0"
+                        - generic [ref=e675]: Publicados
+                    - generic [ref=e676]:
+                      - button "Responder Preguntas" [ref=e677] [cursor=pointer]:
+                        - generic [ref=e678]:
+                          - img [ref=e679]
+                          - text: Responder Preguntas
+                        - img [ref=e681]
+                      - button "Mis Artículos" [ref=e683] [cursor=pointer]:
+                        - generic [ref=e684]:
+                          - img [ref=e685]
+                          - text: Mis Artículos
+                        - img [ref=e690]
+                  - generic [ref=e692]:
+                    - img [ref=e693]
+                    - paragraph [ref=e695]: "\"Tu dedicación transforma vidas\""
+                    - paragraph [ref=e696]: Cada sesión es un paso hacia el bienestar de tus pacientes.
+  - button [ref=e7] [cursor=pointer]:
+    - img [ref=e9]
+  - generic [ref=e91]:
+    - generic [ref=e93]:
+      - img [ref=e95]
+      - generic [ref=e97]:
+        - heading "Configuración de Cookies" [level=3] [ref=e98]
+        - paragraph [ref=e99]:
+          - text: Usamos cookies para mejorar tu experiencia. Puedes elegir qué categorías aceptar. Consulta nuestra
+          - link "política de cookies" [ref=e100] [cursor=pointer]:
+            - /url: /legal/politica-cookies
+          - text: .
+    - generic [ref=e101]:
+      - button "Personalizar" [ref=e102] [cursor=pointer]:
+        - img [ref=e103]
+        - text: Personalizar
+      - button "Solo esenciales" [ref=e105] [cursor=pointer]
+      - button "Aceptar todas" [ref=e106] [cursor=pointer]
+  - generic [ref=e698]:
+    - button [ref=e699] [cursor=pointer]:
+      - img [ref=e700]
+    - generic [ref=e703]:
+      - button [ref=e704] [cursor=pointer]:
+        - img [ref=e705]
+      - generic [ref=e708]:
+        - img [ref=e710]
+        - generic [ref=e714]:
+          - heading "Tu opinión vale $30.000" [level=3] [ref=e715]
+          - paragraph [ref=e716]: Cuéntanos tu experiencia con DentalSpot
+    - generic [ref=e717]:
+      - generic [ref=e718]:
+        - img [ref=e719]
+        - paragraph [ref=e723]:
+          - text: Responde y recibe
+          - strong [ref=e724]: $30.000 en tu wallet
+          - text: para comprar materiales en el Marketplace.
+      - generic [ref=e725]:
+        - paragraph [ref=e726]: ¿Cómo calificarías DentalSpot?
+        - generic [ref=e727]:
+          - button [ref=e728] [cursor=pointer]:
+            - img [ref=e729]
+          - button [ref=e731] [cursor=pointer]:
+            - img [ref=e732]
+          - button [ref=e734] [cursor=pointer]:
+            - img [ref=e735]
+          - button [ref=e737] [cursor=pointer]:
+            - img [ref=e738]
+          - button [ref=e740] [cursor=pointer]:
+            - img [ref=e741]
+      - generic [ref=e743]:
+        - generic [ref=e744]: ¿Qué podríamos mejorar? (opcional)
+        - textbox "Tu feedback nos ayuda a construir una mejor plataforma..." [ref=e745]
+      - button "Enviar y recibir $30.000" [disabled]:
+        - img
+        - text: Enviar y recibir $30.000
+      - button "Recordarme más tarde" [ref=e746] [cursor=pointer]
+  - region "Notifications (F8)":
+    - list

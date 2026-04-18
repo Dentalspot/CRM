@@ -1,0 +1,6 @@
+- generic [ref=e2]:
+  - img [ref=e4]
+  - button [ref=e7] [cursor=pointer]:
+    - img [ref=e9]
+  - region "Notifications (F8)":
+    - list

@@ -1,0 +1,182 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link:
+            - /url: /
+            - generic:
+              - img
+              - generic: DentalSpot
+        - navigation:
+          - generic:
+            - heading [level=3]: General
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/patient
+                    - generic:
+                      - img
+                      - generic: Dashboard
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/my-agenda
+                    - generic:
+                      - img
+                      - generic: Mi Agenda
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/patient/my-progress
+                    - generic:
+                      - img
+                      - generic: Mi Progreso
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/questions
+                    - generic:
+                      - img
+                      - generic: Mis Preguntas
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/patient/clinical-file
+                    - generic:
+                      - img
+                      - generic: Mi Ficha Clínica
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/patient/access-history
+                    - generic:
+                      - img
+                      - generic: Historial de Accesos
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/chatbot
+                    - generic:
+                      - img
+                      - generic: Asistente Virtual
+          - generic:
+            - heading [level=3]: Cuenta
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/profile
+                    - generic:
+                      - img
+                      - generic: Mi Perfil
+        - generic:
+          - button:
+            - img
+            - generic: Cerrar Sesión
+          - generic:
+            - generic: © 2026 DentalSpot
+      - generic:
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=1]: Hola, pruebatin.
+                - paragraph: Todo en orden, esto es lo que viene.
+              - generic:
+                - img
+                - text: Sin citas agendadas
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - img
+                      - paragraph: Aún no tienes sesiones agendadas.
+                      - paragraph: Tu terapeuta puede ayudarte a programar la siguiente, o puedes buscar un especialista.
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - paragraph: Hoy no tienes ejercicios pendientes.
+                      - paragraph: ¡Aprovecha para descansar! Tu próximo ejercicio aparecerá aquí cuando tu terapeuta lo indique.
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - paragraph: Tu progreso aparecerá aquí a medida que avances.
+                      - paragraph: Sesiones completadas, actividades y logros se irán sumando automáticamente.
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=3]:
+                      - img
+                      - text: Mi Equipo Tratante
+                  - generic:
+                    - paragraph: Aún no tienes un equipo tratante asignado.
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                      - paragraph: Sin documentos aún
+                      - paragraph: Tus informes y certificados aparecerán aquí cuando estén listos.
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic: Mis Preguntas
+                      - paragraph: ¿Tienes dudas sobre tu tratamiento? Envía una pregunta y tu terapeuta te responderá.
+                      - generic:
+                        - link:
+                          - /url: /dashboard/questions
+                          - img
+                          - text: Hacer una pregunta
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - img
+                        - generic: ¿Necesitas ayuda?
+                      - paragraph: Si tienes dudas sobre tu tratamiento, tus citas o el uso de la plataforma, estamos aquí.
+                      - generic:
+                        - button:
+                          - img
+                          - text: Abrir chat de ayuda
+                        - button:
+                          - img
+                          - text: Reportar un problema
+                        - link:
+                          - /url: /ayuda
+                          - img
+                          - text: Preguntas frecuentes
+            - button [ref=e144] [cursor=pointer]:
+              - img [ref=e146]
+    - button [ref=e47] [cursor=pointer]:
+      - img [ref=e49]
+    - list
+  - dialog [ref=e152]:
+    - generic [ref=e153]:
+      - heading "Bienvenido/a, pruebatin!" [level=2] [ref=e154]
+      - paragraph [ref=e155]: Te preparamos 2 pasos rápidos para sacar el máximo provecho de DentalSpot.
+    - generic [ref=e157]:
+      - img [ref=e159]
+      - generic [ref=e162]:
+        - heading "Completa tus datos personales" [level=3] [ref=e163]
+        - paragraph [ref=e164]: Agrega tu información de contacto y datos médicos relevantes para que tu dentista tenga todo el contexto.
+    - generic [ref=e165]:
+      - button "Saltar todo" [active] [ref=e166] [cursor=pointer]
+      - generic [ref=e167]:
+        - button "Completar Perfil" [ref=e168] [cursor=pointer]:
+          - text: Completar Perfil
+          - img [ref=e169]
+        - button "Siguiente" [ref=e171] [cursor=pointer]
+    - button "Close" [ref=e172] [cursor=pointer]:
+      - img [ref=e173]
+      - generic [ref=e176]: Close

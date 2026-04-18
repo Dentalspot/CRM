@@ -1,0 +1,271 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - link "DentalSpot DentalSpot" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]:
+          - img "DentalSpot" [ref=e8]
+          - generic [ref=e9]: DentalSpot
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - heading "General" [level=3] [ref=e12]
+          - list [ref=e13]:
+            - listitem [ref=e14]:
+              - link "Dashboard" [ref=e16] [cursor=pointer]:
+                - /url: /dashboard/therapist
+                - generic [ref=e17]:
+                  - img [ref=e18]
+                  - generic [ref=e21]: Dashboard
+            - listitem [ref=e22]:
+              - link "Mi Perfil" [ref=e24] [cursor=pointer]:
+                - /url: /dashboard/profile
+                - generic [ref=e25]:
+                  - img [ref=e26]
+                  - generic [ref=e29]: Mi Perfil
+            - listitem [ref=e30]:
+              - link "Calendario" [ref=e32] [cursor=pointer]:
+                - /url: /dashboard/calendar
+                - generic [ref=e33]:
+                  - img [ref=e34]
+                  - generic [ref=e36]: Calendario
+            - listitem [ref=e37]:
+              - link "Mis Pacientes" [ref=e39] [cursor=pointer]:
+                - /url: /dashboard/patients
+                - generic [ref=e40]:
+                  - img [ref=e41]
+                  - generic [ref=e46]: Mis Pacientes
+            - listitem [ref=e47]:
+              - link "Tienda" [ref=e49] [cursor=pointer]:
+                - /url: /dashboard/marketplace
+                - generic [ref=e50]:
+                  - img [ref=e51]
+                  - generic [ref=e56]: Tienda
+            - listitem [ref=e57]:
+              - link "Blog & Preguntas" [ref=e59] [cursor=pointer]:
+                - /url: /dashboard/therapist/questions
+                - generic [ref=e60]:
+                  - img [ref=e61]
+                  - generic [ref=e64]: Blog & Preguntas
+        - generic [ref=e65]:
+          - heading "Evaluaciones Clínicas" [level=3] [ref=e66]
+          - list [ref=e67]:
+            - listitem [ref=e68]:
+              - link "Odontograma" [ref=e70] [cursor=pointer]:
+                - /url: /dashboard/odontograma
+                - generic [ref=e71]:
+                  - img [ref=e72]
+                  - generic [ref=e76]: Odontograma
+        - generic [ref=e77]:
+          - heading "Herramientas IA" [level=3] [ref=e78]
+          - list [ref=e79]:
+            - listitem [ref=e80]:
+              - link "Notiz - Notas Auto." [ref=e82] [cursor=pointer]:
+                - /url: /dashboard/therapist/notiz
+                - generic [ref=e83]:
+                  - img [ref=e84]
+                  - generic [ref=e87]: Notiz - Notas Auto.
+            - listitem [ref=e88]:
+              - link "Crear Plantilla" [ref=e90] [cursor=pointer]:
+                - /url: /dashboard/therapist/create-template
+                - generic [ref=e91]:
+                  - img [ref=e92]
+                  - generic [ref=e94]: Crear Plantilla
+            - listitem [ref=e95]:
+              - link "Evidencia Científica" [ref=e97] [cursor=pointer]:
+                - /url: /dashboard/therapist/evidence-search
+                - generic [ref=e98]:
+                  - img [ref=e99]
+                  - generic [ref=e102]: Evidencia Científica
+            - listitem [ref=e103]:
+              - link "Asistente Virtual" [ref=e105] [cursor=pointer]:
+                - /url: /dashboard/chatbot
+                - generic [ref=e106]:
+                  - img [ref=e107]
+                  - generic [ref=e109]: Asistente Virtual
+      - generic [ref=e110]:
+        - button "Cerrar Sesión" [ref=e111] [cursor=pointer]:
+          - img [ref=e112]
+          - generic [ref=e115]: Cerrar Sesión
+        - generic [ref=e117]: © 2026 DentalSpot
+    - generic [ref=e118]:
+      - generic [ref=e120]:
+        - generic:
+          - generic:
+            - heading [level=2]
+        - combobox [ref=e135] [cursor=pointer]:
+          - img [ref=e136]
+          - generic: Seleccionar organización
+          - img [ref=e140]
+      - main [ref=e123]:
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - button "Volver" [ref=e144] [cursor=pointer]:
+              - img [ref=e145]
+              - text: Volver
+            - heading "Ficha del Paciente" [level=1] [ref=e147]
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - img [ref=e150]
+              - generic [ref=e152]:
+                - heading "Consentimiento Informado Pendiente" [level=4] [ref=e153]
+                - paragraph [ref=e154]: La Ley 20.584 requiere consentimiento informado antes de iniciar tratamiento. El paciente debe firmar el consentimiento para continuar.
+            - button "Firmar ahora" [ref=e155] [cursor=pointer]:
+              - img [ref=e156]
+              - text: Firmar ahora
+          - generic [ref=e160]:
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - generic [ref=e166]: PB
+                - heading "pruebatin bombín" [level=2] [ref=e167]
+                - generic [ref=e168]:
+                  - generic [ref=e169]: años
+                  - generic [ref=e170]: Privado
+                - generic [ref=e171]:
+                  - generic [ref=e172]:
+                    - img [ref=e173]
+                    - generic [ref=e176]: 8.172.546-1
+                  - generic [ref=e177]:
+                    - img [ref=e178]
+                    - generic [ref=e180]: Sin teléfono
+                  - generic [ref=e181]:
+                    - img [ref=e182]
+                    - generic [ref=e185]: bombinpruebatin@gmail.com
+              - button "Agendar Cita" [ref=e186] [cursor=pointer]:
+                - img [ref=e187]
+                - text: Agendar Cita
+              - generic [ref=e189]:
+                - text: Próximas Citas
+                - generic [ref=e190]:
+                  - img [ref=e191]
+                  - generic [ref=e193]: Sin próxima cita agendada
+              - generic [ref=e194]:
+                - generic [ref=e195]:
+                  - generic [ref=e196]: Notas Rápidas
+                  - button "Agregar nueva" [ref=e197] [cursor=pointer]:
+                    - img [ref=e198]
+                    - text: Agregar nueva
+                - generic [ref=e199]: Sin notas rápidas
+            - generic [ref=e201]:
+              - tablist [ref=e203]:
+                - tab "Datos del Paciente" [selected] [ref=e204] [cursor=pointer]:
+                  - text: Datos
+                  - generic [ref=e205]: del Paciente
+                - tab "Historial Clínico" [ref=e206] [cursor=pointer]:
+                  - text: Historial
+                  - generic [ref=e207]: Clínico
+                - tab "Planificar" [ref=e208] [cursor=pointer]
+                - tab "Pagos" [ref=e209] [cursor=pointer]
+                - tab "Odontograma" [ref=e210] [cursor=pointer]
+              - tabpanel "Datos del Paciente" [ref=e211]:
+                - generic [ref=e212]:
+                  - generic [ref=e214]:
+                    - generic [ref=e216] [cursor=pointer]:
+                      - heading "1 Identificación del Paciente" [level=3] [ref=e217]:
+                        - generic [ref=e218]: "1"
+                        - text: Identificación del Paciente
+                      - generic [ref=e219]:
+                        - button "Editar" [ref=e220]:
+                          - img [ref=e221]
+                          - text: Editar
+                        - img [ref=e224]
+                    - generic [ref=e228]:
+                      - generic [ref=e229]:
+                        - text: Nombre y Apellidos
+                        - textbox "Nombre y Apellidos" [ref=e230]:
+                          - /placeholder: Nombre completo del paciente
+                          - text: pruebatin bombín
+                      - generic [ref=e231]:
+                        - text: RUT
+                        - textbox "RUT" [ref=e232]:
+                          - /placeholder: 12.345.678-9
+                          - text: 8.172.546-1
+                      - generic [ref=e233]:
+                        - text: Fecha de Nacimiento
+                        - button "Seleccionar fecha" [disabled]:
+                          - img
+                          - text: Seleccionar fecha
+                      - generic [ref=e234]:
+                        - text: Sexo
+                        - combobox [disabled] [ref=e235]:
+                          - generic: Seleccione...
+                          - img [ref=e236]
+                      - generic [ref=e238]:
+                        - text: Teléfono
+                        - generic [ref=e239]:
+                          - generic [ref=e240]: "+569"
+                          - textbox "Teléfono" [ref=e241]:
+                            - /placeholder: 1234 5678
+                      - generic [ref=e242]:
+                        - text: Email
+                        - textbox "Email" [ref=e243]:
+                          - /placeholder: correo@ejemplo.com
+                          - text: bombinpruebatin@gmail.com
+                      - generic [ref=e244]:
+                        - text: Previsión
+                        - radiogroup [ref=e245]:
+                          - generic [ref=e246]:
+                            - radio "Privado" [checked] [disabled] [ref=e247]:
+                              - img [ref=e249]
+                            - generic [ref=e251] [cursor=pointer]: Privado
+                          - generic [ref=e252]:
+                            - radio "Fonasa" [disabled] [ref=e253]
+                            - generic [ref=e254] [cursor=pointer]: Fonasa
+                          - generic [ref=e255]:
+                            - radio "Convenio" [disabled] [ref=e256]
+                            - generic [ref=e257] [cursor=pointer]: Convenio
+                      - generic [ref=e258]:
+                        - text: Dirección
+                        - textbox "Dirección" [ref=e259]:
+                          - /placeholder: Dirección del paciente
+                      - generic [ref=e260]:
+                        - text: Contacto de Emergencia
+                        - generic [ref=e261]:
+                          - textbox "Nombre del contacto" [ref=e262]
+                          - generic [ref=e263]:
+                            - generic [ref=e264]: "+569"
+                            - textbox "1234 5678" [ref=e265]
+                  - generic [ref=e269] [cursor=pointer]:
+                    - heading "2 Antecedentes de Salud" [level=3] [ref=e270]:
+                      - generic [ref=e271]: "2"
+                      - text: Antecedentes de Salud
+                    - generic [ref=e272]:
+                      - button "Editar" [ref=e273]:
+                        - img [ref=e274]
+                        - text: Editar
+                      - img [ref=e277]
+                  - generic [ref=e279]:
+                    - heading "Diagnósticos Odontológicos CIE-11" [level=3] [ref=e281]:
+                      - img [ref=e282]
+                      - text: Diagnósticos Odontológicos
+                      - generic [ref=e286]: CIE-11
+                    - generic [ref=e287]:
+                      - generic [ref=e288]:
+                        - text: Agregar Diagnóstico
+                        - generic [ref=e289]:
+                          - button "Todos" [ref=e290] [cursor=pointer]
+                          - button "CIE-11" [ref=e291] [cursor=pointer]
+                        - generic [ref=e292]:
+                          - img [ref=e293]
+                          - textbox "Buscar diagnóstico por código o nombre..." [ref=e296]
+                      - generic [ref=e297]:
+                        - text: Notas Adicionales del Diagnóstico
+                        - textbox "Notas Adicionales del Diagnóstico" [ref=e298]:
+                          - /placeholder: Observaciones clínicas adicionales...
+                  - generic [ref=e302] [cursor=pointer]:
+                    - heading "5 Evaluaciones" [level=3] [ref=e303]:
+                      - generic [ref=e304]: "5"
+                      - text: Evaluaciones
+                    - generic [ref=e305]:
+                      - button "Editar" [ref=e306]:
+                        - img [ref=e307]
+                        - text: Editar
+                      - img [ref=e310]
+                - generic [ref=e315] [cursor=pointer]:
+                  - heading "3 Odontograma" [level=3] [ref=e316]:
+                    - generic [ref=e317]: "3"
+                    - text: Odontograma
+                  - img [ref=e319]
+  - button [ref=e128] [cursor=pointer]:
+    - img [ref=e130]
+  - region "Notifications (F8)":
+    - list

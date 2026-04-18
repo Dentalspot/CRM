@@ -1,0 +1,317 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - link "DentalSpot DentalSpot" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]:
+          - img "DentalSpot" [ref=e8]
+          - generic [ref=e9]: DentalSpot
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - heading "General" [level=3] [ref=e12]
+          - list [ref=e13]:
+            - listitem [ref=e14]:
+              - link "Dashboard" [ref=e16] [cursor=pointer]:
+                - /url: /dashboard/therapist
+                - generic [ref=e17]:
+                  - img [ref=e18]
+                  - generic [ref=e21]: Dashboard
+            - listitem [ref=e22]:
+              - link "Mi Perfil" [ref=e24] [cursor=pointer]:
+                - /url: /dashboard/profile
+                - generic [ref=e25]:
+                  - img [ref=e26]
+                  - generic [ref=e29]: Mi Perfil
+            - listitem [ref=e30]:
+              - link "Calendario" [ref=e32] [cursor=pointer]:
+                - /url: /dashboard/calendar
+                - generic [ref=e33]:
+                  - img [ref=e34]
+                  - generic [ref=e36]: Calendario
+            - listitem [ref=e37]:
+              - link "Mis Pacientes" [ref=e39] [cursor=pointer]:
+                - /url: /dashboard/patients
+                - generic [ref=e40]:
+                  - img [ref=e41]
+                  - generic [ref=e46]: Mis Pacientes
+            - listitem [ref=e47]:
+              - link "Tienda" [ref=e49] [cursor=pointer]:
+                - /url: /dashboard/marketplace
+                - generic [ref=e50]:
+                  - img [ref=e51]
+                  - generic [ref=e56]: Tienda
+            - listitem [ref=e57]:
+              - link "Blog & Preguntas" [ref=e59] [cursor=pointer]:
+                - /url: /dashboard/therapist/questions
+                - generic [ref=e60]:
+                  - img [ref=e61]
+                  - generic [ref=e64]: Blog & Preguntas
+        - generic [ref=e65]:
+          - heading "Evaluaciones Clínicas" [level=3] [ref=e66]
+          - list [ref=e67]:
+            - listitem [ref=e68]:
+              - link "Odontograma" [ref=e70] [cursor=pointer]:
+                - /url: /dashboard/odontograma
+                - generic [ref=e71]:
+                  - img [ref=e72]
+                  - generic [ref=e76]: Odontograma
+        - generic [ref=e77]:
+          - heading "Herramientas IA" [level=3] [ref=e78]
+          - list [ref=e79]:
+            - listitem [ref=e80]:
+              - link "Notiz - Notas Auto." [ref=e82] [cursor=pointer]:
+                - /url: /dashboard/therapist/notiz
+                - generic [ref=e83]:
+                  - img [ref=e84]
+                  - generic [ref=e87]: Notiz - Notas Auto.
+            - listitem [ref=e88]:
+              - link "Crear Plantilla" [ref=e90] [cursor=pointer]:
+                - /url: /dashboard/therapist/create-template
+                - generic [ref=e91]:
+                  - img [ref=e92]
+                  - generic [ref=e94]: Crear Plantilla
+            - listitem [ref=e95]:
+              - link "Evidencia Científica" [ref=e97] [cursor=pointer]:
+                - /url: /dashboard/therapist/evidence-search
+                - generic [ref=e98]:
+                  - img [ref=e99]
+                  - generic [ref=e102]: Evidencia Científica
+            - listitem [ref=e103]:
+              - link "Asistente Virtual" [ref=e105] [cursor=pointer]:
+                - /url: /dashboard/chatbot
+                - generic [ref=e106]:
+                  - img [ref=e107]
+                  - generic [ref=e109]: Asistente Virtual
+      - generic [ref=e110]:
+        - button "Cerrar Sesión" [ref=e111] [cursor=pointer]:
+          - img [ref=e112]
+          - generic [ref=e115]: Cerrar Sesión
+        - generic [ref=e117]: © 2026 DentalSpot
+    - generic [ref=e118]:
+      - generic [ref=e120]:
+        - generic:
+          - generic:
+            - heading [level=2]
+        - combobox [ref=e135] [cursor=pointer]:
+          - img [ref=e136]
+          - generic: Odontología Los Álamos
+          - img [ref=e140]
+      - main [ref=e123]:
+        - generic [ref=e1407]:
+          - generic [ref=e1408]:
+            - button "Volver" [ref=e1409] [cursor=pointer]:
+              - img [ref=e1410]
+              - text: Volver
+            - heading "Ficha del Paciente" [level=1] [ref=e1412]
+          - generic [ref=e1413]:
+            - generic [ref=e1414]:
+              - img [ref=e1415]
+              - generic [ref=e1417]:
+                - heading "Consentimiento Informado Pendiente" [level=4] [ref=e1418]
+                - paragraph [ref=e1419]: La Ley 20.584 requiere consentimiento informado antes de iniciar tratamiento. El paciente debe firmar el consentimiento para continuar.
+            - button "Firmar ahora" [ref=e1420] [cursor=pointer]:
+              - img [ref=e1421]
+              - text: Firmar ahora
+          - generic [ref=e1425]:
+            - generic [ref=e1428]:
+              - generic [ref=e1429]:
+                - generic [ref=e1431]: CM
+                - heading "Cristobal Tagle Morales" [level=2] [ref=e1432]
+                - generic [ref=e1433]:
+                  - generic [ref=e1434]: 35 años
+                  - generic [ref=e1435]: Convenio
+                - generic [ref=e1436]:
+                  - generic [ref=e1437]:
+                    - img [ref=e1438]
+                    - generic [ref=e1441]: 17.584.259-4
+                  - generic [ref=e1442]:
+                    - img [ref=e1443]
+                    - generic [ref=e1445]: "56976163232"
+                  - generic [ref=e1446]:
+                    - img [ref=e1447]
+                    - generic [ref=e1450]: cristobal.tagle.morales@gmail.com
+              - button "Agendar Cita" [ref=e1451] [cursor=pointer]:
+                - img [ref=e1452]
+                - text: Agendar Cita
+              - generic [ref=e1454]:
+                - text: Próximas Citas
+                - generic [ref=e1455]:
+                  - img [ref=e1456]
+                  - generic [ref=e1458]: Sin próxima cita agendada
+              - generic [ref=e1459]:
+                - generic [ref=e1460]:
+                  - generic [ref=e1461]: Notas Rápidas
+                  - button "Agregar nueva" [ref=e1462] [cursor=pointer]:
+                    - img [ref=e1463]
+                    - text: Agregar nueva
+                - generic [ref=e1464]: Sin notas rápidas
+            - generic [ref=e1466]:
+              - tablist [ref=e1468]:
+                - tab "Datos del Paciente" [selected] [ref=e1469] [cursor=pointer]:
+                  - text: Datos
+                  - generic [ref=e1470]: del Paciente
+                - tab "Historial Clínico" [ref=e1471] [cursor=pointer]:
+                  - text: Historial
+                  - generic [ref=e1472]: Clínico
+                - tab "Planificar" [ref=e1473] [cursor=pointer]
+                - tab "Pagos" [ref=e1474] [cursor=pointer]
+                - tab "Odontograma" [ref=e1475] [cursor=pointer]
+              - tabpanel "Datos del Paciente" [ref=e1476]:
+                - generic [ref=e1477]:
+                  - generic [ref=e1479]:
+                    - generic [ref=e1481] [cursor=pointer]:
+                      - heading "1 Identificación del Paciente" [level=3] [ref=e1482]:
+                        - generic [ref=e1483]: "1"
+                        - text: Identificación del Paciente
+                      - generic [ref=e1484]:
+                        - button "Editar" [ref=e1485]:
+                          - img [ref=e1486]
+                          - text: Editar
+                        - img [ref=e1489]
+                    - generic [ref=e1493]:
+                      - generic [ref=e1494]:
+                        - text: Nombre y Apellidos
+                        - textbox "Nombre y Apellidos" [ref=e1495]:
+                          - /placeholder: Nombre completo del paciente
+                          - text: Cristobal Tagle Morales
+                      - generic [ref=e1496]:
+                        - text: RUT
+                        - textbox "RUT" [ref=e1497]:
+                          - /placeholder: 12.345.678-9
+                          - text: 17.584.259-4
+                      - generic [ref=e1498]:
+                        - generic [ref=e1499]:
+                          - text: Fecha de Nacimiento
+                          - generic [ref=e1500]: 35 años
+                        - button "14 de noviembre, 1990" [disabled]:
+                          - img
+                          - text: 14 de noviembre, 1990
+                      - generic [ref=e1501]:
+                        - text: Sexo
+                        - combobox [disabled] [ref=e1502]:
+                          - generic: Masculino
+                          - img [ref=e1503]
+                      - generic [ref=e1505]:
+                        - text: Teléfono
+                        - generic [ref=e1506]:
+                          - generic [ref=e1507]: "+569"
+                          - textbox "Teléfono" [ref=e1508]:
+                            - /placeholder: 1234 5678
+                            - text: "76163232"
+                      - generic [ref=e1509]:
+                        - text: Email
+                        - textbox "Email" [ref=e1510]:
+                          - /placeholder: correo@ejemplo.com
+                          - text: cristobal.tagle.morales@gmail.com
+                      - generic [ref=e1511]:
+                        - text: Previsión
+                        - radiogroup [ref=e1512]:
+                          - generic [ref=e1513]:
+                            - radio "Privado" [disabled] [ref=e1514]
+                            - generic [ref=e1515] [cursor=pointer]: Privado
+                          - generic [ref=e1516]:
+                            - radio "Fonasa" [disabled] [ref=e1517]
+                            - generic [ref=e1518] [cursor=pointer]: Fonasa
+                          - generic [ref=e1519]:
+                            - radio "Convenio" [checked] [disabled] [ref=e1520]:
+                              - img [ref=e1522]
+                            - generic [ref=e1524] [cursor=pointer]: Convenio
+                      - generic [ref=e1525]:
+                        - text: Dirección
+                        - textbox "Dirección" [ref=e1526]:
+                          - /placeholder: Dirección del paciente
+                          - text: los pablos 2151
+                      - generic [ref=e1527]:
+                        - text: Contacto de Emergencia
+                        - generic [ref=e1528]:
+                          - textbox "Nombre del contacto" [ref=e1529]: Danissa
+                          - generic [ref=e1530]:
+                            - generic [ref=e1531]: "+569"
+                            - textbox "1234 5678" [ref=e1532]: "48003208"
+                  - generic [ref=e1536] [cursor=pointer]:
+                    - heading "2 Antecedentes de Salud" [level=3] [ref=e1537]:
+                      - generic [ref=e1538]: "2"
+                      - text: Antecedentes de Salud
+                    - generic [ref=e1539]:
+                      - button "Editar" [ref=e1540]:
+                        - img [ref=e1541]
+                        - text: Editar
+                      - img [ref=e1544]
+                  - generic [ref=e1546]:
+                    - heading "Diagnósticos Odontológicos CIE-11" [level=3] [ref=e1548]:
+                      - img [ref=e1549]
+                      - text: Diagnósticos Odontológicos
+                      - generic [ref=e1553]: CIE-11
+                    - generic [ref=e1554]:
+                      - generic [ref=e1555]:
+                        - generic [ref=e1556]:
+                          - img [ref=e1557]
+                          - generic [ref=e1559]: Hallazgos del Odontograma (8 piezas afectadas)
+                        - generic [ref=e1560]:
+                          - generic [ref=e1561]:
+                            - generic [ref=e1562]:
+                              - generic [ref=e1564]: Caries
+                              - generic [ref=e1565]: 6 piezas
+                            - generic [ref=e1566]:
+                              - generic [ref=e1567]:
+                                - generic [ref=e1568]: "1.1"
+                                - generic [ref=e1569]: (D)
+                              - generic [ref=e1570]:
+                                - generic [ref=e1571]: "1.2"
+                                - generic [ref=e1572]: (V)
+                              - generic [ref=e1573]:
+                                - generic [ref=e1574]: "1.3"
+                                - generic [ref=e1575]: (M, V)
+                              - generic [ref=e1576]:
+                                - generic [ref=e1577]: "2.5"
+                                - generic [ref=e1578]: (V)
+                              - generic [ref=e1579]:
+                                - generic [ref=e1580]: "3.5"
+                                - generic [ref=e1581]: (O)
+                              - generic [ref=e1582]:
+                                - generic [ref=e1583]: "3.7"
+                                - generic [ref=e1584]: (O)
+                          - generic [ref=e1585]:
+                            - generic [ref=e1586]:
+                              - generic [ref=e1588]: Corona
+                              - generic [ref=e1589]: 1 pieza
+                            - generic [ref=e1591]:
+                              - generic [ref=e1592]: "1.6"
+                              - generic [ref=e1593]: (D, L, M, O, V)
+                          - generic [ref=e1594]:
+                            - generic [ref=e1595]:
+                              - generic [ref=e1597]: Endodoncia
+                              - generic [ref=e1598]: 1 pieza
+                            - generic [ref=e1600]:
+                              - generic [ref=e1601]: "2.3"
+                              - generic [ref=e1602]: (D, O)
+                      - generic [ref=e1603]:
+                        - text: Agregar Diagnóstico
+                        - generic [ref=e1604]:
+                          - button "Todos" [ref=e1605] [cursor=pointer]
+                          - button "CIE-11" [ref=e1606] [cursor=pointer]
+                        - generic [ref=e1607]:
+                          - img [ref=e1608]
+                          - textbox "Buscar diagnóstico por código o nombre..." [ref=e1611]
+                      - generic [ref=e1612]:
+                        - text: Notas Adicionales del Diagnóstico
+                        - textbox "Notas Adicionales del Diagnóstico" [ref=e1613]:
+                          - /placeholder: Observaciones clínicas adicionales...
+                  - generic [ref=e1617] [cursor=pointer]:
+                    - heading "5 Evaluaciones" [level=3] [ref=e1618]:
+                      - generic [ref=e1619]: "5"
+                      - text: Evaluaciones
+                    - generic [ref=e1620]:
+                      - button "Editar" [ref=e1621]:
+                        - img [ref=e1622]
+                        - text: Editar
+                      - img [ref=e1625]
+                - generic [ref=e1630] [cursor=pointer]:
+                  - heading "3 Odontograma" [level=3] [ref=e1631]:
+                    - generic [ref=e1632]: "3"
+                    - text: Odontograma
+                  - img [ref=e1634]
+  - button [ref=e128] [cursor=pointer]:
+    - img [ref=e130]
+  - region "Notifications (F8)":
+    - list

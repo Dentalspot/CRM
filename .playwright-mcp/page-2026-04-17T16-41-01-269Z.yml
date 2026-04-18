@@ -1,0 +1,116 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - link "DentalSpot DentalSpot" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]:
+          - img "DentalSpot" [ref=e8]
+          - generic [ref=e9]: DentalSpot
+      - navigation [ref=e10]:
+        - generic [ref=e11]:
+          - heading "General" [level=3] [ref=e12]
+          - list [ref=e13]:
+            - listitem [ref=e14]:
+              - link "Dashboard" [ref=e16] [cursor=pointer]:
+                - /url: /dashboard/therapist
+                - generic [ref=e17]:
+                  - img [ref=e18]
+                  - generic [ref=e21]: Dashboard
+            - listitem [ref=e22]:
+              - link "Mi Perfil" [ref=e24] [cursor=pointer]:
+                - /url: /dashboard/profile
+                - generic [ref=e25]:
+                  - img [ref=e26]
+                  - generic [ref=e29]: Mi Perfil
+            - listitem [ref=e30]:
+              - link "Calendario" [ref=e32] [cursor=pointer]:
+                - /url: /dashboard/calendar
+                - generic [ref=e33]:
+                  - img [ref=e34]
+                  - generic [ref=e36]: Calendario
+            - listitem [ref=e37]:
+              - link "Mis Pacientes" [ref=e39] [cursor=pointer]:
+                - /url: /dashboard/patients
+                - generic [ref=e40]:
+                  - img [ref=e41]
+                  - generic [ref=e46]: Mis Pacientes
+            - listitem [ref=e47]:
+              - link "Tienda" [ref=e49] [cursor=pointer]:
+                - /url: /dashboard/marketplace
+                - generic [ref=e50]:
+                  - img [ref=e51]
+                  - generic [ref=e56]: Tienda
+            - listitem [ref=e57]:
+              - link "Blog & Preguntas" [ref=e59] [cursor=pointer]:
+                - /url: /dashboard/therapist/questions
+                - generic [ref=e60]:
+                  - img [ref=e61]
+                  - generic [ref=e64]: Blog & Preguntas
+        - generic [ref=e65]:
+          - heading "Evaluaciones Clínicas" [level=3] [ref=e66]
+          - list [ref=e67]:
+            - listitem [ref=e68]:
+              - link "Odontograma" [active] [ref=e70] [cursor=pointer]:
+                - /url: /dashboard/odontograma
+                - generic [ref=e71]:
+                  - img [ref=e72]
+                  - generic [ref=e76]: Odontograma
+        - generic [ref=e77]:
+          - heading "Herramientas IA" [level=3] [ref=e78]
+          - list [ref=e79]:
+            - listitem [ref=e80]:
+              - link "Notiz - Notas Auto." [ref=e82] [cursor=pointer]:
+                - /url: /dashboard/therapist/notiz
+                - generic [ref=e83]:
+                  - img [ref=e84]
+                  - generic [ref=e87]: Notiz - Notas Auto.
+            - listitem [ref=e88]:
+              - link "Crear Plantilla" [ref=e90] [cursor=pointer]:
+                - /url: /dashboard/therapist/create-template
+                - generic [ref=e91]:
+                  - img [ref=e92]
+                  - generic [ref=e94]: Crear Plantilla
+            - listitem [ref=e95]:
+              - link "Evidencia Científica" [ref=e97] [cursor=pointer]:
+                - /url: /dashboard/therapist/evidence-search
+                - generic [ref=e98]:
+                  - img [ref=e99]
+                  - generic [ref=e102]: Evidencia Científica
+            - listitem [ref=e103]:
+              - link "Asistente Virtual" [ref=e105] [cursor=pointer]:
+                - /url: /dashboard/chatbot
+                - generic [ref=e106]:
+                  - img [ref=e107]
+                  - generic [ref=e109]: Asistente Virtual
+      - generic [ref=e110]:
+        - button "Cerrar Sesión" [ref=e111] [cursor=pointer]:
+          - img [ref=e112]
+          - generic [ref=e115]: Cerrar Sesión
+        - generic [ref=e117]: © 2026 DentalSpot
+    - generic [ref=e118]:
+      - generic [ref=e120]:
+        - generic:
+          - generic:
+            - heading [level=2]
+        - combobox [ref=e135] [cursor=pointer]:
+          - img [ref=e136]
+          - generic: Odontología Los Álamos
+          - img [ref=e140]
+      - main [ref=e123]:
+        - generic [ref=e1636]:
+          - img [ref=e1637]
+          - heading "404" [level=1] [ref=e1639]
+          - heading "¡Ups! Página no encontrada." [level=2] [ref=e1640]
+          - paragraph [ref=e1641]: Parece que te has perdido en el ciberespacio. La página que buscas no existe o ha sido movida.
+          - generic [ref=e1642]:
+            - link "Volver al Inicio" [ref=e1643] [cursor=pointer]:
+              - /url: /
+              - img [ref=e1644]
+              - text: Volver al Inicio
+            - link "Contactar Soporte" [ref=e1647] [cursor=pointer]:
+              - /url: /contact
+          - img "Ilustración de una persona perdida mirando un mapa" [ref=e1649]
+  - button [ref=e128] [cursor=pointer]:
+    - img [ref=e130]
+  - region "Notifications (F8)":
+    - list

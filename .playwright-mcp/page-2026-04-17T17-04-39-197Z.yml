@@ -1,0 +1,138 @@
+- generic [ref=e2]:
+  - generic [ref=e54]:
+    - complementary [ref=e55]:
+      - link "DentalSpot DentalSpot" [ref=e57] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e58]:
+          - img "DentalSpot" [ref=e59]
+          - generic [ref=e60]: DentalSpot
+      - navigation [ref=e61]:
+        - generic [ref=e62]:
+          - heading "General" [level=3] [ref=e63]
+          - list [ref=e64]:
+            - listitem [ref=e65]:
+              - link "Dashboard" [ref=e67] [cursor=pointer]:
+                - /url: /dashboard/patient
+                - generic [ref=e68]:
+                  - img [ref=e69]
+                  - generic [ref=e72]: Dashboard
+            - listitem [ref=e73]:
+              - link "Mi Agenda" [ref=e75] [cursor=pointer]:
+                - /url: /dashboard/my-agenda
+                - generic [ref=e76]:
+                  - img [ref=e77]
+                  - generic [ref=e79]: Mi Agenda
+            - listitem [ref=e80]:
+              - link "Mi Progreso" [ref=e82] [cursor=pointer]:
+                - /url: /dashboard/patient/my-progress
+                - generic [ref=e83]:
+                  - img [ref=e84]
+                  - generic [ref=e87]: Mi Progreso
+            - listitem [ref=e88]:
+              - link "Mis Preguntas" [ref=e90] [cursor=pointer]:
+                - /url: /dashboard/questions
+                - generic [ref=e91]:
+                  - img [ref=e92]
+                  - generic [ref=e94]: Mis Preguntas
+            - listitem [ref=e95]:
+              - link "Mi Ficha Clínica" [ref=e97] [cursor=pointer]:
+                - /url: /dashboard/patient/clinical-file
+                - generic [ref=e98]:
+                  - img [ref=e99]
+                  - generic [ref=e102]: Mi Ficha Clínica
+            - listitem [ref=e103]:
+              - link "Historial de Accesos" [ref=e105] [cursor=pointer]:
+                - /url: /dashboard/patient/access-history
+                - generic [ref=e106]:
+                  - img [ref=e107]
+                  - generic [ref=e110]: Historial de Accesos
+            - listitem [ref=e111]:
+              - link "Asistente Virtual" [ref=e113] [cursor=pointer]:
+                - /url: /dashboard/chatbot
+                - generic [ref=e114]:
+                  - img [ref=e115]
+                  - generic [ref=e117]: Asistente Virtual
+        - generic [ref=e118]:
+          - heading "Cuenta" [level=3] [ref=e119]
+          - list [ref=e120]:
+            - listitem [ref=e121]:
+              - link "Mi Perfil" [ref=e123] [cursor=pointer]:
+                - /url: /dashboard/profile
+                - generic [ref=e124]:
+                  - img [ref=e125]
+                  - generic [ref=e128]: Mi Perfil
+      - generic [ref=e129]:
+        - button "Cerrar Sesión" [ref=e130] [cursor=pointer]:
+          - img [ref=e131]
+          - generic [ref=e134]: Cerrar Sesión
+        - generic [ref=e136]: © 2026 DentalSpot
+    - generic [ref=e137]:
+      - generic [ref=e138]:
+        - generic:
+          - generic:
+            - generic:
+              - heading [level=2]
+      - main [ref=e139]:
+        - generic [ref=e140]:
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - heading "Hola, pruebatin." [level=1] [ref=e179]
+              - paragraph [ref=e180]: Todo en orden, esto es lo que viene.
+            - generic [ref=e181]:
+              - img [ref=e182]
+              - text: Sin citas agendadas
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - generic [ref=e190]:
+                - img [ref=e191]
+                - paragraph [ref=e193]: Aún no tienes sesiones agendadas.
+                - paragraph [ref=e194]: Tu terapeuta puede ayudarte a programar la siguiente, o puedes buscar un especialista.
+              - generic [ref=e197]:
+                - img [ref=e199]
+                - paragraph [ref=e205]: Hoy no tienes ejercicios pendientes.
+                - paragraph [ref=e206]: ¡Aprovecha para descansar! Tu próximo ejercicio aparecerá aquí cuando tu terapeuta lo indique.
+              - generic [ref=e209]:
+                - img [ref=e211]
+                - paragraph [ref=e214]: Tu progreso aparecerá aquí a medida que avances.
+                - paragraph [ref=e215]: Sesiones completadas, actividades y logros se irán sumando automáticamente.
+            - generic [ref=e216]:
+              - generic [ref=e217]:
+                - heading "Mi Equipo Tratante" [level=3] [ref=e219]:
+                  - img [ref=e220]
+                  - text: Mi Equipo Tratante
+                - paragraph [ref=e226]: Aún no tienes un equipo tratante asignado.
+              - generic [ref=e229]:
+                - img [ref=e231]
+                - paragraph [ref=e234]: Sin documentos aún
+                - paragraph [ref=e235]: Tus informes y certificados aparecerán aquí cuando estén listos.
+              - generic [ref=e238]:
+                - generic [ref=e239]:
+                  - img [ref=e241]
+                  - generic [ref=e243]: Mis Preguntas
+                - paragraph [ref=e244]: ¿Tienes dudas sobre tu tratamiento? Envía una pregunta y tu terapeuta te responderá.
+                - link "Hacer una pregunta" [ref=e246] [cursor=pointer]:
+                  - /url: /dashboard/questions
+                  - img [ref=e247]
+                  - text: Hacer una pregunta
+              - generic [ref=e250]:
+                - generic [ref=e251]:
+                  - img [ref=e253]
+                  - generic [ref=e255]: ¿Necesitas ayuda?
+                - paragraph [ref=e256]: Si tienes dudas sobre tu tratamiento, tus citas o el uso de la plataforma, estamos aquí.
+                - generic [ref=e257]:
+                  - button "Abrir chat de ayuda" [ref=e258] [cursor=pointer]:
+                    - img [ref=e259]
+                    - text: Abrir chat de ayuda
+                  - button "Reportar un problema" [ref=e261] [cursor=pointer]:
+                    - img [ref=e262]
+                    - text: Reportar un problema
+                  - link "Preguntas frecuentes" [ref=e264] [cursor=pointer]:
+                    - /url: /ayuda
+                    - img [ref=e265]
+                    - text: Preguntas frecuentes
+          - button [ref=e144] [cursor=pointer]:
+            - img [ref=e146]
+  - button [ref=e47] [cursor=pointer]:
+    - img [ref=e49]
+  - region "Notifications (F8)":
+    - list

@@ -1,0 +1,250 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link:
+            - /url: /
+            - generic:
+              - img
+              - generic: DentalSpot
+        - navigation:
+          - generic:
+            - heading [level=3]: General
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist
+                    - generic:
+                      - img
+                      - generic: Dashboard
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/profile
+                    - generic:
+                      - img
+                      - generic: Mi Perfil
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/calendar
+                    - generic:
+                      - img
+                      - generic: Calendario
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/patients
+                    - generic:
+                      - img
+                      - generic: Mis Pacientes
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/marketplace
+                    - generic:
+                      - img
+                      - generic: Tienda
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/questions
+                    - generic:
+                      - img
+                      - generic: Blog & Preguntas
+          - generic:
+            - heading [level=3]: Evaluaciones Clínicas
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/odontograma
+                    - generic:
+                      - img
+                      - generic: Odontograma
+          - generic:
+            - heading [level=3]: Herramientas IA
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/notiz
+                    - generic:
+                      - img
+                      - generic: Notiz - Notas Auto.
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/create-template
+                    - generic:
+                      - img
+                      - generic: Crear Plantilla
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/therapist/evidence-search
+                    - generic:
+                      - img
+                      - generic: Evidencia Científica
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: /dashboard/chatbot
+                    - generic:
+                      - img
+                      - generic: Asistente Virtual
+        - generic:
+          - button:
+            - img
+            - generic: Cerrar Sesión
+          - generic:
+            - generic: © 2026 DentalSpot
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - combobox [expanded]:
+                - img
+                - generic: Seleccionar organización
+                - img
+        - main:
+          - generic:
+            - generic:
+              - heading [level=1]: Pacientes
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - heading [level=3]: Total de Pacientes
+                    - img
+                  - generic:
+                    - generic: "2"
+                - generic:
+                  - generic:
+                    - heading [level=3]: Citas Programadas
+                    - img
+                  - generic:
+                    - generic: "9"
+                - generic:
+                  - generic:
+                    - heading [level=3]: Documentos
+                    - img
+                  - generic:
+                    - generic: "0"
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - img
+                      - heading [level=3]: Listado de Pacientes
+                      - generic: "2"
+                    - generic:
+                      - button:
+                        - img
+                        - generic: Fusionar Pacientes
+                      - link:
+                        - /url: /dashboard/patients/import
+                        - img
+                        - generic: Importar
+                      - button: + Nuevo Paciente
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - img
+                        - textbox:
+                          - /placeholder: Buscar paciente...
+                      - combobox:
+                        - generic: Última Visita
+                        - img
+                  - generic:
+                    - generic:
+                      - table:
+                        - rowgroup:
+                          - row:
+                            - columnheader:
+                              - checkbox
+                            - columnheader: Nombre
+                            - columnheader: Contacto
+                            - columnheader: Edad
+                            - columnheader: Última Cita
+                            - columnheader: Total Citas
+                            - columnheader: Acciones
+                        - rowgroup:
+                          - row:
+                            - cell:
+                              - checkbox
+                            - cell:
+                              - generic:
+                                - generic:
+                                  - generic: C
+                                - generic:
+                                  - generic:
+                                    - button: Cristobal Tagle Morales
+                                  - generic: "RUT: 175842594"
+                            - cell:
+                              - generic:
+                                - generic: cristobal.tagle.morales@gmail.com
+                                - generic: "56976163232"
+                            - cell: 35 años
+                            - cell:
+                              - generic:
+                                - generic: "-"
+                                - generic:
+                                  - generic: Sin actividad
+                            - cell:
+                              - generic: "0"
+                            - cell:
+                              - generic:
+                                - button:
+                                  - img
+                                - button:
+                                  - img
+                                  - text: Ver ficha
+                          - row:
+                            - cell:
+                              - checkbox
+                            - cell:
+                              - generic:
+                                - generic:
+                                  - generic: D
+                                - generic:
+                                  - generic:
+                                    - button: Danissa Klagges Romero
+                                  - generic: "RUT: 168474393"
+                            - cell:
+                              - generic:
+                                - generic: danissa.klagges.88@gmail.com
+                                - generic: "+56948003808"
+                            - cell: 38 años
+                            - cell:
+                              - generic:
+                                - generic: "-"
+                                - generic:
+                                  - generic: Sin actividad
+                            - cell:
+                              - generic: "0"
+                            - cell:
+                              - generic:
+                                - button:
+                                  - img
+                                - button:
+                                  - img
+                                  - text: Ver ficha
+                  - generic:
+                    - generic: 1 - 2 de 2
+                    - generic:
+                      - button [disabled]:
+                        - img
+                      - button [disabled]:
+                        - img
+    - button [ref=e128] [cursor=pointer]:
+      - img [ref=e130]
+    - list
+  - listbox [ref=e337]:
+    - option "Odontología Los Álamos" [active] [ref=e338]:
+      - generic [ref=e340]: Odontología Los Álamos
+    - option "Odontologia Bulnes" [ref=e341]:
+      - generic [ref=e343]: Odontologia Bulnes

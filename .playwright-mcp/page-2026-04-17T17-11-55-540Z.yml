@@ -1,0 +1,37 @@
+- generic [ref=e2]:
+  - generic [ref=e498]:
+    - generic [ref=e499]:
+      - heading "Iniciar Sesión" [level=3] [ref=e500]
+      - paragraph [ref=e501]: Ingresa tus credenciales para acceder
+    - generic [ref=e502]:
+      - generic [ref=e503]:
+        - generic [ref=e504]:
+          - text: Email *
+          - generic [ref=e505]:
+            - img [ref=e506]
+            - textbox "Email *" [ref=e509]:
+              - /placeholder: tu@email.com
+        - generic [ref=e510]:
+          - text: Contraseña *
+          - generic [ref=e511]:
+            - img [ref=e512]
+            - textbox "Contraseña *" [ref=e515]:
+              - /placeholder: ••••••••
+            - button [ref=e516] [cursor=pointer]:
+              - img [ref=e517]
+        - button "Iniciar Sesión" [ref=e520] [cursor=pointer]
+      - generic [ref=e525]: o continua con
+      - button "Google" [ref=e526] [cursor=pointer]:
+        - img [ref=e527]
+        - text: Google
+    - generic [ref=e532]:
+      - paragraph [ref=e533]:
+        - text: ¿No tienes cuenta?
+        - button "Regístrate aquí" [ref=e534] [cursor=pointer]
+      - paragraph [ref=e535]:
+        - text: ¿Olvidaste tu contraseña?
+        - button "Recupérala aquí" [ref=e536] [cursor=pointer]
+  - button [ref=e128] [cursor=pointer]:
+    - img [ref=e130]
+  - region "Notifications (F8)":
+    - list
