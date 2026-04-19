@@ -1,6 +1,6 @@
 installed: []
 settings:
-  auto_execute_hooks: true
+  auto_execute_hooks: false
 hooks:
   before_constitution:
   - extension: git
