@@ -34,15 +34,14 @@ yarn-error.log*
 .claude/worktrees/
 
 dist/
-.claude/plans/
 
 .claire/
-.claude/
+.claude/settings.local.json
+.claude/launch.json
 .env.production
 
 .env.production
 .claire/
-.claude/
 dist/
 
 supabase/.temp/
