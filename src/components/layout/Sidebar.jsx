@@ -158,7 +158,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           {
             section: 'Evaluaciones Clínicas',
             items: [
-              { name: 'Odontograma', icon: ClipboardCheck, path: '/dashboard/odontograma' },
+              { name: 'Odontograma', icon: ClipboardCheck, path: '/dashboard/therapist/odontograma' },
             ],
           },
           {

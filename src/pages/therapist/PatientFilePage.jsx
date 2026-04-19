@@ -360,7 +360,7 @@ const PatientFilePage = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/dashboard/odontograma/nueva?patient=${id}`)}
+                        onClick={() => navigate(`/dashboard/therapist/odontograma/nueva?patient=${id}`)}
                         className="text-pink-600 border-pink-200 hover:bg-pink-50"
                       >
                         <ClipboardCheck className="h-4 w-4 mr-2" />

@@ -109,7 +109,7 @@ const OdontogramEvaluationPage = () => {
     const { data, error } = await fetchEvaluationById(id);
     if (error || !data) {
       toast({ variant: 'destructive', title: 'Error', description: 'No se encontró la evaluación' });
-      navigate('/dashboard/odontograma');
+      navigate('/dashboard/therapist/odontograma');
       return;
     }
 
@@ -343,7 +343,7 @@ const OdontogramEvaluationPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/odontograma')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/therapist/odontograma')}>
           <ChevronLeft className="h-4 w-4 mr-1" /> Volver
         </Button>
         <h1 className="text-xl font-bold text-gray-900">

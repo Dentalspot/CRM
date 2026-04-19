@@ -69,7 +69,7 @@ const OdontogramListPage = () => {
               Odontogramas iniciales y de tratamiento de tus pacientes
             </CardDescription>
           </div>
-          <Button onClick={() => navigate('/dashboard/odontograma/nueva')} className="bg-pink-500 hover:bg-pink-600">
+          <Button onClick={() => navigate('/dashboard/therapist/odontograma/nueva')} className="bg-pink-500 hover:bg-pink-600">
             <Plus className="h-4 w-4 mr-2" /> Nueva Evaluación
           </Button>
         </div>
@@ -147,7 +147,7 @@ const OdontogramListPage = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/odontograma/${ev.id}`)}>
+                          <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/therapist/odontograma/${ev.id}`)}>
                             <Eye className="h-4 w-4 mr-1" /> Ver
                           </Button>
                           <Button
@@ -196,7 +196,7 @@ const OdontogramListPage = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="flex-1 bg-pink-500 hover:bg-pink-600" onClick={() => navigate(`/dashboard/odontograma/${ev.id}`)}>
+                    <Button size="sm" className="flex-1 bg-pink-500 hover:bg-pink-600" onClick={() => navigate(`/dashboard/therapist/odontograma/${ev.id}`)}>
                       <Eye className="h-3.5 w-3.5 mr-1" /> Ver
                     </Button>
                     <Button size="sm" variant="outline" className="text-red-500" onClick={() => handleDelete(ev.id)} disabled={deleting === ev.id}>
