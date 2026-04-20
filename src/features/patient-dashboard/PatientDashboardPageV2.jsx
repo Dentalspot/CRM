@@ -160,8 +160,8 @@ const PatientDashboardPageV2 = () => {
     try {
       const { data, error } = await supabase
         .from('session_activities')
-        .select('id, status, created_at, activity_id, exercise_id')
-        .eq('patient_id', pId)
+        .select('id, status, created_at, activity_id, exercise_id, plan_sessions!inner(patient_assigned_plans!inner(patient_id))')
+        .eq('plan_sessions.patient_assigned_plans.patient_id', pId)
         .eq('status', 'pending')
         .order('created_at', { ascending: true })
         .limit(10);
@@ -180,7 +180,7 @@ const PatientDashboardPageV2 = () => {
     const [reportsRes, informesRes] = await Promise.all([
       supabase
         .from('clinical_reports')
-        .select('id, title, file_url, created_at, report_type')
+        .select('id, file_url:final_pdf_url, created_at, report_type')
         .eq('patient_id', pId)
         .order('created_at', { ascending: false })
         .limit(3),
@@ -239,8 +239,8 @@ const PatientDashboardPageV2 = () => {
 
       const { data: weekActivities, error } = await supabase
         .from('session_activities')
-        .select('id, status, updated_at')
-        .eq('patient_id', pId)
+        .select('id, status, updated_at, plan_sessions!inner(patient_assigned_plans!inner(patient_id))')
+        .eq('plan_sessions.patient_assigned_plans.patient_id', pId)
         .gte('updated_at', weekStart)
         .lte('updated_at', weekEnd);
 
