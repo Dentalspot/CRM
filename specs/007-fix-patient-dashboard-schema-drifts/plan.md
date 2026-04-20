@@ -325,18 +325,19 @@ ANTES:
     .eq('patient_id', pId)
     .eq('status', 'pending')
 
-DESPUÉS:
+DESPUÉS (corregido post Phase 1 audit — ver data-model.md §H-2):
   supabase
     .from('session_activities')
-    .select('id, status, created_at, activity_id, exercise_id, plan_sessions!inner(patient_id)')
-    .eq('plan_sessions.patient_id', pId)
+    .select('id, status, created_at, activity_id, exercise_id, plan_sessions!inner(patient_assigned_plans!inner(patient_id))')
+    .eq('plan_sessions.patient_assigned_plans.patient_id', pId)
     .eq('status', 'pending')
 ```
 
-**Notas de ejecución**:
-- Sintaxis exacta del embed (`plan_sessions!inner(patient_id)`) depende de confirmación en Phase 1 Query B. Si la FK está nombrada estándar (`session_activities_plan_session_id_fkey`), PostgREST resuelve el embed automáticamente.
-- El shape del response cambia ligeramente (cada row incluye `plan_sessions: { patient_id: ... }`). Si el componente consume solo campos originales (id, status, etc.) → 0 impacto. Si usaba `row.patient_id` localmente → buscar y actualizar (contabiliza dentro del bound `<=5 archivos`, normalmente queda in-file).
-- **R-06 check** (Constitution §III): grep `useClinicalAccessLogger` en el archivo. Si no aparece → documentar hallazgo y decidir con Danissa (NO fixear en este spec).
+**Notas de ejecución (actualizadas post Phase 1)**:
+- El embed real es **3-level** (no 2-level como se asumió inicialmente): `plan_sessions → patient_assigned_plans → patient_id`. Confirmado por Phase 1 (data-model.md §H-2) contra schema real de `src/types/database.ts`: `plan_sessions` NO tiene `patient_id`; la relación pasa por `patient_assigned_plans.patient_id`. Las 3 FKs existen: `session_activities.session_id → plan_sessions.id`, `plan_sessions.assigned_plan_id → patient_assigned_plans.id`, `patient_assigned_plans.patient_id → patients.id`.
+- Este pattern ya existe en producción en 4 callsites: `PatientActivitiesPage.jsx:54+61`, `PatientDashboardPage.jsx:168+173`, `MyProgressPage.jsx:78+85`, `ClinicalQualityPanel.jsx:125`. El fix los replica.
+- El shape del response cambia (cada row incluye `plan_sessions: { patient_assigned_plans: { patient_id: ... } }`). Si el componente consume solo campos originales (id, status, etc.) → 0 impacto. Si usa `row.patient_id` directo → buscar y actualizar.
+- **R-06 check** (Constitution §III): grep `useClinicalAccessLogger` en el archivo. Si no aparece → **acción = document + defer** a spec follow-up `fix-audit-logger-missing-on-patient-dashboard`. NO fix inline. NO block spec 007. (Ver tasks.md TASK-P2-D1-AUDIT.)
 
 ### Drift 2 — `appointments.fee` 400 Bad Request
 

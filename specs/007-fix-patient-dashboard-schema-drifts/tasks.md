@@ -83,12 +83,37 @@ Leyenda de columnas:
 
 | ID | Phase | Task | File:Line | Dependencies | Reference | Est. min |
 |---|---|---|---|---|---|---|
-| `TASK-P3-A` | P3 | **Bloque A — User-story routes fixeadas** (2 rutas): P1 patient dashboard (login paciente + widget actividades + widget reportes; validar 0 errores en consola, N>0 actividades, reportes visibles); P2 therapist dashboard (login terapeuta + widget ingresos; validar monto consistente con citas `completed` del mes, 0 errores) | browser manual · DevTools Console | `GATE SP-3` | plan.md §Phase 3 Bloque A · SC-001, SC-002, SC-003, SC-004 | 5 |
-| `TASK-P3-B` | P3 | **Bloque B — Regression `session_activities`** (7 rutas del inventory): B1 PatientActivitiesPage.jsx:50 · B2 MyProgressPage.jsx:74 · B3 ClinicalQualityPanel.jsx:122 · B4 clinicalPlanningApi.js:322 · B5 PlanningTab.jsx:167 · B6 SessionManagerModal.jsx:300+323 · B7 aiToolsApi.js:176. 0 errores nuevos (vs baseline de `TASK-P1-BASELINE`) | browser manual · DevTools Console | `GATE SP-3` · `TASK-P1-BASELINE` (comparación A/B) | plan.md §Phase 3 Bloque B · SC-005 · spec §Regression Test Inventory | 10 |
-| `TASK-P3-C` | P3 | **Bloque C — Regression `clinical_reports`** (7 rutas del inventory): C1 PatientDashboardPage.jsx:182 · C2 ReportsPage.jsx:33 · C3 ReportDetailPage.jsx:21 · C4 TemplateFormModal.jsx:151+159 · C5 usePatientAdmin.js:81 · C6 useReportGeneration.js:199 · C7 usePatientData.js:126. 0 errores nuevos (vs baseline) | browser manual · DevTools Console | `GATE SP-3` · `TASK-P1-BASELINE` | plan.md §Phase 3 Bloque C · SC-005 · spec §Regression Test Inventory | 10 |
-| `TASK-P3-REPORT` | P3 | Generar Phase 3 Report: contabilizar regresiones vs criterio Rollback Plan (0–2 menores → follow-up · >2 o 1 crítica → `git revert` + spec 007.1); decidir close / follow-up / rollback | conversación | `TASK-P3-A`, `TASK-P3-B`, `TASK-P3-C` | plan.md §Phase 3 P3 reporte · spec §Rollback Plan | 3 |
+| `TASK-P3-A` | P3 | **Bloque A — User-story routes fixeadas** (2 rutas): P1 patient dashboard (login paciente + widget actividades + widget reportes; validar 0 errores en consola, N>0 actividades, reportes visibles); P2 therapist dashboard (login terapeuta + widget ingresos; validar monto consistente con citas `completed` del mes, 0 errores). **Por cada ruta con error reportar en formato forense (ver §Forensic Reporting Format abajo).** | browser manual · DevTools Console | `GATE SP-3` | plan.md §Phase 3 Bloque A · SC-001, SC-002, SC-003, SC-004 · Forensic format (R-04 compensation) | 5 |
+| `TASK-P3-B` | P3 | **Bloque B — Regression `session_activities`** (7 rutas del inventory): B1 PatientActivitiesPage.jsx:54 · B2 MyProgressPage.jsx:78 · B3 ClinicalQualityPanel.jsx:125 · B4 clinicalPlanningApi.js:322 · B5 PlanningTab.jsx:167 · B6 SessionManagerModal.jsx:300+323 · B7 aiToolsApi.js:176. 0 errores nuevos vs lo que funcionaba antes. **Formato forense obligatorio para cada error (§Forensic Reporting Format).** Líneas actualizadas post data-model.md §H-1 | browser manual · DevTools Console | `GATE SP-3` | plan.md §Phase 3 Bloque B · SC-005 · Forensic format (R-04 compensation) | 10 |
+| `TASK-P3-C` | P3 | **Bloque C — Regression `clinical_reports`** (7 rutas del inventory): C1 PatientDashboardPage.jsx:168+172 · C2 ReportsPage.jsx:33 · C3 ReportDetailPage.jsx:21 · C4 TemplateFormModal.jsx:151+159 · C5 usePatientAdmin.js:81 · C6 useReportGeneration.js:199 · C7 usePatientData.js:126. 0 errores nuevos. **Formato forense obligatorio (§Forensic Reporting Format).** Líneas actualizadas post data-model.md §H-1 | browser manual · DevTools Console | `GATE SP-3` | plan.md §Phase 3 Bloque C · SC-005 · Forensic format (R-04 compensation) | 10 |
+| `TASK-P3-REPORT` | P3 | Generar Phase 3 Report: contabilizar regresiones vs criterio Rollback Plan (0–2 menores → follow-up · >2 o 1 crítica → `git revert` + spec 007.1); decidir close / follow-up / rollback. **Usar output forense de P3-A/B/C para separar regresiones nuevas de errores pre-existentes (R-04 compensation).** | conversación | `TASK-P3-A`, `TASK-P3-B`, `TASK-P3-C` | plan.md §Phase 3 P3 reporte · spec §Rollback Plan | 3 |
 
 **Tiempo Phase 3**: 20–30 min (budget plan).
+
+### Forensic Reporting Format (R-04 compensation — baseline no ejecutado pre-fix)
+
+Baseline T5 del SP-1 quedó DEFERRED (decisión Q2 del SP-1 review). Para compensar esa falta de comparación A/B, cada ruta con error en P3-A/B/C **debe** reportarse con las 3 columnas:
+
+| Campo | Qué capturar | Cómo obtenerlo |
+|---|---|---|
+| **(a) HTTP status code** | Status numérico exacto de la request failed (ej. `400`, `401`, `404`, `500`) | DevTools → Network tab → click la request fallida → header response |
+| **(b) Console error literal** | Mensaje exacto emitido por el browser console, sin parafrasear (ej. `column clinical_reports.file_url does not exist`) | DevTools → Console → copy-paste del error tal cual |
+| **(c) Evaluación pre-existente vs nuevo** | ¿El error fue introducido por spec 007 o ya existía? Método: `git log -p -S "<snippet de la query>" src/ruta/del/archivo.jsx` para ubicar cuándo se introdujo el patrón | Comparar fecha de introducción vs fecha del commit del spec 007 |
+
+**Ejemplo de entry en Phase 3 Report**:
+
+```markdown
+### Regresión en B4 (clinicalPlanningApi.js:322)
+
+- (a) HTTP: 400 Bad Request
+- (b) Console: `column plan_sessions.legacy_patient_id does not exist`
+- (c) git blame: patrón introducido en commit abc1234 (2025-09-15, 7 meses antes de spec 007) → **pre-existente, NO regresión nueva**
+- Acción: documentar como follow-up candidato, NO cuenta para Rollback triggers.
+```
+
+**Criterio de cuenta**:
+- Errores con `(c) = pre-existente` → **NO** cuentan para Rollback triggers. Se reportan como follow-ups.
+- Errores con `(c) = introducido por spec 007` → **SÍ** cuentan. Al llegar a >2 o 1 crítica → disparar Rollback.
 
 ---
 
