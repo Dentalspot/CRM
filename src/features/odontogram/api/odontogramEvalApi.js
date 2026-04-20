@@ -169,7 +169,7 @@ export const saveReportToFicha = async ({ evaluationId, patientId, therapistId, 
 export const fetchTherapistServices = async (therapistId) => {
   const { data, error } = await supabase
     .from('therapist_services')
-    .select('id, service_name, price, duration_minutes')
+    .select('id, service_name, price:price_clp, duration_minutes')
     .eq('therapist_id', therapistId)
     .eq('is_active', true)
     .order('service_name');
