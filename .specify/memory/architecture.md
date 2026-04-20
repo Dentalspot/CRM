@@ -166,6 +166,20 @@ Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|del
 ### Data-migration patches
 Las migraciones `resolve_danissa_*` y `resolve_cristobal_*` son evidencia de drift resuelto manualmente. No repetir patrón — ver Constitution VI.
 
+### Known drift non-urgent (preventive audit 2026-04-20)
+
+Auditoría preventiva post-spec 005 sobre 5 tablas sospechosas de drift similar a `therapist_services.price → price_clp`. **3 verde · 2 amarillo · 0 rojo.**
+
+| Tabla · campo | Estado DB | Estado código | Prioridad | Spec candidata |
+|---|---|---|---|---|
+| `clinics.modalidad` vs `.modality` | Ambas columnas existen, las 3 clínicas tienen ambos valores poblados | Frontend usa ambos nombres inconsistentemente | 🟡 Amarillo — deuda, no bug (rows completos) | `consolidate-clinics-modality` (30-45min) |
+| `patients.full_name / rut / phone / email` | Existen como nullable text (duplicados del JOIN con `profiles`) | Algunas queries leen JOIN, otras directo | 🟡 Amarillo — dual source of truth, potencial stale data | `consolidate-patient-pii-source-of-truth` (1-2h) |
+| `appointments.date / start_time / end_time` | date NOT NULL + 2 `time without time zone` NOT NULL | Código usa `date` directo (`useClinicDashboard.js:103`) | ✅ Verde | — |
+| `membership_plans.price_clp / price_usd` | Renombrado igual que `therapist_services` (spec 005) | Único consumer `DirectoryPage.jsx:42` solo lee `name, slug` — no toca `price` | ✅ Verde | — (recordar alias `price:price_clp` si agregan UI de pricing) |
+| `patients.patient_type` vs `attention_type` | Ambos existen nullable text | `patient_type` = previsión (privado/fonasa/convenio), `attention_type` = modalidad (consulta_privada/pie_escolar) — **conceptos ortogonales, no duplicados** | ✅ Verde (no es drift) | — |
+
+**Técnica aplicada:** 5 queries `information_schema.columns` + `grep` dirigido por candidato. Runtime total ~8 min. Template reusable para micro-auditorías futuras.
+
 ### 🚩 Antipatrón: "migración one-shot sin trigger"
 
 **Caso histórico:** `20260415100002_populate_organization_model.sql` pobló `patient_care_team` con un backfill one-shot, sin trigger de sincronización. Consecuencia: todo paciente creado o reasignado post-15-abr cayó fuera del care_team → función `is_in_care_team()` devolvió `false` → policy `cal_dentist_insert` sobre `clinical_audit_log` rechazó writes silenciosamente → **43h de Constitution III violada** (2026-04-18 06:57 → 2026-04-20 02:04 UTC). Detalle completo en `data-compliance.md` §"Historial de compliance".
@@ -184,4 +198,4 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/ecosystem-communicare.md` — rol en ecosistema Communicare
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
 ---
-**Last updated**: 2026-04-20 | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`.
+**Last updated**: 2026-04-20 | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog.
