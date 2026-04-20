@@ -69,4 +69,6 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.
+
+**Active feature**: `007-fix-patient-dashboard-schema-drifts` — [Plan](specs/007-fix-patient-dashboard-schema-drifts/plan.md)
 <!-- SPECKIT END -->
