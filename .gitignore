@@ -40,10 +40,6 @@ dist/
 .claude/launch.json
 .env.production
 
-.env.production
-.claire/
-dist/
-
 supabase/.temp/
 
 # Playwright MCP session artifacts (logs/snapshots)
