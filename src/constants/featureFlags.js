@@ -14,7 +14,6 @@ export const FEATURE_FLAGS = {
   ADIR: false,
   TEA: false,
   SENSORIAL_PROFILE: false,
-  VOICE_VISUALIZER: false,
 
   // Módulo educativo (no-dental, requiere add-on)
   EDUCATOR: false,

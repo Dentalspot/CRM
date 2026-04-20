@@ -46,7 +46,6 @@ const BlogArticleEditorPage = lazy(() => import('@/features/therapist/pages/Blog
 const ConfirmAppointmentPage = lazy(() => import('@/pages/ConfirmAppointmentPage.jsx'));
 const TemplateGeneratorPage = lazy(() => import('@/features/therapist/pages/TemplateGeneratorPage.jsx'));
 const NotizPage = lazy(() => import('@/features/therapist/pages/NotizPage.jsx'));
-const VoiceVisualizerPage = lazy(() => import('@/pages/VoiceVisualizerPage.jsx'));
 const EvidenceSearchPage = lazy(() => import('@/pages/EvidenceSearchPage.jsx'));
 const EducatorDashboardPage = lazy(() => import('@/features/educator/pages/EducatorDashboardPage.jsx'));
 const CourseEditorPage = lazy(() => import('@/features/educator/pages/CourseEditorPage.jsx'));
@@ -188,10 +187,6 @@ const DashboardRouter = () => {
             {/* AI Tools */}
             <Route path="create-template" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="planGenerator"><TemplateGeneratorPage /></AddOnGuard></RoleGuard>} />
             <Route path="notiz" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><AddOnGuard addOnId="notiz"><NotizPage /></AddOnGuard></RoleGuard>} />
-            {/* Voice Visualizer — desactivado en Dentalspot (módulo heredado FonoKit) */}
-            {FEATURE_FLAGS.VOICE_VISUALIZER && (
-              <Route path="voice-visualizer" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><VoiceVisualizerPage /></RoleGuard>} />
-            )}
             <Route path="evidence-search" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><EvidenceSearchPage /></RoleGuard>} />
 
             {/* Educator Add-on — desactivado en Dentalspot (módulo heredado FonoKit) */}
