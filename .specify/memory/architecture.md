@@ -212,6 +212,22 @@ Tras el preventive audit, el test manual de spec 006 reveló 3 drifts adicionale
 - Extensión interpretativa de FR-003.c: replicar patrón canónico existente en archivo adyacente NO es re-modelado semántico — es alineamiento.
 - Hallazgo compliance §III (F-1): evaluado y cerrado como **FALSE POSITIVE** en spec 008 pre-plan research — `useClinicalAccessLogger` excluye intencionalmente el rol `patient` (alineado con Ley 20.584 art. 13 y Ley 21.719, que regulan transparencia sobre accesos de terceros, no auto-consulta). Constitution §III v1.0.1 → v1.1.0 con clarificación explícita. Ver `specs/008-fix-audit-logger-missing-on-patient-dashboard/spec.md` §Spec rejected.
 
+#### RLS policies restauradas (spec 009 — 2026-04-20)
+
+Tabla `marketplace_purchases` recuperó su trilogía completa de access patterns + RLS enforcement:
+
+| Policy | CMD | Pattern | Source |
+|---|---|---|---|
+| `Admins update marketplace_purchases` | UPDATE | `is_admin` | Replaced (legacy) |
+| `Buyers read own marketplace_purchases` | SELECT | `auth.uid() = buyer_id` | Created |
+| `Buyers insert marketplace_purchases` | INSERT | `auth.uid() = buyer_id` (WITH CHECK) | Created |
+| `Admin manage marketplace_purchases` | ALL | `is_admin` via `profiles.role = 'admin'::user_role` | Created (replaces `Admins update`) |
+| `Vendors read own plan purchases` | SELECT | Subquery a `marketplace_plans.author_id` | Kept (injected durante Phase 1, X2→X1 pivot) |
+
+Estado final: **4 policies + `rowsecurity = true`**. Baseline tabla vacía (0 purchases) en momento de apply — primera purchase real será smoke test natural.
+
+**Lección operativa (extensión a `PATTERNS.md`):** state-drift entre Phase 1 y Phase 2 de un spec debe siempre re-verificarse con Query A freshly ejecutada antes de aplicar. Caso 2026-04-20: `"Vendors read own plan purchases"` apareció injected fuera de flujo (Danissa experimentando con el preview de Opción X1 entre phases), el re-check pre-Phase 2 la detectó, pivotamos X2→X1 sin perder horas de rework ni dropear/re-crear una policy ya funcional.
+
 ### Post-spec health-checks (2026-04-20)
 
 Queries ejecutadas en bloque Express para validar que specs 003/004/005 siguen funcionando en producción:
@@ -255,13 +271,13 @@ Query a `pg_tables.rowsecurity` + `pg_policies` reveló gaps críticos de seguri
 
 **🔴 P0 — RLS DISABLED pero con policies existentes (policies NO enforced)**
 
-| Tabla | Policies live | Consumers frontend | Impacto |
-|---|---|---|---|
-| `patient_questions` | 5 policies | 14+ callsites | PHI leak: preguntas accesibles a cualquier auth user |
-| `marketplace_purchases` | 1 policy (solo `Admins update`) | 13+ callsites | Financial leak + policies faltantes (Buyer read/insert, Admin read/insert/delete, Vendor read) |
-| `blog_posts` | 7 policies | 8+ callsites | Moderation bypass + author integrity |
+| Tabla | Policies live | Consumers frontend | Impacto | Status |
+|---|---|---|---|---|
+| `patient_questions` | 5 policies | 14+ callsites | PHI leak: preguntas accesibles a cualquier auth user | ✅ Resuelto spec 006 commit `9e15c80` |
+| `marketplace_purchases` | 1 policy (solo `Admins update`) | 13+ callsites | Financial leak + policies faltantes (Buyer read/insert, Admin read/insert/delete, Vendor read) | ✅ Resuelto spec 009 commit `0b89ba3` |
+| `blog_posts` | 7 policies | 8+ callsites | Moderation bypass + author integrity | ✅ Resuelto spec 006 commit `9e15c80` |
 
-Spec 006 (`enable-rls-quick-wins`) cierra `patient_questions` + `blog_posts` con 1 line de `ALTER TABLE ENABLE RLS` cada una (policies ya existen, solo falta activar enforcement). **`marketplace_purchases` queda diferido** a spec separado porque requiere escribir las policies faltantes primero.
+Spec 006 (`enable-rls-quick-wins`) cerró `patient_questions` + `blog_posts` con 1 line de `ALTER TABLE ENABLE RLS` cada una (policies ya existían, solo faltaba activar enforcement). **`marketplace_purchases` quedó diferido** y se resolvió en spec 009 (`restore-marketplace-purchases-policies`) — requería escribir las policies faltantes antes del enable RLS. Ver §"RLS policies restauradas (spec 009)" más arriba para el detalle de las 4 policies finales.
 
 **🔴 P0 — RLS DISABLED + 0 policies + PHI sensible**
 
@@ -285,8 +301,8 @@ Default PG con RLS enabled + 0 policies = "deny all" para anon+auth. Si frontend
 `clinical_entry_types`, `diagnosis_specialty_map`, `measure_scales`, `schools`, `specialty_keywords`, `blog_article_tags`, `blog_tags`, `patient_reviews`, `marketplace_plans`, `favorite_lists`, `moderation_logs`, `review_reports`.
 
 **Ruta de remediación priorizada:**
-1. Spec 006 — `patient_questions` + `blog_posts` enable RLS (hoy/inmediato, 15-30 min)
-2. Spec siguiente P0 — `marketplace_purchases` restore policies (1-2h)
+1. ✅ Spec 006 — `patient_questions` + `blog_posts` enable RLS (cerrado — commit `9e15c80`)
+2. ✅ Resuelto en spec 009 commit `0b89ba3` — `marketplace_purchases` restore policies (Estrategia B + pivot X2→X1 en Phase 2 para keep Vendors policy)
 3. Spec siguiente P0 — PIE cluster + `debug_signup_logs` write policies (1-2h)
 4. Spec siguiente P1 — auditar `billing_invoices` + otros ENABLED+0 policies (1h)
 
