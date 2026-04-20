@@ -310,7 +310,11 @@ updated_at, validated_at, validated_by, version, visibility_scope
 
 ## Compliance findings (§III VERIFY del Constitution Check)
 
-### ⚠️ Finding F-1: `PatientDashboardPageV2.jsx` NO invoca `useClinicalAccessLogger`
+### 🟢 Finding F-1 [RESUELTO — FALSE POSITIVE]: `PatientDashboardPageV2.jsx` NO invoca `useClinicalAccessLogger`
+
+> **Status update 2026-04-20 (post spec 008 pre-plan)**: Este finding se resolvió como FALSE POSITIVE. Spec 008 pre-plan research reveló que `useClinicalAccessLogger` excluye intencionalmente el rol `patient` (`src/lib/audit/useClinicalAccessLogger.js:31-36` → early return si `!isClinicalRole`). El hook está alineado con Ley 20.584 art. 13 y Ley 21.719, que regulan transparencia sobre accesos de **terceros**, no auto-consulta. Ver `specs/008-fix-audit-logger-missing-on-patient-dashboard/spec.md §Spec rejected` para el análisis completo. Constitution §III enmendado a v1.1.0 con clarificación explícita. El registro debajo se preserva como evidencia histórica del razonamiento original.
+
+---
 
 Ejecutado `TASK-P2-D1-AUDIT` (R-06 check):
 

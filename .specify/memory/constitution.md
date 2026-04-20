@@ -24,11 +24,15 @@ Consequence: Ninguna tabla con PHI vive sin policies de las 3 fases RLS. Regresi
 
 ### III. Append-Only Clinical Audit (NON-NEGOTIABLE)
 
-Rule: Toda apertura, impresión, exportación o modificación de datos clínicos se escribe en `clinical_audit_log` vía `src/lib/audit/clinicalAuditLogger.js` + hook `useClinicalAccessLogger` (el hook conserva el nombre "Access" por razones históricas pero escribe a la tabla `clinical_audit_log`, no a `clinical_access_log` — ésa pertenece al módulo `clinical-passport`). La tabla `clinical_audit_log` tiene triggers append-only: no admite UPDATE ni DELETE desde el cliente ni desde roles no-privilegiados.
+Rule: Todo acceso de **TERCEROS** (roles clínicos: `dentist`, `clinic_admin`, `assistant`) a datos clínicos de un paciente — apertura, impresión, exportación o modificación — se escribe en `clinical_audit_log` vía `src/lib/audit/clinicalAuditLogger.js` + hook `useClinicalAccessLogger` (el hook conserva el nombre "Access" por razones históricas pero escribe a la tabla `clinical_audit_log`, no a `clinical_access_log` — ésa pertenece al módulo `clinical-passport`). La tabla `clinical_audit_log` tiene triggers append-only: no admite UPDATE ni DELETE desde el cliente ni desde roles no-privilegiados.
 
-Why: El paciente tiene derecho ARCO a saber quién, cuándo y por qué se accedió a su ficha (Ley 21.719). El log es la ventana de confianza del paciente al sistema — y, en dirección opuesta, la defensa del profesional ante reclamos injustos (historia fundacional Communicare #3).
+**El auto-acceso del paciente a su propia ficha NO requiere logging** — está alineado con Ley 20.584 art. 13 y Ley 21.719, que regulan transparencia sobre accesos **por terceros**, no auto-consulta del titular. El hook `useClinicalAccessLogger` implementa este filtro explícitamente (early return si el actor no tiene rol clínico). Componentes del flujo paciente (ej. `PatientDashboardPageV2.jsx`, `MyProgressPage.jsx`) **no están obligados** a invocar el hook aunque lean PHI del propio paciente.
 
-Consequence: Cualquier componente que lea datos clínicos sin invocar el hook es una violación documentada. Los edge functions que tocan PHI deben insertar al log vía SQL o RPC dedicada. El log sobrevive aún si el dentista borra al paciente.
+Why: El paciente tiene derecho ARCO a saber quién, cuándo y por qué se accedió a su ficha — donde "quién" se refiere a **terceros** procesadores (Ley 21.719 concepto de "responsable/encargado del tratamiento"). El log es la ventana de confianza del paciente al sistema — y, en dirección opuesta, la defensa del profesional ante reclamos injustos (historia fundacional Communicare #3). Registrar auto-consulta añadiría ruido sin valor legal ni de trazabilidad.
+
+Consequence: Cualquier componente de flujo profesional (dashboard terapeuta, ficha paciente desde staff, odontograma, exports) que lea datos clínicos de paciente **ajeno** sin invocar el hook es una violación documentada. Los edge functions invocados por staff que tocan PHI deben insertar al log vía SQL o RPC dedicada. El log sobrevive aún si el dentista borra al paciente.
+
+**Antipatrón (lección post spec 007/008)**: declarar un gap de §III solo por ausencia de la invocación del hook en un grep, sin leer el body del hook para verificar si el caso de uso está dentro del scope diseñado. Antes de abrir un spec de remediación §III, leer `src/lib/audit/useClinicalAccessLogger.js` y confirmar que el rol del actor está incluido en `isClinicalRole`. Ver `docs/PATTERNS.md §4` — "verificar implementación del consumidor antes de propagar hallazgos".
 
 ### IV. Micro-Bloques con Plan Previo (NON-NEGOTIABLE)
 
@@ -85,8 +89,9 @@ Enmiendas requieren: (a) rationale escrito en el PR, (b) incremento del campo Ve
 Excepciones puntuales a un principio requieren justificación en la spec afectada con etiqueta [CONSTITUTION-EXCEPTION] y un plan de re-alineación.
 Los 6 principios son no-negociables; solo "Regulatory Framework" y "Development Workflow" admiten actualizaciones sin cambio de versión mayor.
 Versioning: MAJOR = remover principio o cambiar gobernanza; MINOR = principio nuevo; PATCH = aclaración sin cambio de regla.
-Version: 1.0.1 | Ratified: 2026-04-19 | Last Amended: 2026-04-20
+Version: 1.1.0 | Ratified: 2026-04-19 | Last Amended: 2026-04-20
 
 Changelog:
+- 1.1.0 (2026-04-20): MINOR — Principio III refinado para clarificar que **el auto-acceso del paciente a su propia ficha NO requiere logging**. El scope del principio se acota explícitamente a acceso de terceros (roles clínicos `dentist` / `clinic_admin` / `assistant`), alineado con Ley 20.584 art. 13 y Ley 21.719 (transparencia sobre accesos por terceros, no auto-consulta). La redacción previa ("toda apertura... se escribe") era ambigua y provocó el falso positivo F-1 de spec 007. El hook `useClinicalAccessLogger` ya implementaba este filtro correctamente; la constitución ahora lo refleja. Se añade antipatrón "declarar gap §III por grep sin leer body del hook" (lección cerrada en spec 008). Este es el primer refinamiento que ajusta el alcance de un principio sin agregar uno nuevo — se clasifica como MINOR por cambio material de qué cuenta como violación vs no (aunque la regla operativa del hook es la misma de siempre).
 - 1.0.1 (2026-04-20): PATCH — aclara que Principio III opera sobre `clinical_audit_log` (no `clinical_access_log`); distingue el hook `useClinicalAccessLogger` (nombre histórico) de la tabla; añade brecha histórica 18-20 abr al Regulatory Framework. Sin cambio de reglas.
 - 1.0.0 (2026-04-19): ratificación inicial con 6 principios no-negociables.

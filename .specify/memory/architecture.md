@@ -210,7 +210,7 @@ Tras el preventive audit, el test manual de spec 006 reveló 3 drifts adicionale
 
 - Test manual post-deploy de spec adyacente es un 3er vector de detección de drifts (complementa `information_schema` audit + `grep` dirigido).
 - Extensión interpretativa de FR-003.c: replicar patrón canónico existente en archivo adyacente NO es re-modelado semántico — es alineamiento.
-- Hallazgo compliance §III (F-1): `PatientDashboardPageV2.jsx` lee PHI sin invocar `useClinicalAccessLogger`. Diferido a spec follow-up `fix-audit-logger-missing-on-patient-dashboard`.
+- Hallazgo compliance §III (F-1): evaluado y cerrado como **FALSE POSITIVE** en spec 008 pre-plan research — `useClinicalAccessLogger` excluye intencionalmente el rol `patient` (alineado con Ley 20.584 art. 13 y Ley 21.719, que regulan transparencia sobre accesos de terceros, no auto-consulta). Constitution §III v1.0.1 → v1.1.0 con clarificación explícita. Ver `specs/008-fix-audit-logger-missing-on-patient-dashboard/spec.md` §Spec rejected.
 
 ### Post-spec health-checks (2026-04-20)
 
