@@ -92,28 +92,45 @@ Leyenda de columnas:
 
 ### Forensic Reporting Format (R-04 compensation — baseline no ejecutado pre-fix)
 
-Baseline T5 del SP-1 quedó DEFERRED (decisión Q2 del SP-1 review). Para compensar esa falta de comparación A/B, cada ruta con error en P3-A/B/C **debe** reportarse con las 3 columnas:
+Baseline T5 del SP-1 quedó DEFERRED (decisión Q2 del SP-1 review). Para compensar esa falta de comparación A/B, cada ruta con error en P3-A/B/C **debe** reportarse exactamente con el siguiente template de 5 campos:
+
+```
+RUTA: [path o user flow]
+STATUS HTTP: [200/400/406/etc.]
+CONSOLE ERROR LITERAL: [copy-paste exacto del mensaje]
+EVALUACIÓN PRE/POST:
+  git log --all --source --oneline -20 -- [archivo]
+  → ¿el error aparece en commit 97c34b6 (spec 007)?
+  → ¿o existía antes?
+EFECTO FUNCIONAL: [qué ve el usuario: pantalla vacía / error rojo / datos incorrectos / etc.]
+```
+
+**Campo-por-campo**:
 
 | Campo | Qué capturar | Cómo obtenerlo |
 |---|---|---|
-| **(a) HTTP status code** | Status numérico exacto de la request failed (ej. `400`, `401`, `404`, `500`) | DevTools → Network tab → click la request fallida → header response |
-| **(b) Console error literal** | Mensaje exacto emitido por el browser console, sin parafrasear (ej. `column clinical_reports.file_url does not exist`) | DevTools → Console → copy-paste del error tal cual |
-| **(c) Evaluación pre-existente vs nuevo** | ¿El error fue introducido por spec 007 o ya existía? Método: `git log -p -S "<snippet de la query>" src/ruta/del/archivo.jsx` para ubicar cuándo se introdujo el patrón | Comparar fecha de introducción vs fecha del commit del spec 007 |
+| **RUTA** | Path exacto del archivo + línea si aplica, o user-flow textual (ej. `src/pages/TherapistDashboardPage.jsx:144` o `Login paciente → dashboard → widget actividades`) | DevTools → Network tab → request URL o Sources tab |
+| **STATUS HTTP** | Status numérico exacto de la request failed (`200`, `400`, `401`, `404`, `406`, `500`) | DevTools → Network tab → click la request fallida → header response |
+| **CONSOLE ERROR LITERAL** | Mensaje exacto emitido por el browser console, sin parafrasear (ej. `column clinical_reports.file_url does not exist`) | DevTools → Console → copy-paste del error tal cual |
+| **EVALUACIÓN PRE/POST** | ¿El error aparece en commit 97c34b6 (spec 007 Phase 2)? ¿O existía antes? Usar `git log --all --source --oneline -20 -- <archivo>` sobre el archivo del error para ubicar cuándo se introdujo el patrón que causa el error | Comparar contra `97c34b6` |
+| **EFECTO FUNCIONAL** | Qué percibe el usuario final — pantalla vacía, error rojo, datos incorrectos, widget en blanco, crash total, etc. | Observación visual directa |
 
 **Ejemplo de entry en Phase 3 Report**:
 
-```markdown
-### Regresión en B4 (clinicalPlanningApi.js:322)
-
-- (a) HTTP: 400 Bad Request
-- (b) Console: `column plan_sessions.legacy_patient_id does not exist`
-- (c) git blame: patrón introducido en commit abc1234 (2025-09-15, 7 meses antes de spec 007) → **pre-existente, NO regresión nueva**
-- Acción: documentar como follow-up candidato, NO cuenta para Rollback triggers.
+```
+RUTA: src/features/clinical-planning/api/clinicalPlanningApi.js:322
+STATUS HTTP: 400 Bad Request
+CONSOLE ERROR LITERAL: column plan_sessions.legacy_patient_id does not exist
+EVALUACIÓN PRE/POST:
+  git log --all --source --oneline -20 -- src/features/clinical-planning/api/clinicalPlanningApi.js
+  → Patrón introducido en commit abc1234 (2025-09-15), 7 meses antes de spec 007 (97c34b6)
+  → PRE-EXISTENTE, NO regresión nueva
+EFECTO FUNCIONAL: Panel de planning del paciente queda en blanco, sin spinner ni estado de error visible
 ```
 
-**Criterio de cuenta**:
-- Errores con `(c) = pre-existente` → **NO** cuentan para Rollback triggers. Se reportan como follow-ups.
-- Errores con `(c) = introducido por spec 007` → **SÍ** cuentan. Al llegar a >2 o 1 crítica → disparar Rollback.
+**Criterio de cuenta (SP-4 Rollback Plan)**:
+- `EVALUACIÓN PRE/POST = pre-existente` → **NO** cuenta para Rollback triggers. Se reporta como follow-up candidato.
+- `EVALUACIÓN PRE/POST = introducido por 97c34b6` → **SÍ** cuenta. Al llegar a **>2** regresiones nuevas o **1 crítica** (rompe flujo visible del rol) → disparar Rollback (`git revert 97c34b6`).
 
 ---
 

@@ -196,6 +196,22 @@ Auditoría preventiva post-spec 005 sobre 5 tablas sospechosas de drift similar 
 
 **Técnica aplicada:** 5 queries `information_schema.columns` + `grep` dirigido por candidato. Runtime total ~8 min. Template reusable para micro-auditorías futuras.
 
+#### Drifts resueltos post-audit (spec 007 — 2026-04-20)
+
+Tras el preventive audit, el test manual de spec 006 reveló 3 drifts adicionales no capturados por la auditoría inicial (rutas del patient dashboard y therapist dashboard). Resueltos en spec 007.
+
+| Drift | Archivo | Fix | Commit |
+|---|---|---|---|
+| `session_activities.patient_id` no existe | `PatientDashboardPageV2.jsx:162,240` | 3-level embed `plan_sessions → patient_assigned_plans → patient_id` | `97c34b6` |
+| `appointments.fee` nunca existió | `TherapistDashboardPage.jsx:144` | Structural-join `therapist_services.price_clp` vía `service_id` FK (patrón canónico de `useTherapistDashboard.js`) | `97c34b6` |
+| `clinical_reports.file_url` renombrado + `title` inexistente | `PatientDashboardPageV2.jsx:182` | Alias PostgREST `file_url:final_pdf_url` + título default `'Documento'` | `97c34b6` |
+
+**Lecciones operativas:**
+
+- Test manual post-deploy de spec adyacente es un 3er vector de detección de drifts (complementa `information_schema` audit + `grep` dirigido).
+- Extensión interpretativa de FR-003.c: replicar patrón canónico existente en archivo adyacente NO es re-modelado semántico — es alineamiento.
+- Hallazgo compliance §III (F-1): `PatientDashboardPageV2.jsx` lee PHI sin invocar `useClinicalAccessLogger`. Diferido a spec follow-up `fix-audit-logger-missing-on-patient-dashboard`.
+
 ### Post-spec health-checks (2026-04-20)
 
 Queries ejecutadas en bloque Express para validar que specs 003/004/005 siguen funcionando en producción:
@@ -293,4 +309,4 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
 - `docs/PATTERNS.md` — 5 patrones canónicos de DentalSpot (alias SQL · backfill+trigger · dedup audit · audit defensivo · preventive mini-audit)
 ---
-**Last updated**: 2026-04-20 | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags, health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad.
+**Last updated**: 2026-04-20 | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags, health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad, subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados.
