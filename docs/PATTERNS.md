@@ -233,6 +233,60 @@ Post-cualquier spec de schema drift, correr la mini-auditoría sobre tablas adya
 
 ---
 
+## 6. False positive detection — verificar hook body antes de declarar compliance gap
+
+### Problema
+
+Un gap de Constitution III aparente ("archivo X lee PHI pero no invoca `useClinicalAccessLogger`") puede ser un FALSE POSITIVE si el hook está intencionalmente diseñado para filtrar ese caso (ej: excluir auto-acceso del paciente a su propia ficha).
+
+### Patrón
+
+ANTES de abrir spec "fix missing audit logger":
+
+1. Leer el BODY de `useClinicalAccessLogger.js` (no solo la signature).
+2. Verificar condiciones early-return (`isClinicalRole`, user context, etc.).
+3. Cruzar con legislación citada (Ley 20.584 art. 13 habla de **terceros**, no auto-acceso).
+4. Analizar callsites existentes que SÍ funcionan — ¿qué caso cubren?
+5. Solo si (1)-(4) coinciden en que el gap es real → abrir spec.
+
+### Regla operativa
+
+"Gap de compliance aparente" NO implica "gap real" hasta que se verifica body + intent legal + callsites existentes.
+
+### Caso canónico
+
+Spec 008 `fix-audit-logger-missing-on-patient-dashboard` REJECTED durante pre-plan research. El hook excluye rol `patient` intencionalmente (early return en `src/lib/audit/useClinicalAccessLogger.js:31-36`), alineado con intent legal (Ley 20.584 art. 13 regula transparencia sobre accesos de TERCEROS, no auto-consulta). Ver `specs/008-fix-audit-logger-missing-on-patient-dashboard/spec.md` §"Spec rejected — false positive". Esta lección motivó Constitution §III v1.1.0 con clarificación explícita.
+
+---
+
+## 7. State drift re-verification entre phases
+
+### Problema
+
+Entre Phase 1 (audit) y Phase 2 (implementation) de un spec que toca DB, el estado puede cambiar (otro proceso crea/modifica policies, alguien experimenta con SQL, CI corre algo). Si Phase 2 asume el snapshot de Phase 1 está vigente, pre-check puede fallar con error confuso.
+
+### Patrón
+
+ANTES de apply de migration en Phase 3 (o antes de commit de Phase 2):
+
+1. Re-ejecutar la query de audit crítica de Phase 1 (`pg_policies`, `pg_indexes`, `information_schema.columns` según el caso).
+2. Comparar con snapshot Phase 1.
+3. Si estado cambió:
+   - Evaluar si es favorable (ej: policy que ibas a crear ya existe).
+   - Ajustar scope del spec SIN descartar Phase 1 (pivot documentado).
+   - O abortar si el cambio contradice assumptions del spec.
+4. Documentar el state drift en `data-model.md` con razonamiento del pivot.
+
+### Regla operativa
+
+"El estado de la DB en Phase 1 NO es garantía del estado en Phase 3." Re-verify antes de `ENABLE RLS`, `ALTER TABLE`, `DROP POLICY`, o cualquier operación que dependa de snapshot previo.
+
+### Caso canónico
+
+Spec 009 `restore-marketplace-purchases-policies` — Phase 1 mostró 1 policy (`"Admins update"`), Phase 2 re-check reveló **2 policies** (la nueva `"Vendors read own plan purchases"` fue inyectada durante Phase 1 por el usuario experimentando con preview SQL). Pivot X2→X1 documentado en `specs/009-restore-marketplace-purchases-policies/data-model.md` §"Phase 1 State Drift Discovery". Sin re-verify, el apply de Phase 3 habría abortado con pre-check FAIL esperando 1 policy y encontrando 2.
+
+---
+
 ## Referencias
 
 - `constitution.md` — 6 principios no-negociables
@@ -242,4 +296,4 @@ Post-cualquier spec de schema drift, correr la mini-auditoría sobre tablas adya
 
 ---
 
-**Last updated**: 2026-04-20 | **Source**: ciclo de specs 001-005 + preventive audit post-005
+**Last updated**: 2026-04-20 | **Source**: ciclo de specs 001-005 + preventive audit post-005 + specs 008 (false positive detection) + 009 (state drift re-verification) — patrones 6 y 7 añadidos
