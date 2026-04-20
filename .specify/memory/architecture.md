@@ -149,16 +149,20 @@ Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|del
 | Patient file | `pages/therapist/PatientFilePage.jsx` | `features/patient-file/pages/` |
 | Therapist dashboard | `pages/TherapistDashboardPage.jsx` | `features/dashboard/components/` + `hooks/useTherapistDashboard.js` |
 **Regla operativa:** feature nueva → `src/features/`. Al tocar pages/ legacy → spec dedicada decide si migrar o mantener (no migrar "de pasada").
-### Dead code sospechoso
-- `src/app/providers.jsx` — existe pero no enlazado en `App.jsx`
-- Features `fonoaudiologo`, `voice-visualizer` — verificar si activos (posible herencia FONOKIT)
+### Dead code confirmed (mini-audit 2026-04-19/20)
+
+| Item | Veredicto | Acción propuesta |
+|---|---|---|
+| `src/app/providers.jsx` (31 líneas) + `src/app/App.jsx` | 🟠 Dead code efectivo — `src/app/App.jsx` importa `providers.jsx` pero es huérfano (main.jsx usa `src/App.jsx` en la raíz, no `src/app/App.jsx`) | `rm` ambos — spec `cleanup-fonokit-dead-code` |
+| `src/features/voice-visualizer/` (5 archivos) + `src/pages/VoiceVisualizerPage.jsx` + ruta | 🟠 Dead code efectivo — `FEATURE_FLAGS.VOICE_VISUALIZER = false` (comentario del router: "módulo heredado FonoKit") | `rm` feature + page + ruta + flag — spec `cleanup-fonokit-dead-code` |
+| `src/features/fonoaudiologo/` | ✅ Activo (imports reales en `DashboardRouter.jsx:55` + `features/marketplace/pages/tabs/EarningsTab.jsx:22`). **Branding bug crítico:** URLs públicas `/fonoaudiologos` y `/fonoaudiologo/:slug` confunden DentalSpot con app de fonoaudiólogos | Rename folder a `earnings` + migrar URLs con redirects 301 — spec **`rebrand-fonoaudiologo-urls`** (impacto SEO/marca, prioridad alta) |
 ### Stack obsolescence
 - **Vite 4.4** → v5/v6 disponibles. Upgrade rompe config de externals; spec dedicada.
 - **Sin librería de validación** (`zod` / `yup` / `@hookform/resolvers`) — cada form valida a mano. Riesgo: inconsistencia, PHI sin sanitizar.
 - **Sin data-fetching lib** (`tanstack-query`, `swr`) — cache/retries/estado manuales. Riesgo: re-fetches, race conditions.
 ### Environment / operations
-- `supabase/schema.sql` actualmente vacío — dump remoto falló por Docker down. Regenerar vía `supabase db dump --db-url` o MCP Supabase global en micro-bloque.
-- `.playwright-mcp/` (~80 snapshots `page-*.yml`) pushados accidentalmente a `origin/main`. Limpiar con `git rm --cached` + confirmar `.gitignore` (ya presente). Micro-bloque pendiente.
+- `supabase/schema.sql`: restaurado 2026-04-19 al estado del commit `c3f30be` (27.315 líneas, schema del 1-abril). **Desactualizado** — no refleja migración `20260419000001_repair_patient_care_team` de spec 003 ni otras posteriores al 1-abril. Fuente de verdad canónica: `supabase/migrations/` (76+ archivos). Candidato a regenerar con `--db-url` en spec dedicada si se necesita el schema actual consolidado.
+- `.playwright-mcp/`: resuelto en commit pre-sesión `d840024` (`chore: ignore .playwright-mcp artifacts`). `.gitignore` ya lo ignora. Sin acción pendiente.
 ### Data-migration patches
 Las migraciones `resolve_danissa_*` y `resolve_cristobal_*` son evidencia de drift resuelto manualmente. No repetir patrón — ver Constitution VI.
 
