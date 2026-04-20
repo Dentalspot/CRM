@@ -161,8 +161,24 @@ Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|del
 - **Sin librería de validación** (`zod` / `yup` / `@hookform/resolvers`) — cada form valida a mano. Riesgo: inconsistencia, PHI sin sanitizar.
 - **Sin data-fetching lib** (`tanstack-query`, `swr`) — cache/retries/estado manuales. Riesgo: re-fetches, race conditions.
 ### Environment / operations
-- `supabase/schema.sql`: restaurado 2026-04-19 al estado del commit `c3f30be` (27.315 líneas, schema del 1-abril). **Desactualizado** — no refleja migración `20260419000001_repair_patient_care_team` de spec 003 ni otras posteriores al 1-abril. Fuente de verdad canónica: `supabase/migrations/` (76+ archivos). Candidato a regenerar con `--db-url` en spec dedicada si se necesita el schema actual consolidado.
+- `supabase/schema.sql`: restaurado 2026-04-19 al estado del commit `c3f30be` (27.315 líneas, schema del 1-abril). **Desactualizado** — no refleja migración `20260419000001_repair_patient_care_team` de spec 003 ni otras posteriores al 1-abril. Fuente de verdad canónica: `supabase/migrations/` (76+ archivos). **E1 intento 2026-04-20**: `supabase db dump --linked` requiere Docker Desktop corriendo (error `Cannot connect to docker.sock`). `pg_dump` 14.13 local disponible pero credenciales ephemeral del CLI expiran rápido (auth failed en test). **Regeneración diferida** hasta tener Docker Desktop up o db password canónico. Comando esperado: `supabase db dump --linked -f supabase/schema.sql`.
+- **⚠️ Gotcha conocido `supabase db dump -f`:** el CLI abre y **trunca el archivo destino ANTES de chequear Docker**. Si Docker no corre, el archivo queda vacío y el CLI termina con error. Observado 2x (19-abr y 20-abr). **Mitigación:** antes de correr `supabase db dump -f supabase/schema.sql`, verificar `docker ps` responde OK; si trunca por error, recuperar con `git checkout HEAD -- supabase/schema.sql`. Alternativa segura: dump a archivo temporal `-f /tmp/schema.sql.tmp` y `mv` solo si exit code = 0.
 - `.playwright-mcp/`: resuelto en commit pre-sesión `d840024` (`chore: ignore .playwright-mcp artifacts`). `.gitignore` ya lo ignora. Sin acción pendiente.
+- `.specify/feature.json`: estado transitorio del Spec Kit (apunta al spec activo). Agregado a `.gitignore` 2026-04-20.
+### Feature flags inventory (2026-04-20)
+Archivo `src/constants/featureFlags.js` — todos en **Etapa 1 Contención** (`false`). Documentación del archivo: "controla la visibilidad de módulos heredados de FonoKit que no aplican al dominio dental".
+
+| Flag | Valor | Call sites | Nota |
+|---|---|---|---|
+| `PIE_ESCOLAR` | false | 3 (DashboardRouter, PatientFilePage, PatientModal) | Más conectado — reactivar requiere test UX end-to-end |
+| `ADOS2` | false | 1 (DashboardRouter) | Candidato a dead code |
+| `ADIR` | false | 1 (DashboardRouter) | Candidato a dead code |
+| `TEA` | false | 1 (DashboardRouter) | Candidato a dead code |
+| `SENSORIAL_PROFILE` | false | 1 (DashboardRouter) | Candidato a dead code |
+| `VOICE_VISUALIZER` | false | 1 (DashboardRouter) | Ya confirmado dead (ver "Dead code confirmed" arriba) |
+| `EDUCATOR` | false | 1 (DashboardRouter) | Candidato a dead code |
+
+**Regla operativa:** si un flag permanece `false` >2 meses sin plan de reactivación, entra en scope de spec `cleanup-fonokit-dead-code`.
 ### Data-migration patches
 Las migraciones `resolve_danissa_*` y `resolve_cristobal_*` son evidencia de drift resuelto manualmente. No repetir patrón — ver Constitution VI.
 
@@ -179,6 +195,43 @@ Auditoría preventiva post-spec 005 sobre 5 tablas sospechosas de drift similar 
 | `patients.patient_type` vs `attention_type` | Ambos existen nullable text | `patient_type` = previsión (privado/fonasa/convenio), `attention_type` = modalidad (consulta_privada/pie_escolar) — **conceptos ortogonales, no duplicados** | ✅ Verde (no es drift) | — |
 
 **Técnica aplicada:** 5 queries `information_schema.columns` + `grep` dirigido por candidato. Runtime total ~8 min. Template reusable para micro-auditorías futuras.
+
+### Post-spec health-checks (2026-04-20)
+
+Queries ejecutadas en bloque Express para validar que specs 003/004/005 siguen funcionando en producción:
+
+| Check | Query | Resultado | Verdict |
+|---|---|---|---|
+| Spec 003 — audit log activo | `SELECT COUNT(*) FROM clinical_audit_log WHERE created_at >= '2026-04-20'` | 9 writes en 2026-04-20 | ✅ Trigger OK, Constitution III restaurada tras gap de 43h |
+| Spec 005 — therapist_services pricing | `SELECT COUNT(*) FILTER (WHERE price_clp IS NULL) FROM therapist_services` | 0 null / 4 total | ✅ Data consistente con schema |
+| Spec 003 — patient_care_team sync | `COUNT(patients) vs COUNT(DISTINCT pct.patient_id)` | 5/5 sincronizados, 0 missing | ✅ Trigger de sync funcionando 100% |
+
+### Performance audit (2026-04-20) — FKs sin índice
+
+Query a `pg_constraint` + `pg_index` detectó 30+ foreign keys sin índice en la columna de origen. Clasificación por impacto operacional esperado:
+
+**🔴 Alta prioridad — queries frecuentes en UI:**
+- `appointments.service_id` → therapist_services (calendar render)
+- `commissions.therapist_id` → profiles (dashboard therapist)
+- `commissions.sale_id` → sales (admin commissions)
+- `clinic_invoices.patient_id` → patients (patient file)
+- `clinic_invoices.therapist_id` → profiles (dashboard therapist)
+- `clinical_history.entry_type` → clinical_entry_types (patient file filter)
+- `clinical_history.diagnosis_id` → patient_diagnoses (diagnosis lookup)
+
+**🟡 Media — features calendaring / LMS:**
+- `blocked_times.clinic_id` + `.therapist_id` (calendar)
+- `course_modules.course_id` (LMS, feature flag EDUCATOR `false` hoy)
+- `clinical_audit_log.grant_id` → exceptional_access_grants
+
+**🟢 Baja — admin / infrecuente:**
+`admin_*`, `arco_*`, `blog_*`, `cookie_consents`, `coupon_uses`, etc. (15+).
+
+**Verdict:** sin bug funcional hoy. Latencias crecientes con volumen. Candidato a spec `add-missing-fk-indexes` (45-60min, migración sola con `CREATE INDEX IF NOT EXISTS`).
+
+### Schema audit NOT NULL (2026-04-20) — limpio
+
+29 columnas NOT NULL sin default en tablas core (`patients`, `appointments`, `clinics`, `therapist_services`, `patient_care_team`, `clinical_audit_log`, `organizations`, `profiles`, `membership_plans`, `subscriptions`). Todas **semánticamente requeridas por dominio** (appointment necesita date, patient necesita org, audit log necesita user/action/resource). Sin INSERTs silenciosos que puedan fallar por NULL. **Schema bien constrained. 0 findings.**
 
 ### 🚩 Antipatrón: "migración one-shot sin trigger"
 
@@ -197,5 +250,6 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/constitution.md` — 6 principios no-negociables
 - `.specify/memory/ecosystem-communicare.md` — rol en ecosistema Communicare
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
+- `docs/PATTERNS.md` — 5 patrones canónicos de DentalSpot (alias SQL · backfill+trigger · dedup audit · audit defensivo · preventive mini-audit)
 ---
-**Last updated**: 2026-04-20 | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog.
+**Last updated**: 2026-04-20 | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags, health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad.
