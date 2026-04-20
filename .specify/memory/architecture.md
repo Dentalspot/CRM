@@ -151,11 +151,11 @@ Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|del
 **Regla operativa:** feature nueva → `src/features/`. Al tocar pages/ legacy → spec dedicada decide si migrar o mantener (no migrar "de pasada").
 ### Dead code confirmed (mini-audit 2026-04-19/20)
 
-| Item | Veredicto | Acción propuesta |
-|---|---|---|
-| `src/app/providers.jsx` (31 líneas) + `src/app/App.jsx` | 🟠 Dead code efectivo — `src/app/App.jsx` importa `providers.jsx` pero es huérfano (main.jsx usa `src/App.jsx` en la raíz, no `src/app/App.jsx`) | `rm` ambos — spec `cleanup-fonokit-dead-code` |
-| `src/features/voice-visualizer/` (5 archivos) + `src/pages/VoiceVisualizerPage.jsx` + ruta | 🟠 Dead code efectivo — `FEATURE_FLAGS.VOICE_VISUALIZER = false` (comentario del router: "módulo heredado FonoKit") | `rm` feature + page + ruta + flag — spec `cleanup-fonokit-dead-code` |
-| `src/features/fonoaudiologo/` | ✅ Activo (imports reales en `DashboardRouter.jsx:55` + `features/marketplace/pages/tabs/EarningsTab.jsx:22`). **Branding bug crítico:** URLs públicas `/fonoaudiologos` y `/fonoaudiologo/:slug` confunden DentalSpot con app de fonoaudiólogos | Rename folder a `earnings` + migrar URLs con redirects 301 — spec **`rebrand-fonoaudiologo-urls`** (impacto SEO/marca, prioridad alta) |
+| Item | Veredicto | Acción propuesta | Status |
+|---|---|---|---|
+| `src/app/providers.jsx` (31 líneas) + `src/app/App.jsx` | 🟠 Dead code efectivo — `src/app/App.jsx` importa `providers.jsx` pero es huérfano (main.jsx usa `src/App.jsx` en la raíz, no `src/app/App.jsx`) | `rm` ambos — spec `cleanup-fonokit-dead-code` | ✅ Resuelto spec 010 commit `1c07b26` |
+| `src/features/voice-visualizer/` (5 archivos) + `src/pages/VoiceVisualizerPage.jsx` + ruta | 🟠 Dead code efectivo — `FEATURE_FLAGS.VOICE_VISUALIZER = false` (comentario del router: "módulo heredado FonoKit") | `rm` feature + page + ruta + flag — spec `cleanup-fonokit-dead-code` | ✅ Resuelto spec 010 commit `1c07b26` |
+| `src/features/fonoaudiologo/` | ✅ Activo (imports reales en `DashboardRouter.jsx:55` + `features/marketplace/pages/tabs/EarningsTab.jsx:22`). **Branding bug crítico:** URLs públicas `/fonoaudiologos` y `/fonoaudiologo/:slug` confunden DentalSpot con app de fonoaudiólogos | Rename folder a `earnings` + migrar URLs con redirects 301 — spec **`rebrand-fonoaudiologo-urls`** (impacto SEO/marca, prioridad alta) | 🔄 Backlog (spec dedicada pendiente) |
 ### Stack obsolescence
 - **Vite 4.4** → v5/v6 disponibles. Upgrade rompe config de externals; spec dedicada.
 - **Sin librería de validación** (`zod` / `yup` / `@hookform/resolvers`) — cada form valida a mano. Riesgo: inconsistencia, PHI sin sanitizar.
@@ -175,7 +175,7 @@ Archivo `src/constants/featureFlags.js` — todos en **Etapa 1 Contención** (`f
 | `ADIR` | false | 1 (DashboardRouter) | Candidato a dead code |
 | `TEA` | false | 1 (DashboardRouter) | Candidato a dead code |
 | `SENSORIAL_PROFILE` | false | 1 (DashboardRouter) | Candidato a dead code |
-| `VOICE_VISUALIZER` | false | 1 (DashboardRouter) | Ya confirmado dead (ver "Dead code confirmed" arriba) |
+| ~~`VOICE_VISUALIZER`~~ | — | 0 | 🗑️ Removido spec 010 commit `1c07b26` (flag + feature + page + ruta eliminados) |
 | `EDUCATOR` | false | 1 (DashboardRouter) | Candidato a dead code |
 
 **Regla operativa:** si un flag permanece `false` >2 meses sin plan de reactivación, entra en scope de spec `cleanup-fonokit-dead-code`.
@@ -325,4 +325,4 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
 - `docs/PATTERNS.md` — 5 patrones canónicos de DentalSpot (alias SQL · backfill+trigger · dedup audit · audit defensivo · preventive mini-audit)
 ---
-**Last updated**: 2026-04-20 | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags, health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad, subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados.
+**Last updated**: 2026-04-20 | spec 010 closed — voice-visualizer + src/app/ orphans eliminados (commit `1c07b26`) | spec 009 closed — marketplace_purchases RLS 4 policies (commit `0b89ba3`) | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) + spec 009 marketplace_purchases RLS restoration (20-abr, commit `0b89ba3`) + spec 010 dead code cleanup (20-abr, commit `1c07b26`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags (reducido a 6 tras spec 010), health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad, subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados, subsección "RLS policies restauradas (spec 009)" con 4 policies finales de marketplace_purchases, Dead code table con columna Status tracking spec 010 resolution.
