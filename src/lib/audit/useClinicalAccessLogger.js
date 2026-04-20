@@ -6,13 +6,13 @@ import { logClinicalAccess } from './clinicalAuditLogger';
 // Dedupe por hora: decisión anti-spam de UX, NO un control de seguridad.
 // Evita registrar re-aperturas repetidas del mismo recurso por el mismo usuario
 // dentro de la misma hora (p.ej. navegar ficha → odontograma → ficha).
-function hourBucketKey({ userId, patientId, action, resourceType }) {
+function hourBucketKey({ userId, patientId, action, resourceType, resourceId }) {
   const now = new Date();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   const h = String(now.getHours()).padStart(2, '0');
-  return `clinical_audit:${userId}:${patientId}:${action}:${resourceType}:${y}-${m}-${d}-${h}`;
+  return `clinical_audit:${userId}:${patientId}:${action}:${resourceType}:${resourceId ?? ''}:${y}-${m}-${d}-${h}`;
 }
 
 export default function useClinicalAccessLogger({
@@ -43,6 +43,7 @@ export default function useClinicalAccessLogger({
       patientId,
       action,
       resourceType,
+      resourceId,
     });
 
     try {
