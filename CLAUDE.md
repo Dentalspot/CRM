@@ -18,7 +18,7 @@ Los 6 principios de la constitución (resumen):
 
 1. **Compliance-First** — sin evaluación Ley 20.584/21.719, no hay spec
 2. **RLS-First Security** — los guards React son UX, no seguridad. La seguridad vive en `supabase/policies.sql`
-3. **Append-Only Audit** — leer datos clínicos sin invocar `useClinicalAccessLogger` es violación
+3. **Append-Only Audit** — leer datos clínicos sin invocar `useClinicalAccessLogger` es violación. El hook escribe a `clinical_audit_log` (audit general, NO a `clinical_access_log` que pertenece al módulo `clinical-passport`, ver `data-compliance.md`)
 4. **Micro-Bloques** — un PR = un bug/feature. Nunca refactor + fix + feature mezclados
 5. **UI Honesty** — ningún toast "Guardado" sin validar `.select('id').length > 0`
 6. **Schema Drift Zero** — columna usada en código = columna existente en `supabase/migrations/`
@@ -44,9 +44,11 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 ## Supabase
 
 - Project ref: `tomremkbuxvedliyywbo`
-- 76 migraciones en `supabase/migrations/` (RLS en 3 fases)
+- 77 migraciones en `supabase/migrations/` (RLS en 3 fases + sync fix de spec 003)
 - 173 tablas, 38 edge functions, ≈ 3.016 líneas de policies
 - Schema dump (`supabase/schema.sql`) actualmente vacío — regenerar como micro-bloque
+- **Dos tablas audit distintas, NO confundir:** `clinical_audit_log` (audit general via `src/lib/audit/*`) vs `clinical_access_log` (passport sharing via `src/features/clinical-passport/*`). Detalle en `data-compliance.md` §"Dos tablas distintas"
+- **Patrón canónico "backfill idempotente + trigger de sincronización"** para tablas derivadas — ver `architecture.md` §"Canonical patterns" (ejemplo: migración `20260419000001` de spec 003)
 
 ## Antes de hacer X, lee Y
 
@@ -58,10 +60,12 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 | Pensar en API entre DentalSpot y FONOKIT | `ecosystem-communicare.md` |
 | Tocar RLS | `data-compliance.md` sección "Aislamiento entre clínicas" |
 | Investigar duplicación pages/features | `architecture.md` sección "Technical debt inventory" |
+| Crear tabla derivada poblada por backfill | `architecture.md` §"Canonical patterns" (backfill+trigger) + antipatrón §"migración one-shot sin trigger" |
+| Distinguir `clinical_audit_log` vs `clinical_access_log` | `data-compliance.md` §"Dos tablas distintas" |
 
 ---
 
-**Última revisión fundacional**: 2026-04-19
+**Última revisión fundacional**: 2026-04-20 (aprendizajes ciclo spec 001/002/003 incorporados — ver changelogs en los 4 docs de `.specify/memory/`)
 
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.

@@ -24,7 +24,7 @@ Consequence: Ninguna tabla con PHI vive sin policies de las 3 fases RLS. Regresi
 
 ### III. Append-Only Clinical Audit (NON-NEGOTIABLE)
 
-Rule: Toda apertura, impresión, exportación o modificación de datos clínicos se escribe en clinical_access_log vía src/lib/audit/clinicalAuditLogger.js + hook useClinicalAccessLogger. La tabla tiene triggers append-only: no admite UPDATE ni DELETE desde el cliente ni desde roles no-privilegiados.
+Rule: Toda apertura, impresión, exportación o modificación de datos clínicos se escribe en `clinical_audit_log` vía `src/lib/audit/clinicalAuditLogger.js` + hook `useClinicalAccessLogger` (el hook conserva el nombre "Access" por razones históricas pero escribe a la tabla `clinical_audit_log`, no a `clinical_access_log` — ésa pertenece al módulo `clinical-passport`). La tabla `clinical_audit_log` tiene triggers append-only: no admite UPDATE ni DELETE desde el cliente ni desde roles no-privilegiados.
 
 Why: El paciente tiene derecho ARCO a saber quién, cuándo y por qué se accedió a su ficha (Ley 21.719). El log es la ventana de confianza del paciente al sistema — y, en dirección opuesta, la defensa del profesional ante reclamos injustos (historia fundacional Communicare #3).
 
@@ -58,11 +58,11 @@ Consequence: Revisión obligatoria: cada mención de tabla/columna en src/ tiene
 
 DentalSpot opera bajo:
 
-Ley 21.719 (Chile, protección de datos personales, reemplaza a Ley 19.628 en transición progresiva). Estado: compliance parcial — tablas arco_requests, legal_signatures, logger clinical_access_log y RLS phase3 vivas; ARCO self-service desde AccountSecuritySettings y módulo admin ArcoRequestsPage operativos; pendiente flujo completo de portabilidad y borrado con retención legal.
+Ley 21.719 (Chile, protección de datos personales, reemplaza a Ley 19.628 en transición progresiva). Estado: compliance parcial — tablas `arco_requests`, `legal_signatures`, logger `clinical_audit_log` (audit general) + `clinical_access_log` (passport sharing) y RLS phase3 vivas; ARCO self-service desde `AccountSecuritySettings` y módulo admin `ArcoRequestsPage` operativos; pendiente flujo completo de portabilidad y borrado con retención legal. Brecha histórica documentada: ventana 2026-04-18 06:57 → 2026-04-20 02:04 UTC con `clinical_audit_log` silencioso (ver `data-compliance.md` §"Historial de compliance"), cerrada en spec 003 commit `c55d1a5`.
 Ley 20.584 (Chile, derechos del paciente y acciones de salud). Estado: compliance-ready — consentimiento informado vía legal_signatures + ClinicalConsentModal + hook useClinicalConsent.
 Ley 19.628 (predecesora, vigente durante transición).
 RGPD (referencia para expansión futura fuera de Chile).
-Toda tabla con PHI debe tener: (a) columna organization_id + RLS phase2_clinical, (b) registro en clinical_access_log cuando se lee, (c) política de retención alineada a la ley que corresponda.
+Toda tabla con PHI debe tener: (a) columna `organization_id` + RLS phase2_clinical, (b) registro en `clinical_audit_log` cuando se lee/edita/crea (vía `useClinicalAccessLogger`), (c) política de retención alineada a la ley que corresponda.
 
 ## Development Workflow
 
@@ -85,4 +85,8 @@ Enmiendas requieren: (a) rationale escrito en el PR, (b) incremento del campo Ve
 Excepciones puntuales a un principio requieren justificación en la spec afectada con etiqueta [CONSTITUTION-EXCEPTION] y un plan de re-alineación.
 Los 6 principios son no-negociables; solo "Regulatory Framework" y "Development Workflow" admiten actualizaciones sin cambio de versión mayor.
 Versioning: MAJOR = remover principio o cambiar gobernanza; MINOR = principio nuevo; PATCH = aclaración sin cambio de regla.
-Version: 1.0.0 | Ratified: 2026-04-19 | Last Amended: 2026-04-19
+Version: 1.0.1 | Ratified: 2026-04-19 | Last Amended: 2026-04-20
+
+Changelog:
+- 1.0.1 (2026-04-20): PATCH — aclara que Principio III opera sobre `clinical_audit_log` (no `clinical_access_log`); distingue el hook `useClinicalAccessLogger` (nombre histórico) de la tabla; añade brecha histórica 18-20 abr al Regulatory Framework. Sin cambio de reglas.
+- 1.0.0 (2026-04-19): ratificación inicial con 6 principios no-negociables.

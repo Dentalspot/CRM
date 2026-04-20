@@ -83,9 +83,10 @@ Fases identificadas:
 1. **Baseline** — archivos `.bak` pre-baseline + baselines iniciales
 2. **Phase 1 RLS** (`rls_phase1_administrative`) — profiles, organizations, subscriptions, memberships
 3. **Phase 2 RLS** (`rls_phase2_clinical`) — patients, clinical_records, evaluations, treatments + fix `fix_dentist_insert_policies`
-4. **Phase 3 RLS** (`rls_phase3_compliance`) — clinical_access_log, legal_signatures, arco_requests, processing_lawful_basis, exceptional_access_grants + `fix_care_team_recursion`
+4. **Phase 3 RLS** (`rls_phase3_compliance`) — clinical_audit_log, legal_signatures, arco_requests, processing_lawful_basis, exceptional_access_grants + `fix_care_team_recursion`
 5. **Post-baseline patches** — `organization_model_schema`, `revoke_anon_privs`, `patient_admin_columns`, `payment_fixes`, `consent_status_rpc`, `resolve_danissa_*`, `resolve_cristobal_*` (drift resuelto manualmente)
-Última migración registrada: `20260418000002_*`.
+6. **Phase 3 sync fix (spec 003, 2026-04-20)** — `20260419000001_repair_patient_care_team.sql`: backfill reparador idempotente + triggers `trg_sync_patient_care_team_insert/update` sobre `patients`. Cierra la brecha de `clinical_audit_log` silencioso (ventana 2026-04-18 06:57 → 2026-04-20 02:04 UTC). Ver `data-compliance.md` §"Historial de compliance".
+Última migración registrada: `20260419000001_*`.
 ### Tables (~173 en `supabase/tables_list.txt`)
 | Dominio | Tablas representativas |
 |---|---|
@@ -93,7 +94,8 @@ Fases identificadas:
 | Clínico | `patients`, `clinical_records`, `evaluations`, `treatment_plans`, `odontogram`, `session_activities` |
 | Agenda | `appointments`, `reminders` |
 | Servicios | `therapist_services` (precio en `price_clp`) |
-| Compliance | `clinical_access_log`, `legal_signatures`, `arco_requests`, `consent_records` |
+| Compliance — audit general | `clinical_audit_log` (append-only, `view_record`/`edit_record`/`create_record`/`export_file`/`print_record`), `patient_care_team` (gate para `is_in_care_team`), `legal_signatures`, `arco_requests`, `consent_records` |
+| Compliance — Pasaporte Clínico | `clinical_access_log` (grant/share/revoke/download, módulo `clinical-passport`) — tabla distinta de `clinical_audit_log`, ver data-compliance.md §"Dos tablas distintas" |
 | Comercio | `subscriptions`, `payments` (MercadoPago), `wallet`, `marketplace_*` |
 | Módulos verticales | `symptom_flow_*`, `sensorial_profile_*`, `tea_*`, `ados2_*`, `adir_*`, `pie_*`, `progress_*`, `recommendations_*` |
 ### Edge functions (38 en `supabase/functions/`)
@@ -110,12 +112,35 @@ Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|del
 | Propósito | Archivo(s) |
 |---|---|
 | Cliente Supabase | `src/lib/supabase/*` (singleton) |
-| Audit logger | `src/lib/audit/clinicalAuditLogger.js` + `src/lib/audit/useClinicalAccessLogger.js` |
+| Audit logger (escribe a `clinical_audit_log`) | `src/lib/audit/clinicalAuditLogger.js` + `src/lib/audit/useClinicalAccessLogger.js` *(el hook se llama "Access" por historia — escribe a la tabla `clinical_audit_log`, no a `clinical_access_log`)* |
+| Pasaporte Clínico (escribe a `clinical_access_log`) | `src/features/clinical-passport/` — implementación parcial del Pasaporte Clínico Universal del ecosistema Communicare. Cubre grant/share/revoke/download de acceso compartido a la ficha entre profesionales. Consumidores: `AcceptPassportPage.jsx`, `useAccessLog.js`, `useCompliance.js`, `AccessGrantsManager.jsx`, `SharePassportModal.jsx`. |
 | Consent flow | `src/hooks/useClinicalConsent.js` + `src/components/shared/ClinicalConsentModal.jsx` |
 | ARCO paciente self-service | `src/features/settings/components/AccountSecuritySettings.jsx` |
 | ARCO gestión admin | `src/features/admin/modules/legal/pages/ArcoRequestsPage.jsx` |
 | Legal signatures admin | `src/features/admin/modules/legal/pages/DocumentDetailPage.jsx` + `legalApi.js` |
 | Patient access history (derecho ARCO) | `src/features/patient-dashboard/pages/PatientAccessHistoryPage.jsx` |
+## ✅ Canonical patterns
+
+### Tabla derivada: "backfill idempotente + trigger de sincronización"
+
+**Problema que resuelve:** mantener una tabla derivada (ej. `patient_care_team`) consistente con su tabla fuente (ej. `patients`). Sin trigger, el backfill one-shot degrada en silencio a medida que la tabla fuente crece/cambia.
+
+**Implementación canónica** (ver migración `20260419000001_repair_patient_care_team.sql`, spec 003, commit `c55d1a5`):
+
+1. **Backfill reparador idempotente** — `INSERT INTO <derivada> (...) SELECT ... FROM <fuente> WHERE <condiciones> AND NOT EXISTS (<fila ya presente>) ON CONFLICT DO NOTHING;`. Condiciones replican el backfill original one-shot + filtro negativo para no duplicar. `ON CONFLICT DO NOTHING` protege contra índices únicos parciales.
+2. **Función `SECURITY DEFINER`** con gate de validación (membership, consistencia de org, etc.). Bypasea RLS internamente pero preserva design intent vía su guard propio.
+3. **Triggers** `AFTER INSERT` y `AFTER UPDATE OF <columnas clave>` sobre la tabla fuente, llamando a la función. `DROP TRIGGER IF EXISTS` antes de `CREATE TRIGGER` = idempotencia.
+4. **No relajar policies RLS** downstream — el fix mantiene el design intent de la policy, sólo asegura que sus pre-requisitos (la fila en la tabla derivada) existan.
+
+**Cuándo usar este patrón:**
+- Creaste una tabla derivada con backfill one-shot (ej. en una migración de tipo `populate_*`).
+- Otra policy RLS o función SQL depende de la presencia de filas en esa tabla derivada.
+- La tabla fuente sigue aceptando INSERT/UPDATE post-backfill.
+
+**Cuándo NO usar:** si la tabla derivada debe tener lógica de desactivación compleja (p.ej. desasignar dentista al reasignar paciente), el trigger simple no alcanza. Esa es spec dedicada aparte.
+
+---
+
 ## 🟠 Technical debt inventory
 ### Duplicación pages ↔ features (migración incompleta)
 | Dominio | Legacy (pages/) | Moderno (features/) |
@@ -136,6 +161,14 @@ Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|del
 - `.playwright-mcp/` (~80 snapshots `page-*.yml`) pushados accidentalmente a `origin/main`. Limpiar con `git rm --cached` + confirmar `.gitignore` (ya presente). Micro-bloque pendiente.
 ### Data-migration patches
 Las migraciones `resolve_danissa_*` y `resolve_cristobal_*` son evidencia de drift resuelto manualmente. No repetir patrón — ver Constitution VI.
+
+### 🚩 Antipatrón: "migración one-shot sin trigger"
+
+**Caso histórico:** `20260415100002_populate_organization_model.sql` pobló `patient_care_team` con un backfill one-shot, sin trigger de sincronización. Consecuencia: todo paciente creado o reasignado post-15-abr cayó fuera del care_team → función `is_in_care_team()` devolvió `false` → policy `cal_dentist_insert` sobre `clinical_audit_log` rechazó writes silenciosamente → **43h de Constitution III violada** (2026-04-18 06:57 → 2026-04-20 02:04 UTC). Detalle completo en `data-compliance.md` §"Historial de compliance".
+
+**Regla operativa:** si una migración pobla una tabla derivada cuyos valores son consultados por policies/funciones downstream, **el trigger de sincronización va en el mismo PR**. No "después, en otra spec" — el gap entre merges es latente de ruptura silenciosa. Solución canónica: patrón documentado arriba en §"Canonical patterns".
+
+**Otras tablas candidatas a auditar** (potencial antipatrón no cerrado): revisar si `organization_members`, `clinic_therapists`, `patient_assigned_plans`, `care_team`-like tablas tienen backfill sin trigger equivalente. Micro-bloque pendiente.
 ## Hosting & deploy
 | Capa | Proveedor |
 |---|---|
@@ -147,4 +180,4 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/ecosystem-communicare.md` — rol en ecosistema Communicare
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
 ---
-**Last updated**: 2026-04-19 | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr)
+**Last updated**: 2026-04-20 | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`.

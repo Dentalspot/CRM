@@ -34,14 +34,27 @@ El paciente sí puede editar campos administrativos propios: teléfono, email, d
 **Implementación actual:**
 | Elemento | Path / tabla |
 |---|---|
-| Tabla log | `clinical_access_log` (append-only con triggers) |
-| Migración creadora | `supabase/migrations/20260416000001_rls_phase3_compliance.sql` |
-| Logger (util) | `src/lib/audit/clinicalAuditLogger.js` |
-| Hook consumidor | `src/lib/audit/useClinicalAccessLogger.js` |
+| Tabla log | `clinical_audit_log` (append-only con triggers `trg_audit_log_no_update` / `trg_audit_log_no_delete`) |
+| Migración creadora de la tabla | `supabase/migrations/20260415100000_organization_model_schema.sql:157-200` |
+| Policies RLS sobre la tabla | `supabase/migrations/20260416000001_rls_phase3_compliance.sql` (phase 3 compliance) |
+| Sync trigger `patient_care_team` | `supabase/migrations/20260419000001_repair_patient_care_team.sql` (spec 003, 2026-04-20) |
+| Logger (util) | `src/lib/audit/clinicalAuditLogger.js` — inserta en `clinical_audit_log` |
+| Hook consumidor | `src/lib/audit/useClinicalAccessLogger.js` *(nombre del hook incluye "Access" por razones históricas, pero escribe a `clinical_audit_log` — ver subsección "Dos tablas distintas" abajo)* |
 | Consumidores confirmados | `src/pages/therapist/PatientFilePage.jsx:24,136` · `src/features/odontogram/pages/OdontogramEvaluationPage.jsx:24,81` |
 | UI paciente (ver accesos a su ficha) | `src/features/patient-dashboard/pages/PatientAccessHistoryPage.jsx` |
 **Doble seguro contra spam:** si el dentista entra y sale 5 veces en la misma hora sobre la misma ficha, se graba UNA línea, no 5.
 **Constraint no-negociable (Constitution III):** ningún componente lee datos clínicos sin invocar el hook. Edge functions que tocan PHI escriben al log vía SQL/RPC dedicada.
+
+### Dos tablas distintas: `clinical_audit_log` vs `clinical_access_log`
+
+Ambas existen en la DB y son activas, con propósitos diferentes que deben mantenerse separados:
+
+| Tabla | Propósito | Acciones permitidas | Consumidores |
+|---|---|---|---|
+| **`clinical_audit_log`** | Audit trail general del acceso/edición de PHI clínica por parte del dentista. | `view_record`, `edit_record`, `create_record`, `export_file`, `print_record`, `grant_exceptional_access`, `exceptional_access` | `src/lib/audit/*` (logger y hook) |
+| **`clinical_access_log`** | Auditoría del **módulo Pasaporte Clínico** (`src/features/clinical-passport/`): grants, shares, revokes y descargas de acceso compartido entre profesionales. | `grant`, `share`, `revoke`, `download_pdf`, `export`, `auto_grant`, `view` | `src/features/clinical-passport/*`, `src/features/admin/modules/clinical-history/hooks/useAccessLog.js`, `AcceptPassportPage.jsx` |
+
+Los CHECK constraints de cada tabla hacen los sets de acciones **mutuamente excluyentes**: una fila de `clinical_audit_log` nunca puede existir en `clinical_access_log` y viceversa. El módulo `clinical-passport` (≈6 archivos frontend) es la **implementación parcial del Pasaporte Clínico Universal** del ecosistema Communicare (ver `ecosystem-communicare.md`).
 ### Base jurídica del tratamiento (`processing_lawful_basis`)
 **Estado:** referenciado en las tablas con PHI (columna o ENUM — a confirmar tras regenerar `schema.sql`). Migrations que lo mencionan:
 - `20260415100000_organization_model_schema.sql`
@@ -78,9 +91,21 @@ El paciente sí puede editar campos administrativos propios: teléfono, email, d
 |---|---|---|
 | Phase 1 — Administrativa | `20260415100007_rls_phase1_administrative.sql` | profiles, organizations, subscriptions, memberships |
 | Phase 2 — Clínica | `20260415100008_rls_phase2_clinical.sql` + fix `20260415100009_fix_dentist_insert_policies.sql` | patients, clinical_records, evaluations, treatments |
-| Phase 3 — Compliance | `20260416000001_rls_phase3_compliance.sql` + fix `20260416000002_fix_care_team_recursion.sql` | clinical_access_log, legal_signatures, arco_requests, processing_lawful_basis, exceptional_access_grants |
+| Phase 3 — Compliance | `20260416000001_rls_phase3_compliance.sql` + fix `20260416000002_fix_care_team_recursion.sql` | clinical_audit_log, legal_signatures, arco_requests, processing_lawful_basis, exceptional_access_grants |
+| Phase 3 — Sync fix (spec 003) | `20260419000001_repair_patient_care_team.sql` | backfill reparador `patient_care_team` + triggers `trg_sync_patient_care_team_insert/update` |
 | Baseline | Archivos `.bak` | Rollback de referencia |
 **Total policies:** ≈ 3.016 líneas en `supabase/policies.sql`.
+---
+## Historial de compliance — brechas conocidas
+
+Registro honesto de ventanas donde Constitution III / Ley 21.719 estuvieron violadas en producción. Cada ítem es **irrecuperable** (append-only significa que las entradas perdidas no pueden fabricarse retroactivamente) y queda documentado por transparencia con pacientes y auditores.
+
+| Ventana | Principio violado | Causa raíz | Resolución |
+|---|---|---|---|
+| **2026-04-18 06:57 UTC → 2026-04-20 02:04 UTC** (≈43h) | Constitution III + Ley 21.719 ARCO | `clinical_audit_log` silencioso: policy `cal_dentist_insert` exige `is_in_care_team(patient_id)`; la función consulta `patient_care_team`; ésta se pobló una vez (15-abr, migración `20260415100002`) y no existía trigger de sincronización. Pacientes creados post-backfill caían fuera del care_team → policy rechazaba INSERT silenciosamente (console.warn solo en DEV). | Commit `c55d1a5` + migración `20260419000001_repair_patient_care_team.sql` (spec 003): backfill reparador idempotente + triggers `AFTER INSERT / AFTER UPDATE OF therapist_id, organization_id` mantienen la tabla sincronizada. Policy RLS sin tocar — design intent Phase 3 preservado. |
+
+**Lección operativa:** toda tabla derivada poblada por backfill one-shot debe tener un trigger de sincronización en el mismo PR. Si el backfill y el trigger son specs separadas, la ventana entre merges es latente de ruptura silenciosa. Patrón canónico documentado en `architecture.md` §"Canonical patterns".
+
 ---
 ## Deuda compliance conocida
 Checklist de backlog regulatorio. Cada ítem es candidato a spec dedicada.
@@ -93,7 +118,7 @@ Checklist de backlog regulatorio. Cada ítem es candidato a spec dedicada.
 | Hardening rol `assistant` (hoy UPDATE amplio sobre `patients`) | 20.584 | Alta | Chico (análogo al hecho con patient) |
 | Scope refinado de `clinic_admin` | 20.584 | Media | Medio |
 | Auditoría de impresión/exportación de documentos clínicos | 21.719 | Media | Chico (extender logger existente) |
-| Fallback legacy `therapist_id` en SELECTs clínicos → migrar a `care_team` | 21.719 | Media | Grande (migración datos + queries) |
+| Fallback legacy `therapist_id` en SELECTs clínicos → migrar a `patient_care_team` (spec 003 cerró la parte de writes al audit log via trigger sync; los SELECTs del modelo Phase 2 con fallback siguen pendientes) | 21.719 | Media | Grande (migración datos + queries) |
 | Regeneración de `supabase/schema.sql` tras levantar Docker o usar MCP | — | Baja | Chico |
 | Limpieza `.playwright-mcp/` pushado accidentalmente al repo | — | Baja | Chico |
 ---
@@ -107,4 +132,4 @@ Checklist de backlog regulatorio. Cada ítem es candidato a spec dedicada.
 - `.specify/memory/architecture.md` — mapa técnico con paths exactos
 - `.specify/memory/ecosystem-communicare.md` — por qué el estándar de DentalSpot no puede bajar
 ---
-**Last updated**: 2026-04-19 | **Estado**: Ley 20.584 compliance-ready · Ley 21.719 cobertura parcial | **Fuentes**: FASE 1 audit (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr)
+**Last updated**: 2026-04-20 | **Estado**: Ley 20.584 compliance-ready · Ley 21.719 cobertura parcial (brecha 18-20 abr documentada y cerrada) | **Fuentes**: FASE 1 audit (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr)
