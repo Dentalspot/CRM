@@ -2,24 +2,21 @@
 
 **Feature Branch**: `001-fix-odontogram-audit-log`
 **Created**: 2026-04-19
-**Status**: 🛑 PAUSED — blocked by spec 002 (routing upstream)
+**Status**: ✅ Ready for implementation (resumed)
 **Input**: User description: "primera creación de evaluación de odontograma no registra línea en clinical_audit_log. El fix previo en OdontogramEvaluationPage.jsx (~línea 176) usa `window.history.replaceState` tras crear la evaluación, lo que bypassa React Router y deja al hook `useClinicalAccessLogger` sin detectar la primera apertura. Comportamiento observado en producción: la primera evaluación no queda registrada — el log solo aparece tras refresh o navegación posterior. Reportado como 'quick-win de 5 minutos' en el roadmap del 18-abril-2026 pero sigue vivo."
 
-## 🛑 PAUSED — Blocked by spec 002 (routing upstream)
+## ✅ RESUMED — 2026-04-19
 
-**Descubrimiento durante `/speckit-plan` (2026-04-19):** el fix propuesto — reemplazar `window.history.replaceState` por `navigate('/dashboard/odontograma/${data.id}', { replace: true })` — asume que la ruta `/dashboard/odontograma/*` existe. La ruta realmente registrada es `/dashboard/therapist/odontograma/*`, bajo el bloque `<Route path="therapist">` en `src/app/routers/DashboardRouter.jsx:123-206`.
+**Spec bloqueadora 002 cerrada y mergeada** en `origin/main`. Los 7 callsites del módulo Odontograma ahora apuntan al prefijo correcto `/dashboard/therapist/odontograma/*`, que coincide con las rutas registradas en `DashboardRouter.jsx:123-206`. El módulo es alcanzable desde la UI (test manual de spec 002 pasó 6/6).
 
-Aplicar el fix tal como está planeado convertiría un bug silencioso (log no dispara por `replaceState` bypassando React Router) en una regresión visible (404 renderizado tras crear evaluación), porque `navigate()` sí dispara re-matching del router y el path no matchea ninguna ruta registrada.
+**Ajuste al plan original**: el `navigate` del fix apunta ahora al path con prefijo correcto:
 
-**Spec bloqueadora:** `002-fix-odontogram-routing-mismatch` — alinea los 7 callsites existentes al prefijo `therapist/` mediante enfoque A2 (actualizar callsites, no mover rutas).
+    ANTES (plan paused):    navigate(`/dashboard/odontograma/${data.id}`, { replace: true })
+    AHORA (plan resumed):   navigate(`/dashboard/therapist/odontograma/${data.id}`, { replace: true })
 
-**Cuando 002 cierre,** se reanuda esta spec con el único ajuste de usar el path correcto con prefijo en el `navigate`. El diff técnico pasa de 1 línea con path sin prefijo a 1 línea con path con prefijo; el resto del plan (criterio de dedup, test manual, FR, SC) permanece válido.
+El resto del plan, tasks, FR y SC permanecen válidos. El test manual (crear evaluación → consultar `clinical_audit_log`) ya es ejecutable porque el flujo de UI no tira 404.
 
-**Trazabilidad:** reporte detallado en la conversación del asesor del 2026-04-19 (sesión de investigación de DashboardRouter.jsx), basado en evidencia citada de 7 callsites:
-- `src/components/layout/Sidebar.jsx:161`
-- `src/pages/therapist/PatientFilePage.jsx:363`
-- `src/features/odontogram/pages/OdontogramListPage.jsx:72, 150, 199`
-- `src/features/odontogram/pages/OdontogramEvaluationPage.jsx:112, 346` (la línea 176 es parte del fix de esta spec, no de 002)
+**Trazabilidad del unblock**: commit `28878b6` en `origin/main` (fix de routing de spec 002, 6/6 acceptance scenarios PASS, 0 regressions).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -35,7 +32,7 @@ Cuando un dentista crea una nueva evaluación de odontograma para un paciente, e
 
 1. **Given** un dentista autenticado con un paciente asignado y sin evaluaciones previas de odontograma en la última hora, **When** crea una nueva evaluación desde el módulo Odontograma, **Then** se registra una (y solo una) fila en `clinical_audit_log` con `resource='odontogram'`, `action='open'`, `patient_id` del paciente correcto, `user_id` del dentista y `organization_id` de la clínica activa.
 2. **Given** que la evaluación acaba de crearse, **When** el paciente consulta su "Historial de accesos" desde su portal, **Then** ve el acceso del dentista con timestamp dentro del último minuto.
-3. **Given** la creación acaba de ejecutarse, **When** el dentista observa la URL del browser, **Then** la URL muestra `/dashboard/odontograma/<evaluation-id>` y el estado interno del router está sincronizado con esa URL.
+3. **Given** la creación acaba de ejecutarse, **When** el dentista observa la URL del browser, **Then** la URL muestra `/dashboard/therapist/odontograma/<evaluation-id>` y el estado interno del router está sincronizado con esa URL.
 
 ---
 
@@ -49,7 +46,7 @@ Tras crear una evaluación, el dentista puede presionar el botón atrás del bro
 
 **Acceptance Scenarios**:
 
-1. **Given** un dentista acaba de crear una evaluación nueva y está en `/dashboard/odontograma/<evaluation-id>`, **When** presiona el botón atrás del browser, **Then** es llevado a la vista previa (listado de odontogramas o ficha de paciente, según el origen) sin crear una nueva evaluación ni duplicar la fila en `clinical_audit_log`.
+1. **Given** un dentista acaba de crear una evaluación nueva y está en `/dashboard/therapist/odontograma/<evaluation-id>`, **When** presiona el botón atrás del browser, **Then** es llevado a la vista previa (listado de odontogramas o ficha de paciente, según el origen) sin crear una nueva evaluación ni duplicar la fila en `clinical_audit_log`.
 2. **Given** el dentista navegó atrás, **When** navega de nuevo adelante hacia la evaluación, **Then** la evaluación se abre correctamente; si ocurre dentro de la misma hora, no se añade nueva fila al log (dedup anti-spam).
 
 ---
@@ -64,7 +61,7 @@ El refresh del navegador sobre la página de evaluación respeta la invariante a
 
 **Acceptance Scenarios**:
 
-1. **Given** una evaluación creada hace menos de una hora con una línea en `clinical_audit_log`, **When** el dentista refresca la página `/dashboard/odontograma/<id>`, **Then** el log sigue mostrando exactamente una línea para esa combinación `user_id + patient_id + resource + evaluation-id` en esa hora.
+1. **Given** una evaluación creada hace menos de una hora con una línea en `clinical_audit_log`, **When** el dentista refresca la página `/dashboard/therapist/odontograma/<id>`, **Then** el log sigue mostrando exactamente una línea para esa combinación `user_id + patient_id + resource + evaluation-id` en esa hora.
 
 ---
 
@@ -81,7 +78,7 @@ El refresh del navegador sobre la página de evaluación respeta la invariante a
 
 - **FR-001**: El sistema MUST registrar una y solo una fila nueva en `clinical_audit_log` en el flujo de primera creación de una evaluación de odontograma por parte de un dentista, sin necesidad de refresh ni navegación posterior.
 - **FR-002**: La fila registrada MUST contener `resource='odontogram'`, `action='open'`, `patient_id` del paciente de la evaluación, `user_id` del dentista autenticado y `organization_id` de la clínica activa.
-- **FR-003**: Tras la creación exitosa de la evaluación, la URL del browser MUST reflejar la ruta canónica `/dashboard/odontograma/<evaluation-id>` y el estado interno del router MUST estar sincronizado con esa URL (no debe quedar en estado "modo creación" mientras la URL muestra el id).
+- **FR-003**: Tras la creación exitosa de la evaluación, la URL del browser MUST reflejar la ruta canónica `/dashboard/therapist/odontograma/<evaluation-id>` y el estado interno del router MUST estar sincronizado con esa URL (no debe quedar en estado "modo creación" mientras la URL muestra el id).
 - **FR-004**: El botón atrás del browser MUST devolver al usuario a la vista previa (listado o ficha) sin disparar la creación de una nueva evaluación y sin insertar líneas duplicadas en `clinical_audit_log`.
 - **FR-005**: La deduplicación anti-spam existente (máximo una línea por hora para la misma combinación `user_id + patient_id + resource` aplicable a esa evaluación) MUST continuar operando sin cambios; refresh dentro de la misma hora NO añade líneas adicionales.
 - **FR-006**: El sistema MUST NO introducir regresiones en los flujos existentes de odontograma: guardado, cierre, reapertura, navegación desde el listado (`OdontogramListPage`) y desde la ficha de paciente (`PatientFilePage`).

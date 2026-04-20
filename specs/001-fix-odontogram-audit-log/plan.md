@@ -19,7 +19,7 @@ Detalle técnico en "Dedup Key Analysis" abajo. Espero tu confirmación antes de
 
 El bug es frontend-only: al crear una evaluación nueva de odontograma, el código usa `window.history.replaceState` (`OdontogramEvaluationPage.jsx:176`) para reescribir la URL. `replaceState` actualiza `window.location` pero **no** el estado interno de React Router; por eso `useParams().id` sigue retornando `'nueva'` y el gate del hook `useClinicalAccessLogger` (`patientId: isEditing && evaluationId ? …`) permanece en `null`, sin disparar el insert. Después de refresh, React Router lee el `id` de la URL, `isEditing = true`, y el hook sí dispara — por eso el roadmap 18-abr observa "aparece tras refresh".
 
-**Fix**: reemplazar esa única línea por `navigate(\`/dashboard/odontograma/${data.id}\`, { replace: true })`. El hook `useNavigate` ya está importado (línea 2) y usado (línea 34). React Router re-rendera, `useParams().id` cambia, `isEditing` flips, y el hook del logger dispara en el mismo ciclo. Cambio localizado a 1 archivo, 1 línea. Ninguna otra modificación requerida.
+**Fix**: reemplazar esa única línea por `navigate(\`/dashboard/therapist/odontograma/${data.id}\`, { replace: true })`. El hook `useNavigate` ya está importado (línea 2) y usado (línea 34). React Router re-rendera, `useParams().id` cambia, `isEditing` flips, y el hook del logger dispara en el mismo ciclo. Cambio localizado a 1 archivo, 1 línea. Ninguna otra modificación requerida.
 
 ## Technical Context
 
@@ -101,7 +101,7 @@ if (sessionStorage.getItem(bucketKey)) {
 ```js
       // Navigate to canonical URL so React Router state stays in sync
       // (required for useClinicalAccessLogger to fire — see spec 001).
-      navigate(`/dashboard/odontograma/${data.id}`, { replace: true });
+      navigate(`/dashboard/therapist/odontograma/${data.id}`, { replace: true });
 ```
 
 ### Justificación de `navigate(path, { replace: true })` sobre alternativas
@@ -163,7 +163,7 @@ Los parámetros efectivos dependen de:
 
 ### ¿Por qué hoy no dispara con `replaceState`? (Explicación técnica concreta)
 
-1. Flujo creación empieza en `/dashboard/odontograma/nueva` → React Router matchea `odontograma/nueva` → `useParams().id = 'nueva'` → `isEditing = false`.
+1. Flujo creación empieza en `/dashboard/therapist/odontograma/nueva` → React Router matchea la ruta `odontograma/nueva` anidada bajo `<Route path="therapist">` → `useParams().id = 'nueva'` → `isEditing = false`.
 2. `handleStartEvaluation` crea la evaluación (línea 158) → la DB devuelve `data.id`.
 3. `setEvaluationId(data.id)` actualiza el state (línea 170).
 4. `setStep(2)` pasa a wizard step 2 (línea 173).
@@ -217,7 +217,7 @@ Con el fix (`navigate(path, { replace: true })`):
 2. Ir a `Dashboard → Odontograma → Nueva Evaluación` (botón del listado).
 3. En Step 1 (Configuración): seleccionar el paciente de prueba, dejar tipo "inicial", presionar **"Iniciar Evaluación"**.
 4. Esperar el paso a Step 2 (Odontograma) — **NO refrescar la página**.
-5. Observar la URL del browser: debe haber cambiado a `/dashboard/odontograma/<uuid>` (uuid de la evaluación recién creada).
+5. Observar la URL del browser: debe haber cambiado a `/dashboard/therapist/odontograma/<uuid>` (uuid de la evaluación recién creada).
 
 **Pass**:
 - La URL contiene un UUID (no `nueva`).
@@ -256,16 +256,16 @@ Con el fix (`navigate(path, { replace: true })`):
 
 ### Paso 5 — Botón atrás
 
-1. Desde la página de evaluación (`/dashboard/odontograma/<uuid>`), presionar **botón atrás** del navegador.
-2. Observar destino: debe llevar al listado de odontogramas (`/dashboard/odontograma`) o a la vista previa desde donde se abrió.
+1. Desde la página de evaluación (`/dashboard/therapist/odontograma/<uuid>`), presionar **botón atrás** del navegador.
+2. Observar destino: debe llevar al listado de odontogramas (`/dashboard/therapist/odontograma`) o a la vista previa desde donde se abrió.
 
 **Pass**:
-- No vuelve a `/dashboard/odontograma/nueva` (porque `replace: true`).
+- No vuelve a `/dashboard/therapist/odontograma/nueva` (porque `replace: true`).
 - No se crea evaluación fantasma (verificar con `SELECT count(*) FROM odontogram_evaluations WHERE patient_id = '<PATIENT_ID>' AND evaluation_type = 'inicial' AND created_at > NOW() - INTERVAL '5 minutes';` — debe ser 1, no 2).
 
 ### Paso 6 — Navegación adelante dentro de la misma hora
 
-1. Desde el listado, hacer click en la evaluación recién creada (`onClick={() => navigate(\`/dashboard/odontograma/${ev.id}\`)}`).
+1. Desde el listado, hacer click en la evaluación recién creada (`onClick={() => navigate(\`/dashboard/therapist/odontograma/${ev.id}\`)}`).
 2. Re-ejecutar la query del Paso 3.
 
 **Pass**: siguen siendo exactamente 1 fila nueva desde el baseline. Re-abrir la misma evaluación dentro de la misma hora no duplica.

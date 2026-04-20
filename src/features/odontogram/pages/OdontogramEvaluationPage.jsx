@@ -172,8 +172,9 @@ const OdontogramEvaluationPage = () => {
       setPatientInfo({ name: patient?.name, rut: patient?.rut });
       setStep(2);
 
-      // Update URL without full navigation
-      window.history.replaceState(null, '', `/dashboard/odontograma/${data.id}`);
+      // Navigate to canonical URL so React Router state stays in sync
+      // (required for useClinicalAccessLogger to fire — see spec 001).
+      navigate(`/dashboard/therapist/odontograma/${data.id}`, { replace: true });
     } catch (err) {
       toast({ variant: 'destructive', title: 'Error', description: err.message });
     } finally {

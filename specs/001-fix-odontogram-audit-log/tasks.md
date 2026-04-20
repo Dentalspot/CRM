@@ -67,11 +67,11 @@ description: "Tasks for spec 001-fix-odontogram-audit-log — surgical 1-line fi
     ```js
           // Navigate to canonical URL so React Router state stays in sync
           // (required for useClinicalAccessLogger to fire — see spec 001).
-          navigate(`/dashboard/odontograma/${data.id}`, { replace: true });
+          navigate(`/dashboard/therapist/odontograma/${data.id}`, { replace: true });
     ```
   - File(s): `src/features/odontogram/pages/OdontogramEvaluationPage.jsx` — **1 archivo, 1 reemplazo**.
   - Depends on: T-01, T-02, T-03, T-04.
-  - Pass criterion: `grep -n "replaceState" src/features/odontogram/pages/OdontogramEvaluationPage.jsx` devuelve **0 matches**; `grep -n "navigate(\`/dashboard/odontograma/" src/features/odontogram/pages/OdontogramEvaluationPage.jsx` devuelve al menos 1 match con `{ replace: true }`.
+  - Pass criterion: `grep -n "replaceState" src/features/odontogram/pages/OdontogramEvaluationPage.jsx` devuelve **0 matches**; `grep -n "navigate(\`/dashboard/therapist/odontograma/" src/features/odontogram/pages/OdontogramEvaluationPage.jsx` devuelve al menos 1 match con `{ replace: true }`.
 
 ---
 
@@ -109,20 +109,20 @@ description: "Tasks for spec 001-fix-odontogram-audit-log — surgical 1-line fi
 - [ ] **T-09** [US1] Ejecutar **Paso 2 del plan** — login como dentista → Dashboard → Odontograma → Nueva Evaluación → seleccionar paciente → "Iniciar Evaluación".
   - File(s): no file (browser).
   - Depends on: T-08.
-  - Pass criterion: URL cambia a `/dashboard/odontograma/<uuid>` (no `nueva`), wizard muestra Step 2, sin toast de error.
+  - Pass criterion: URL cambia a `/dashboard/therapist/odontograma/<uuid>` (no `nueva`), wizard muestra Step 2, sin toast de error.
 
 - [ ] **T-10** 🎯 [US1] Ejecutar **Paso 3 del plan** — query "core": `SELECT ... FROM clinical_audit_log WHERE patient_id = '<PATIENT_ID>' AND resource_type = 'odontogram' AND action = 'view_record' AND created_at > NOW() - INTERVAL '2 minutes'`.
   - File(s): no file (SQL Editor).
   - Depends on: T-09.
   - Pass criterion: devuelve exactamente **1 fila nueva** (count total = N + 1), con `user_id` = dentista logueado, `patient_id` = paciente de prueba, `resource_id` = UUID de la evaluación (coincide con la URL), `organization_id` de la clínica activa, `created_at` dentro del último minuto. **Esta es la task que confirma el fix.**
 
-- [ ] **T-11** [US3] Ejecutar **Paso 4 del plan** — refresh F5 sobre `/dashboard/odontograma/<uuid>` y re-ejecutar la query de T-10.
+- [ ] **T-11** [US3] Ejecutar **Paso 4 del plan** — refresh F5 sobre `/dashboard/therapist/odontograma/<uuid>` y re-ejecutar la query de T-10.
   - File(s): no file (browser + SQL Editor).
   - Depends on: T-10.
   - Pass criterion: count sigue siendo N + 1 (dedup anti-spam vía `sessionStorage` funciona).
 
 - [ ] **T-12** [US2] Ejecutar **Paso 5 del plan** — botón atrás del navegador + verificación:
-  - (a) URL destino no es `/dashboard/odontograma/nueva`.
+  - (a) URL destino no es `/dashboard/therapist/odontograma/nueva`.
   - (b) Query `SELECT count(*) FROM odontogram_evaluations WHERE patient_id = '<PATIENT_ID>' AND evaluation_type = 'inicial' AND created_at > NOW() - INTERVAL '5 minutes'` devuelve 1 (no 2).
   - (c) Re-ejecutar query de T-10: count sigue siendo N + 1.
   - File(s): no file (browser + SQL Editor).
