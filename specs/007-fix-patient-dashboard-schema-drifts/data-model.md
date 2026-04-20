@@ -275,11 +275,78 @@ El fix NO es `.select('fee:price_clp')` (alias) porque no existe una columna de 
 
 Corrección menor: el FK column de session_activities a plan_sessions se llama `session_id` (singular, sin prefijo), no `plan_session_id` como dije en plan.md R-01. Para PostgREST embed esto no importa (se resuelve por tabla), solo para documentación. Ya corregido en la tabla de FKs de este doc.
 
+### H-5. Drift 3 tiene también `title` inexistente (descubierto durante Phase 2, NO amplía scope)
+
+El query original del spec §Drift 3 (`PatientDashboardPageV2.jsx:182-185`) era:
+
+```js
+.select('id, title, file_url, created_at, report_type')
+```
+
+Phase 1 confirmó que `file_url` no existe (renombrado a `final_pdf_url`) y que `report_type` sí existe. **No auditamos `title` porque no estaba en la lista de drifts reportados por el user.**
+
+Durante Phase 2, al leer el schema completo de `clinical_reports`, se confirma que **`title` tampoco existe** en la tabla:
+
+```
+id, created_at, created_by, delivery_status, document_id, editable_json, encounter_id,
+final_pdf_url, hash_integrity, locked_at, locked_reason, patient_id, report_type,
+signed_at, signed_by, signed_hash, specialty_id, status, template_id, therapist_id,
+updated_at, validated_at, validated_by, version, visibility_scope
+```
+
+**Por qué el user no lo reportó**: PostgREST devuelve en el error body solo la primera columna faltante detectada. El console error mencionó `file_url` o `report_type`, pero el query ya hubiera fallado igual por `title`. Este es un artefacto del error handler de PostgREST, no un bug adicional.
+
+**Decisión aplicada**: `title` **también removido del select** como parte del fix de Drift 3 (cumple FR-006 "pedir solo columnas existentes").
+
+**¿Es scope creep?** NO. Análisis:
+- FR-006 manda "pedir solo columnas existentes" — removerla cumple la regla.
+- Mismo archivo, misma query (1 edit), mismo drift conceptual — NO es archivo/query adicional.
+- Consumer `loadDocuments()` ya hace `title: r.title || 'Documento'` → el comportamiento visible se preserva (el default 'Documento' ya existía como fallback).
+- No dispara FR-003.b (sigue siendo ≤5 archivos) ni FR-003.c (no hay re-modelado).
+
+**Fix aplicado**: `select('id, title, file_url, created_at, report_type')` → `select('id, file_url:final_pdf_url, created_at, report_type')`. Removido `title`, aliasedo `file_url`, preservado `report_type`.
+
 ---
 
 ## Compliance findings (§III VERIFY del Constitution Check)
 
-Pendiente ejecutar TASK-P2-D1-AUDIT en Phase 2. Phase 1 no toca este aspecto (el grep en PatientDashboardPageV2.jsx para buscar `useClinicalAccessLogger` se hace en Phase 2 como parte del fix de Drift 1).
+### ⚠️ Finding F-1: `PatientDashboardPageV2.jsx` NO invoca `useClinicalAccessLogger`
+
+Ejecutado `TASK-P2-D1-AUDIT` (R-06 check):
+
+```bash
+grep -rn "useClinicalAccessLogger\|clinicalAccessLog\|clinical_access" \
+  src/features/patient-dashboard/PatientDashboardPageV2.jsx
+# → No matches found
+```
+
+Global sanity check:
+
+```bash
+grep -rn "useClinicalAccessLogger" src/
+# → 3 files:
+#   src/lib/audit/useClinicalAccessLogger.js       (el hook)
+#   src/features/odontogram/pages/OdontogramEvaluationPage.jsx
+#   src/pages/therapist/PatientFilePage.jsx
+```
+
+**Evidencia**: `PatientDashboardPageV2.jsx` accede a múltiples tablas con PHI (`session_activities` actividades del paciente, `clinical_reports` reportes clínicos, `appointments` citas) sin invocar el hook de audit clínico. Esto es una potencial violación del **Constitution §III (Append-Only Audit)**:
+> "leer datos clínicos sin invocar `useClinicalAccessLogger` es violación. El hook escribe a `clinical_audit_log`."
+
+**Acción tomada (protocolo acordado en tasks.md TASK-P2-D1-AUDIT)**:
+
+- **📝 Document** — este hallazgo queda registrado aquí en data-model.md §Compliance findings.
+- **🔀 Defer** — se abre spec follow-up `fix-audit-logger-missing-on-patient-dashboard` (número a asignar cuando se cree).
+- **🚫 NO fix inline** — agregar el hook en el mismo PR violaría Principio IV (Micro-Bloques).
+- **🚫 NO block spec 007** — el fix de schema drift procede independiente. El dashboard ya leía PHI sin audit antes del spec 007 (las queries fallaban pero parcialmente, y cuando había data la leía igual).
+
+**Path del follow-up**:
+- Título sugerido: `fix-audit-logger-missing-on-patient-dashboard`
+- Scope: agregar `useClinicalAccessLogger` en `PatientDashboardPageV2.jsx` para cubrir las 4 queries que leen PHI (session_activities, clinical_reports, appointments, clinical_history).
+- Precondición: spec 007 cerrado (si no, el archivo está en flujo de cambio y se pisan).
+- Revisar también: el dashboard legacy (`src/pages/PatientDashboardPage.jsx`) probablemente tenga el mismo gap — incluir en el follow-up.
+
+**Por qué no es un bug de spec 007**: spec 007 arregla que las queries no devuelvan 400. El gap de audit existe desde antes y persistirá hasta su propio spec. Spec 007 no lo introduce ni lo empeora.
 
 ---
 

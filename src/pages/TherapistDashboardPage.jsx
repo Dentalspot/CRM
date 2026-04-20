@@ -141,7 +141,7 @@ const TherapistDashboardPage = () => {
 
         supabase
           .from('appointments')
-          .select('fee')
+          .select('service:therapist_services!appointments_service_id_fkey(price_clp)')
           .eq('therapist_id', user.id)
           .eq('status', 'completed')
           .gte('date', format(monthStart, 'yyyy-MM-dd'))
@@ -166,7 +166,7 @@ const TherapistDashboardPage = () => {
       ]);
 
       const uniqueAttended = new Set((attendedRes.data || []).map(a => a.patient_id)).size;
-      const totalIncome = (incomeRes.data || []).reduce((acc, a) => acc + (a.fee || 0), 0);
+      const totalIncome = (incomeRes.data || []).reduce((acc, a) => acc + (a.service?.price_clp || 0), 0);
 
       const now = new Date();
       const filteredUpcoming = (upcomingRes.data || []).filter(app => {
