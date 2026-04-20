@@ -261,9 +261,50 @@ FROM public.marketplace_purchases;
 
 ---
 
-## §Deferred Follow-up (spec 009.1, trigger condicional)
+## §Phase 1 State Drift Discovery (2026-04-20, post-SP-1, pre-Phase 2)
 
-**Razón de diferir**: al cierre de spec 009 (Phase 1 completo con decisiones confirmadas), la callsite `src/features/marketplace/pages/TherapistMarketplacePage.jsx:60` presenta un gap de cobertura RLS en el patrón vendor-via-plan-ownership — pero el impact hoy es **cero** por Query C (`total_purchases = 0`). Micro-Bloques discipline (Constitution §IV): spec 009 mantiene su scope de **3 policies** (Buyer read own + Buyer insert + Admin manage). Ampliar para cubrir el vendor pattern sería scope creep sin beneficio operativo hoy.
+Durante re-verificación pre-Phase 2, **Query A re-ejecutada reveló 2 policies vivas (no 1 como reportó el Phase 1 inicial)**:
+
+| # | policyname | cmd | permissive | roles | qual |
+|---|---|---|---|---|---|
+| 1 | `Admins update marketplace_purchases` | UPDATE | PERMISSIVE | `{public}` | `EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'::user_role)` (legacy, esperada) |
+| 2 | `Vendors read own plan purchases` | SELECT | PERMISSIVE | `{public}` | `(marketplace_plan_id IN ( SELECT marketplace_plans.id FROM marketplace_plans WHERE (marketplace_plans.author_id = auth.uid())))` (**NO esperada**, agregada entre Phase 1 y Phase 2) |
+
+**Origen del CREATE de la segunda policy**: Danissa la ejecutó manualmente durante experimentación con el preview de Opción X1 (confirmado por advisor pregunta directa). El `qual` es idéntico al SQL propuesto como alternativa X1 en el SP-1 analysis.
+
+### Decisión reactivada: pivot **X2 → X1**
+
+La policy ya existe y es funcional. Rationale:
+
+- **Marginal cost de mantenerla = 0 SQL** (ya está creada).
+- **UX objetivamente mejor**: `TherapistMarketplacePage.jsx:60` funciona post-enable sin empty array silencioso (cierra el riesgo flagueado al cierre Phase 1).
+- **Evita spec 009.1 futuro** (30+ min de overhead: nuevo spec + plan + tasks + migration + smoke).
+- **Completa trilogía buyer/vendor/admin** como originalmente visionado por el spec.
+- **X2 rationale diluido**: el argumento Micro-Bloques strict (mantener scope 3-policies) era válido cuando la policy no existía; ahora que ya está en la DB (introducida fuera de flujo), conservarla es el path de menor desviación vs dropearla y luego re-crearla en otro spec.
+
+### Ajustes de scope (reemplaza decisiones previas)
+
+| Dimensión | X2 (prev) | X1 (actual) |
+|---|---|---|
+| `policy_count` final | 3 | **4** |
+| Callsite #7 `TherapistMarketplacePage.jsx:60` | Deferred a 009.1 | **Entra a Phase 3 smoke tests** como vendor flow verificable |
+| Spec 009.1 | Abrir en trigger futuro | **CANCELADO** (si otro gap aparece, nuevo nombre) |
+| Policies creadas | 2 buyer + Admin manage | 2 buyer + Admin manage + keep Vendors read own plan purchases |
+| `DROP` en migration | "Admins update" | "Admins update" (igual — Vendors policy NO se dropea) |
+
+### Lección operativa (para PATTERNS.md futuro)
+
+**State drift entre Phase 1 y Phase 2 debe re-verificarse siempre antes de apply**. El audit defensivo de Phase 1 produce un snapshot; cualquier cambio manual en la DB entre phases invalida ese snapshot. Pre-Phase 2 re-query de `pg_policies` debe ser una mini-check obligatoria (≤ 1 min) antes de escribir la migration.
+
+---
+
+## §Deferred Follow-up (spec 009.1, trigger condicional) — ❌ CANCELADO post pivot X2→X1
+
+> **Status update 2026-04-20**: spec 009.1 CANCELADO. La policy `"Vendors read own plan purchases"` ya existe en live (introducida manualmente por Danissa durante experimentación con preview X1) y se integra al scope de spec 009. Ver `§Phase 1 State Drift Discovery` arriba. Los bloques originales que documentaban la decisión X2 de diferir se preservan abajo como registro histórico del razonamiento previo.
+
+---
+
+**Razón de diferir** (razonamiento original X2, ahora obsoleto): al cierre de spec 009 (Phase 1 completo con decisiones confirmadas), la callsite `src/features/marketplace/pages/TherapistMarketplacePage.jsx:60` presenta un gap de cobertura RLS en el patrón vendor-via-plan-ownership — pero el impact hoy es **cero** por Query C (`total_purchases = 0`). Micro-Bloques discipline (Constitution §IV): spec 009 mantiene su scope de **3 policies** (Buyer read own + Buyer insert + Admin manage). Ampliar para cubrir el vendor pattern sería scope creep sin beneficio operativo hoy.
 
 ### Contexto del gap
 
