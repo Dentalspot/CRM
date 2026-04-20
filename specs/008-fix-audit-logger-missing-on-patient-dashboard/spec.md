@@ -2,8 +2,56 @@
 
 **Feature Branch**: `008-fix-audit-logger-missing-on-patient-dashboard`
 **Created**: 2026-04-20
-**Status**: Draft
+**Status**: REJECTED (false positive)
 **Input**: User description: "fix-audit-logger-missing-on-patient-dashboard — F-1 de spec 007 (PatientDashboardPageV2.jsx lee PHI sin useClinicalAccessLogger)"
+
+## ⚠️ Spec rejected — false positive detectado en pre-plan
+
+Durante la investigación pre-Phase 1 de `/speckit-plan`, antes de escribir `plan.md`, el ejecutor leyó el body del hook `useClinicalAccessLogger` y detectó que la premisa de spec 008 era incorrecta. El hallazgo F-1 de spec 007 era un falso positivo.
+
+### Evidencia del hook (`src/lib/audit/useClinicalAccessLogger.js:31-36`)
+
+```js
+const isClinicalRole =
+  Array.isArray(userOrgRoles) &&
+  (userOrgRoles.includes('dentist') ||
+    userOrgRoles.includes('clinic_admin') ||
+    userOrgRoles.includes('assistant'));
+if (!isClinicalRole) return;
+```
+
+El hook retorna early si el usuario no tiene rol clínico (dentist / clinic_admin / assistant). Un paciente en su dashboard NO tiene ninguno de esos roles en `userOrgRoles` — el hook no-opea silenciosamente. La P1 del spec (generar entries en `clinical_audit_log` por auto-acceso) es inalcanzable con FR-008 ("NO tocar hook").
+
+### Interpretación legal (por qué el hook está bien como está)
+
+- **Ley 20.584 art. 13** (Chile): "el paciente tiene derecho a saber qué **profesionales** han visto su ficha". Regula transparencia sobre **terceros**, no auto-acceso.
+- **Ley 21.719** (Chile) / **GDPR**: derecho a saber quién **procesó** tus datos — concepto de tercer procesador, no auto-consulta.
+- **Contexto del producto**: el propósito del `clinical_audit_log` es construir confianza paciente-profesional ("¿quién más vio mi ficha?") y defensa profesional ante reclamos ("yo no accedí ese día"). Ninguno de los dos casos de uso incluye el auto-acceso del paciente.
+- **2 callsites existentes** (`OdontogramEvaluationPage.jsx:81`, `PatientFilePage.jsx:136`): ambos son profesionales accediendo ficha ajena. Ningún callsite audita auto-acceso. Coherente con el filtro de rol del hook.
+
+### Por qué F-1 fue falso positivo
+
+Durante Phase 2 de spec 007 (R-06 check), el ejecutor hizo grep de `useClinicalAccessLogger` en `PatientDashboardPageV2.jsx`, encontró 0 matches, y concluyó "gap de compliance". **No verificó el body del hook** para entender que el hook está diseñado deliberadamente para filtrar auto-acceso. Se declaró un gap que no existe.
+
+### Lección operativa (para futuros audits §III)
+
+**Antes de declarar un gap de compliance por ausencia de hook, verificar el body del hook**. Un hook puede filtrar casos válidos (como aquí con `isClinicalRole`), o puede tener semántica distinta a la asumida. El grep "no se invoca" no prueba "debería invocarse" — hay que leer la función.
+
+Este principio se reforzará en `docs/PATTERNS.md §4` (Audit defensivo) como subpatrón: "verificar implementación del consumidor antes de propagar hallazgos".
+
+### Acciones de cierre (ejecutadas en commit de closure)
+
+1. Status de este spec marcado `REJECTED`.
+2. `specs/007-.../data-model.md §F-1` actualizado con nota de false-positive resuelto.
+3. `.specify/memory/architecture.md §Drifts resueltos post-audit (spec 007)` ajustado.
+4. Constitution §III enmendado (v1.0.1 → v1.1.0) para clarificar explícitamente que auto-acceso del paciente está fuera del scope del logging.
+5. Este spec queda archivado como registro del razonamiento — **NO se ejecuta `/speckit-plan`, `/speckit-tasks`, ni `/speckit-implement`** sobre él.
+
+---
+
+**El contenido original del spec (abajo) se preserva tal cual fue escrito para referencia histórica. Las user stories, FRs, success criteria y rollback plan describían un feature que no debe construirse porque su premisa es incorrecta.**
+
+---
 
 ## User Scenarios & Testing *(mandatory)*
 
