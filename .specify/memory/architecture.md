@@ -242,14 +242,14 @@ Queries ejecutadas en bloque Express para validar que specs 003/004/005 siguen f
 
 Query a `pg_constraint` + `pg_index` detectó 30+ foreign keys sin índice en la columna de origen. Clasificación por impacto operacional esperado:
 
-**🔴 Alta prioridad — queries frecuentes en UI:**
-- `appointments.service_id` → therapist_services (calendar render)
-- `commissions.therapist_id` → profiles (dashboard therapist)
-- `commissions.sale_id` → sales (admin commissions)
-- `clinic_invoices.patient_id` → patients (patient file)
-- `clinic_invoices.therapist_id` → profiles (dashboard therapist)
-- `clinical_history.entry_type` → clinical_entry_types (patient file filter)
-- `clinical_history.diagnosis_id` → patient_diagnoses (diagnosis lookup)
+**🔴 Alta prioridad — queries frecuentes en UI:** ✅ **Todos resueltos en spec 011 commit `bcb8448`** (migration `20260420000003_add_missing_fk_indexes.sql`)
+- `appointments.service_id` → therapist_services (calendar render) ✅
+- `commissions.therapist_id` → profiles (dashboard therapist) ✅
+- `commissions.sale_id` → sales (admin commissions) ✅
+- `clinic_invoices.patient_id` → patients (patient file) ✅
+- `clinic_invoices.therapist_id` → profiles (dashboard therapist) ✅
+- `clinical_history.entry_type` → clinical_entry_types (patient file filter) ✅
+- `clinical_history.diagnosis_id` → patient_diagnoses (diagnosis lookup) ✅
 
 **🟡 Media — features calendaring / LMS:**
 - `blocked_times.clinic_id` + `.therapist_id` (calendar)
@@ -259,7 +259,25 @@ Query a `pg_constraint` + `pg_index` detectó 30+ foreign keys sin índice en la
 **🟢 Baja — admin / infrecuente:**
 `admin_*`, `arco_*`, `blog_*`, `cookie_consents`, `coupon_uses`, etc. (15+).
 
-**Verdict:** sin bug funcional hoy. Latencias crecientes con volumen. Candidato a spec `add-missing-fk-indexes` (45-60min, migración sola con `CREATE INDEX IF NOT EXISTS`).
+**Verdict:** ✅ **Alta prioridad cerrada** en spec 011 (2026-04-20). Latencias crecientes con volumen mitigadas para los 7 FKs críticos. 🟡 Media y 🟢 Baja quedan en backlog — spec futura dedicada si el volumen de esas tablas amerita tuning.
+
+#### FKs indexados post-audit (spec 011 — 2026-04-20)
+
+7 FKs de alta prioridad indexados via migration `20260420000003_add_missing_fk_indexes.sql`:
+
+| Índice | Tabla | Columna | Ref |
+|---|---|---|---|
+| `idx_appointments_service_id` | `appointments` | `service_id` | `therapist_services.id` |
+| `idx_clinic_invoices_patient_id` | `clinic_invoices` | `patient_id` | `patients.id` |
+| `idx_clinic_invoices_therapist_id` | `clinic_invoices` | `therapist_id` | `profiles.id` |
+| `idx_clinical_history_diagnosis_id` | `clinical_history` | `diagnosis_id` | `patient_diagnoses.id` |
+| `idx_clinical_history_entry_type` | `clinical_history` | `entry_type` | `clinical_entry_types.code` |
+| `idx_commissions_sale_id` | `commissions` | `sale_id` | `sales.id` |
+| `idx_commissions_therapist_id` | `commissions` | `therapist_id` | `profiles.id` |
+
+Todos btree default. `CONCURRENTLY` omitido (max 14 rows al apply, innecesario). EXPLAIN ANALYZE `commissions` post-apply confirmó **BITMAP INDEX SCAN** en uso (planner reconoce y prioriza el índice aún en tabla vacía — superó la expectativa FR-009 de Seq Scan tolerado).
+
+Los ~23 FKs de prioridad media/baja (`admin_*`, `arco_*`, `blog_*`, `cookie_consents`, `coupon_uses`, etc.) quedan **EXCLUIDOS** per FR-012 — spec futura dedicada si el volumen de esas tablas amerita performance tuning.
 
 ### Schema audit NOT NULL (2026-04-20) — limpio
 
@@ -325,4 +343,4 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
 - `docs/PATTERNS.md` — 5 patrones canónicos de DentalSpot (alias SQL · backfill+trigger · dedup audit · audit defensivo · preventive mini-audit)
 ---
-**Last updated**: 2026-04-20 | spec 010 closed — voice-visualizer + src/app/ orphans eliminados (commit `1c07b26`) | spec 009 closed — marketplace_purchases RLS 4 policies (commit `0b89ba3`) | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) + spec 009 marketplace_purchases RLS restoration (20-abr, commit `0b89ba3`) + spec 010 dead code cleanup (20-abr, commit `1c07b26`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags (reducido a 6 tras spec 010), health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad, subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados, subsección "RLS policies restauradas (spec 009)" con 4 policies finales de marketplace_purchases, Dead code table con columna Status tracking spec 010 resolution.
+**Last updated**: 2026-04-20 | spec 011 closed — 7 FK indexes alta prioridad aplicados (commit `bcb8448`) | spec 010 closed — voice-visualizer + src/app/ orphans eliminados (commit `1c07b26`) | spec 009 closed — marketplace_purchases RLS 4 policies (commit `0b89ba3`) | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) + spec 009 marketplace_purchases RLS restoration (20-abr, commit `0b89ba3`) + spec 010 dead code cleanup (20-abr, commit `1c07b26`) + spec 011 FK indexes high-priority (20-abr, commit `bcb8448`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags (reducido a 6 tras spec 010), health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad (🔴 alta cerrada en spec 011, 🟡 media + 🟢 baja en backlog), subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados, subsección "RLS policies restauradas (spec 009)" con 4 policies finales de marketplace_purchases, Dead code table con columna Status tracking spec 010 resolution, subsección "FKs indexados post-audit (spec 011)" con 7 índices btree + BITMAP INDEX SCAN confirmado.
