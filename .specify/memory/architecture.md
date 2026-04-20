@@ -322,7 +322,41 @@ Default PG con RLS enabled + 0 policies = "deny all" para anon+auth. Si frontend
 1. ✅ Spec 006 — `patient_questions` + `blog_posts` enable RLS (cerrado — commit `9e15c80`)
 2. ✅ Resuelto en spec 009 commit `0b89ba3` — `marketplace_purchases` restore policies (Estrategia B + pivot X2→X1 en Phase 2 para keep Vendors policy)
 3. Spec siguiente P0 — PIE cluster + `debug_signup_logs` write policies (1-2h)
-4. Spec siguiente P1 — auditar `billing_invoices` + otros ENABLED+0 policies (1h)
+4. ✅ Auditado en spec 012 — 22 tablas RLS enabled + 0 policies categorizadas (GROUP A=0 / B=3 / C=19 / D=0). 3 templates preparados para GROUP B (billing_invoices, patient_evaluations, patient_goals). Ver subsección siguiente.
+
+### RLS enabled zero-policies audit (2026-04-20)
+
+22 tablas con `rowsecurity = true` + 0 policies identificadas en audit previo (`§RLS coverage audit` arriba). Discovery completo vía spec 012 con classifier determinístico de 6 categorías de callsites + clasificación final en 4 GROUPs.
+
+**Distribución GROUPs**:
+
+| GROUP | Count | Significado | Acción |
+|---|---|---|---|
+| 🔴 **A** (activa rota hoy) | **0** | — ningún user impactado actualmente (todas las 22 tablas tienen `row_count = 0` al momento del audit) | — |
+| 🟡 **B** (pre-launch preventivo) | **3** | Frontend ya consume, impact llegará al primer INSERT | 3 templates de spec preparados |
+| 🟢 **C** (dormant intencional) | **19** | Sin callsites frontend, leave as-is hasta reactivación | Documentar, no fixear |
+| ⚪ **D** (feature-flag OFF) | **0** | Ningún callsite wrapped en `FEATURE_FLAGS.X` | — |
+
+**GROUP B (3 tablas a preparar spec de remediación)**:
+
+- `billing_invoices` — 3 callsites (`BillingHistory.jsx:27`, `useInvoices.js:13`, `commissionsApi.js:30`)
+- `patient_evaluations` — 2 callsites (`lib/patientApi.js:159 + :189`)
+- `patient_goals` — 2 callsites frontend + 4 edge functions (service_role, bypass RLS)
+
+**Buenas noticias operativas**: ningún usuario real está viendo "sin data" por bug de policies hoy. La remediación puede ser **preventiva y planificada**, no emergency.
+
+**Priorización GROUP B**: `billing_invoices` (recibe primera data real vía facturación) > `patient_evaluations` (flujo clínico por sesión) > `patient_goals` (downstream de plan terapéutico).
+
+**Bundle note**: `patient_development_areas` cubierta vía FK embed en `patient_goals` → template de `patient_goals` debe cubrir ambas en una sola migration (Template 3 en `specs/012-.../data-model.md §Follow-up specs`).
+
+**Edge functions de `patient_goals`** (`suggest-treatment`, `rag-query`, `analyze-progress`, `recommend-purchases`) usan `service_role` → bypass RLS, **no afectadas** por futuras policies.
+
+**Follow-up specs preparadas** en `specs/012-audit-rls-enabled-zero-policies/data-model.md §Follow-up specs`:
+- `write-policies-billing-invoices` — policies candidatas: `Therapists read own` (SELECT therapist_id=auth.uid()) + `Admin manage` (FOR ALL is_admin).
+- `write-policies-patient-evaluations` — policies candidatas: `Therapists manage` (FOR ALL vía care_team) + `Patients read own` (SELECT patient_id match) + `Admin manage`.
+- `write-policies-patient-goals-and-development-areas` — policies candidatas: mismo patrón via care_team, bundled patient_development_areas por FK embed.
+
+**Scope bound explícito**: 19 tablas GROUP C quedan como-están hasta reactivación. Si alguna recibe código o flag se activa → mover a GROUP B y re-evaluar. FR-006 no disparó (GROUP A ≤ 5), no se requiere meta-spec.
 
 ### 🚩 Antipatrón: "migración one-shot sin trigger"
 
