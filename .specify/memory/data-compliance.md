@@ -103,8 +103,12 @@ Registro honesto de ventanas donde Constitution III / Ley 21.719 estuvieron viol
 | Ventana | Principio violado | Causa raíz | Resolución |
 |---|---|---|---|
 | **2026-04-18 06:57 UTC → 2026-04-20 02:04 UTC** (≈43h) | Constitution III + Ley 21.719 ARCO | `clinical_audit_log` silencioso: policy `cal_dentist_insert` exige `is_in_care_team(patient_id)`; la función consulta `patient_care_team`; ésta se pobló una vez (15-abr, migración `20260415100002`) y no existía trigger de sincronización. Pacientes creados post-backfill caían fuera del care_team → policy rechazaba INSERT silenciosamente (console.warn solo en DEV). | Commit `c55d1a5` + migración `20260419000001_repair_patient_care_team.sql` (spec 003): backfill reparador idempotente + triggers `AFTER INSERT / AFTER UPDATE OF therapist_id, organization_id` mantienen la tabla sincronizada. Policy RLS sin tocar — design intent Phase 3 preservado. |
+| **Inicio desconocido → 2026-04-20** (multi-semanas, posiblemente desde Apr 1) | Constitution II (RLS-First Security) + Ley 20.584 (PHI) + Ley 21.719 (datos personales) | 3 tablas (`patient_questions`, `marketplace_purchases`, `blog_posts`) con policies definidas pero `rowsecurity = false` → policies decoración, no enforcement. Cualquier usuario autenticado podía leer/escribir filas de otros. Detectado por audit preventivo post-Express block ejecutando `pg_tables.rowsecurity` vs `pg_policies` coverage check. | Spec 006 (`enable-rls-quick-wins`, migración `20260420000001`): `ALTER TABLE ENABLE ROW LEVEL SECURITY` en `patient_questions` + `blog_posts`. `marketplace_purchases` diferido a spec separado (solo 1 de las 3 policies históricas sobrevive en live state — necesita restore antes de enable RLS). Las policies ya existentes y diseñadas para Phase 1/2/3 se activan automáticamente al encender el flag. |
 
-**Lección operativa:** toda tabla derivada poblada por backfill one-shot debe tener un trigger de sincronización en el mismo PR. Si el backfill y el trigger son specs separadas, la ventana entre merges es latente de ruptura silenciosa. Patrón canónico documentado en `architecture.md` §"Canonical patterns".
+**Lección operativa:**
+1. Toda tabla derivada poblada por backfill one-shot debe tener un trigger de sincronización en el mismo PR.
+2. **Audit `pg_tables.rowsecurity` vs `pg_policies` en cada corte de release** — crear 1 policy no implica tabla protegida; requiere además `ALTER TABLE ENABLE ROW LEVEL SECURITY`. Caso 2026-04-20 fue detectable con query de 4 líneas y permaneció invisible por semanas.
+3. Patrón canónico de ambas lecciones en `architecture.md` §"Canonical patterns" y §"RLS coverage audit".
 
 ---
 ## Deuda compliance conocida

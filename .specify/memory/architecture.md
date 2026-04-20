@@ -233,6 +233,47 @@ Query a `pg_constraint` + `pg_index` detectó 30+ foreign keys sin índice en la
 
 29 columnas NOT NULL sin default en tablas core (`patients`, `appointments`, `clinics`, `therapist_services`, `patient_care_team`, `clinical_audit_log`, `organizations`, `profiles`, `membership_plans`, `subscriptions`). Todas **semánticamente requeridas por dominio** (appointment necesita date, patient necesita org, audit log necesita user/action/resource). Sin INSERTs silenciosos que puedan fallar por NULL. **Schema bien constrained. 0 findings.**
 
+### 🔴 RLS coverage audit (2026-04-20) — P0 encontrado
+
+Query a `pg_tables.rowsecurity` + `pg_policies` reveló gaps críticos de seguridad. Categorización por exposure real (cruzada con frontend greps):
+
+**🔴 P0 — RLS DISABLED pero con policies existentes (policies NO enforced)**
+
+| Tabla | Policies live | Consumers frontend | Impacto |
+|---|---|---|---|
+| `patient_questions` | 5 policies | 14+ callsites | PHI leak: preguntas accesibles a cualquier auth user |
+| `marketplace_purchases` | 1 policy (solo `Admins update`) | 13+ callsites | Financial leak + policies faltantes (Buyer read/insert, Admin read/insert/delete, Vendor read) |
+| `blog_posts` | 7 policies | 8+ callsites | Moderation bypass + author integrity |
+
+Spec 006 (`enable-rls-quick-wins`) cierra `patient_questions` + `blog_posts` con 1 line de `ALTER TABLE ENABLE RLS` cada una (policies ya existen, solo falta activar enforcement). **`marketplace_purchases` queda diferido** a spec separado porque requiere escribir las policies faltantes primero.
+
+**🔴 P0 — RLS DISABLED + 0 policies + PHI sensible**
+
+| Tabla | Nota | Spec candidato |
+|---|---|---|
+| `debug_signup_logs` | Logs de signup = emails/RUTs | `lock-down-debug-tables` |
+| `pie_sessions` + `pie_students` + `pie_paci` + `pie_schedule_blocks` + `pie_therapist_schools` | PHI de menores (PIE Escolar); FEATURE_FLAG=false en UI pero accesible directo | `write-policies-for-pie-cluster` |
+
+**🟡 P1 — RLS ENABLED + 0 policies (feature posiblemente rota silenciosamente)**
+
+| Tabla | Consumers frontend |
+|---|---|
+| `billing_invoices` | 3 callsites (BillingHistory, useInvoices, commissionsApi) |
+| `patient_evaluations` | 2 callsites (patientApi) |
+| `orders`, `ai_chat_messages`, `course_lessons`, `therapist_insurances`, etc. | Features inactivas o edge-function-only |
+
+Default PG con RLS enabled + 0 policies = "deny all" para anon+auth. Si frontend usa la tabla con anon key, devuelve array vacío silenciosamente. Spec `audit-rls-enabled-zero-policies` (1h) investiga caso por caso si están broken (features visibles) vs intencionales (edge-function-only).
+
+**🟢 OK (reference data público, DISABLED intencional)**
+
+`clinical_entry_types`, `diagnosis_specialty_map`, `measure_scales`, `schools`, `specialty_keywords`, `blog_article_tags`, `blog_tags`, `patient_reviews`, `marketplace_plans`, `favorite_lists`, `moderation_logs`, `review_reports`.
+
+**Ruta de remediación priorizada:**
+1. Spec 006 — `patient_questions` + `blog_posts` enable RLS (hoy/inmediato, 15-30 min)
+2. Spec siguiente P0 — `marketplace_purchases` restore policies (1-2h)
+3. Spec siguiente P0 — PIE cluster + `debug_signup_logs` write policies (1-2h)
+4. Spec siguiente P1 — auditar `billing_invoices` + otros ENABLED+0 policies (1h)
+
 ### 🚩 Antipatrón: "migración one-shot sin trigger"
 
 **Caso histórico:** `20260415100002_populate_organization_model.sql` pobló `patient_care_team` con un backfill one-shot, sin trigger de sincronización. Consecuencia: todo paciente creado o reasignado post-15-abr cayó fuera del care_team → función `is_in_care_team()` devolvió `false` → policy `cal_dentist_insert` sobre `clinical_audit_log` rechazó writes silenciosamente → **43h de Constitution III violada** (2026-04-18 06:57 → 2026-04-20 02:04 UTC). Detalle completo en `data-compliance.md` §"Historial de compliance".
