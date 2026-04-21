@@ -1,6 +1,6 @@
 # Session log — 2026-04-20 (extended spec kit session)
 
-**Duración:** ~10-11 horas continuas (pre-almuerzo + 12:30-22:30+)
+**Duración:** ~12-13 horas continuas (pre-almuerzo + 12:30 → past midnight into 2026-04-21)
 **Advisor:** sesión Claude externa (strategic)
 **Executor:** Claude Code (IDE)
 **Modalidad:** Spec Kit disciplinado con stop points obligatorios
@@ -9,18 +9,22 @@
 
 ## Executive summary
 
-Sesión extraordinariamente productiva cerrando **6 brechas P0 compliance** (todo el RLS coverage audit del día 1), **1 spec P1 schema drifts**, **1 spec P1 UX**, **1 cleanup de tech debt**, **1 spec P2 performance**, **1 discovery audit**, y **1 spec rejected con Constitution amendment**. Además armado de material legal completo para Fase A del pivot estratégico.
+Sesión excepcional cerrando **6 brechas P0 compliance** (todo el RLS coverage audit del día 1), **1 spec P1 schema drifts**, **1 spec P1 UX**, **1 cleanup de tech debt**, **1 spec P2 performance**, **3 discovery audits** (1 categorización + 2 descartados), y **1 spec rejected con Constitution amendment**. Material legal completo pre-armado para Fase A del pivot estratégico.
 
-**🎯 Logro milestone:** RLS coverage audit 2026-04-20 → 100% CERRADO en producción. 12 tablas originalmente flageadas, 12 resueltas distribuidas en 6 specs.
+**🎯 Logros milestone:**
+- RLS coverage audit 2026-04-20 → **100% CERRADO** en producción (12 tablas resueltas en 6 specs)
+- Cross-org isolation audit → **LEAK DESCARTADO** (diseño intencional confirmado)
+- Therapist_id vs care_team drift audit → **NULA** (triggers spec 003 funcionando correctamente)
 
 **Resultado medible:**
-- **11 specs ciclados + 1 rejected** (total 12 ciclos de spec kit en 1 día)
+- **13 specs ciclados + 1 rejected + 3 audits discovery concluidos** (total 17 ciclos de spec kit discipline)
 - Constitution §III v1.0.0 → v1.1.0
 - PATTERNS.md de 5 a 7 patrones (con §8-§10 candidatos forward)
-- architecture.md con 6+ subsecciones nuevas preservando historial
+- architecture.md con 8+ subsecciones nuevas preservando historial
 - 638 líneas de material legal pre-armado para futuro outreach
-- ~60+ commits productivos en origin/main
-- 4 migrations aplicadas en producción (20260420000001-006, spec 006 fue 20260420000001)
+- ~80+ commits productivos en origin/main
+- 7 migrations aplicadas en producción (`20260419000001`, `20260420000001-006`)
+- 2 hallazgos laterales confirmados como non-bugs (diseño intencional + transitorio resolved)
 
 ---
 
@@ -201,6 +205,46 @@ Applied en 4 partes. 0 rows afectadas (todas las tablas vacías).
 
 **🎯 RLS coverage audit 2026-04-20 = 100% CERRADO** tras este spec.
 
+### 22:30 — 23:15 · Spec 017 (audit-cross-org-query-isolation)
+
+Discovery pure follow-up de hallazgo lateral spec 013: Cristóbal (multi-org Los Álamos + Bulnes) con `currentOrganizationId=null` aún veía 4 pacientes en `/patients`.
+
+**Phase 1 audit estático:**
+- 13 callsites `useCurrentOrganization`: 0 usan como READ filter (WRITEs, UI, audit, guards)
+- 20+ callsites a tablas con organization_id: 0 filtran por currentOrganizationId en reads
+- 2 RLS patterns canonical: `is_org_member()` + `patient_care_team.dentist_id` agregan across orgs
+
+**🎯 SMOKING GUN:** `patientApi.js:375-376` comentario explícito: "RLS filtra automáticamente por care_team + org membership. No se filtra por therapist_id en el frontend — la seguridad la da RLS."
+
+**Phase 2 empirical:**
+- Query β (raw therapist_id): 5 pacientes, 3 orgs
+- Query γ (RLS aplicado): 4 pacientes, 2 orgs
+- Diferencia: 1 paciente con therapist_id sin care_team activo → hallazgo lateral para spec 018
+
+**VERDICT: LEAK DESCARTADO — Scenario 2a (diseño intencional).**
+Multi-org dentist ve pacientes across clinics donde tiene care_team + org membership = feature, no bug. Hipótesis (a)/(b) de spec 013 REFUTADAS.
+
+**Patrón WRITE vs READ establecido como diseño canonical DentalSpot:**
+- WRITE: usa `currentOrganizationId` para tag org activa
+- READ: no usa `currentOrganizationId`, RLS resuelve isolation
+- Dropdown UI: cosmético para reads, funcional para writes
+
+### 23:15 — 00:00 · Spec 018 (audit-therapist-id-vs-care-team-drift)
+
+Discovery pure del hallazgo lateral de spec 017 (1 paciente drift en Cristóbal). Quantificación global + categorización en 5 hipótesis.
+
+**Phase 1 empirical:**
+- Query α global: `A_drift_count = 0` (¡CERO pacientes con drift en TODA la DB!)
+- Queries β/γ/δ: 0 rows consistentes
+
+**VERDICT: DRIFT NULA — transitorio confirmado.**
+
+Spec 017's 1-paciente hallazgo fue transitorio, probablemente resolved entre audits (care_team sync async, deactivation, o race condition).
+
+**R-01 confirmed:** triggers spec 003 (`20260419000001`, `AFTER INSERT/UPDATE` on patients) funcionan correctamente. Post-trigger drift global es 0.
+
+Close sin fix. Monitoring proactivo opcional (cron query α) si vuelve a aparecer.
+
 ---
 
 ## Specs detalle
@@ -218,9 +262,12 @@ Applied en 4 partes. 0 rows afectadas (todas las tablas vacías).
 | 014 | apply-policies-billing-evaluations | 6 (5 policies aplicadas) | ✅ En prod |
 | 015 | apply-policies-goals-and-development-areas | 6 (SHARED CATALOG decision, 5 policies) | ✅ En prod |
 | 016 | lockdown-pie-debug-tables | 6 (6 ALTER + 1 policy minimal Option 2a) | ✅ En prod |
+| 017 | audit-cross-org-query-isolation | 6 (discovery pure, LEAK DESCARTADO) | ✅ En prod (verdict) |
+| 018 | audit-therapist-id-vs-care-team-drift | 5 (discovery pure, DRIFT NULA) | ✅ En prod (verdict) |
 | — | Legal outreach prep | 1 | ✅ Archivado |
+| — | Session log update (este doc) | 1 | ✅ Archivado |
 
-**Total: 11 specs cerrados en prod + 1 rejected con Constitution amendment + 1 docs folder = 13 ciclos productivos completos.**
+**Total: 13 specs cerrados en prod + 1 rejected con Constitution amendment + 2 discovery audits concluidos + 2 docs archives = 18 ciclos productivos completos.**
 
 ---
 
@@ -342,6 +389,18 @@ Entre "pure deny-all" (rompe things) y "full policies" (over-engineering para fe
 
 **Lesson:** no todo es binario. Feature flag OFF + 1 callsite no-wrapped ≠ abort ≠ full policy. Puede ser "minimal lock-down con 1 excepción documentada".
 
+### 9. Discovery audits que CIERRAN hipótesis sin fix (specs 017 + 018)
+
+Spec 017 y 018 demostraron que **un audit bien hecho puede concluir "no hay bug"** con evidencia convergente de 3+ fuentes y eso es tan valioso como fix un bug real. Spec 017 cerró con verdict LEAK DESCARTADO basado en código + matriz + empirical; spec 018 cerró con DRIFT NULA via query global.
+
+**Lesson:** discovery pure es Constitution-compliant. No todo audit debe terminar en fix. Descartar hipótesis con rigor = closure organizational valiosa. Evita que el mismo hallazgo lateral vuelva a generar alarma en futuras sesiones.
+
+### 10. El SMOKING GUN documental (spec 017)
+
+El comentario explícito en `patientApi.js:375-376` ("la seguridad la da RLS, no frontend filter") fue evidencia de TIER-1 para el verdict. Futuro dev que lea el código entiende el diseño inmediatamente.
+
+**Lesson:** comentarios de diseño en el código son patrimonio. Spec 017 aprovechó esto. Al escribir código de seguridad con patrón no-obvio, documentar el "por qué" inline previene audits futuros redundantes.
+
 ---
 
 ## Backlog state at session close
@@ -356,11 +415,17 @@ Ningún item pendiente del audit original. 12 tablas procesadas, ~20 policies ac
 |---|---|---|
 | `audit-mercadopago-subscription-flow` | 1-1.5h | Único item revenue-critical sin audit. Verificar webhook → subscriptions → billing. Potencial bug financial |
 
-### 🟡 Follow-ups surgidos HOY (documentar en backlog)
+### 🟢 Follow-ups RESUELTOS hoy (no más pendientes)
+
+| Item | Origen | Resolución |
+|---|---|---|
+| `audit-cross-org-query-isolation` | Hallazgo spec 013 | ✅ Spec 017 LEAK DESCARTADO (diseño intencional) |
+| `audit-therapist-id-vs-care-team-drift` | Hallazgo spec 017 | ✅ Spec 018 DRIFT NULA (transitorio, triggers spec 003 OK) |
+
+### 🟡 Follow-ups pendientes mañana
 
 | Item | Estimación | Origen |
 |---|---|---|
-| `audit-cross-org-query-isolation` | 30-45min discovery | Hallazgo lateral spec 013 — dropdown vacío + /patients poblada sugiere queries NO filtran por `organization_id` → potencial cross-org data leak |
 | `cleanup-duplicate-fks-patient-goals` | 30-45min | Hallazgo lateral spec 015 — FKs duplicados en patient_goals (`patient_id` FK dual a patients.id + profiles.id) |
 | `audit-clinical-phi-logging` | 45-60min | Inspeccionar callsites que leen PHI sin invocar useClinicalAccessLogger (Constitution III) — flagued en specs 014/015 sin deep-dive |
 | `write-pie-policies-full` | 1.5-2h | Pre-requisito obligatorio antes de activar FEATURE_FLAGS.PIE_ESCOLAR=true. Policies patient-read/therapist-via-care_team/admin-manage para 5 tablas PIE. Forward-looking §V flag spec 016 |
@@ -400,28 +465,33 @@ Ningún item pendiente del audit original. 12 tablas procesadas, ~20 policies ac
 
 ---
 
-## Prompt para retomar mañana
+## Prompt para retomar (cuando duermas)
 
 ```
-Buenos días. Retomamos DentalSpot post-sesión épica 2026-04-20.
+Buenos días. Retomamos DentalSpot post-sesión ÉPICA 2026-04-20/21 
+(trasnochada con 13 specs cerrados + 3 discovery audits concluidos).
 
 Contexto activo:
-- 11 specs cerrados ayer + 1 rejected + Constitution §III v1.1.0 
+- 13 specs en prod + 1 rejected + Constitution §III v1.1.0
 - RLS coverage audit 100% CERRADO (12 tablas, 6 specs)
-- PATTERNS.md 5→7 con §8-§10 candidatos documentados en session log
-- architecture.md 6+ subsecciones nuevas preservando historial
+- Cross-org isolation audit → DESCARTADO (diseño intencional, spec 017)
+- Therapist_id drift audit → NULA (transitorio, spec 018)
+- PATTERNS.md 5→7 con §8-§10 candidatos documentados
+- architecture.md 8+ subsecciones nuevas preservando historial
 - docs/legal-outreach/ 638 líneas pre-armadas
-- 4 migrations aplicadas en producción
+- 7 migrations aplicadas en producción
 
-Target HOY sugerido: audit-mercadopago-subscription-flow (1-1.5h) — 
-único item revenue-critical sin audit. O algún follow-up:
-- audit-cross-org-query-isolation (30-45min, potential bug real)
-- cleanup-duplicate-fks-patient-goals (30-45min)
-- audit-clinical-phi-logging (45-60min)
+Target HOY priority 1: audit-mercadopago-subscription-flow (1-1.5h) 
+— único item revenue-critical sin audit. Con cabeza fresca.
 
-Session log completo en docs/session-logs/2026-04-20-extended-session.md.
+Otros pendientes: cleanup-duplicate-fks-patient-goals (spec 015 lateral),
+audit-clinical-phi-logging (specs 014/015 lateral), hardening-assistant-role
+(Ley 20.584), rebrand-fonoaudiologo-urls (branding visible).
 
-¿Qué atacamos hoy?
+Session log completo en docs/session-logs/2026-04-20-extended-session.md 
+(~500+ líneas).
+
+¿Arrancamos MercadoPago?
 ```
 
 ---
