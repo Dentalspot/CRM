@@ -283,7 +283,25 @@ Los ~23 FKs de prioridad media/baja (`admin_*`, `arco_*`, `blog_*`, `cookie_cons
 
 29 columnas NOT NULL sin default en tablas core (`patients`, `appointments`, `clinics`, `therapist_services`, `patient_care_team`, `clinical_audit_log`, `organizations`, `profiles`, `membership_plans`, `subscriptions`). Todas **semánticamente requeridas por dominio** (appointment necesita date, patient necesita org, audit log necesita user/action/resource). Sin INSERTs silenciosos que puedan fallar por NULL. **Schema bien constrained. 0 findings.**
 
-### 🔴 RLS coverage audit (2026-04-20) — P0 encontrado
+### ✅ RLS coverage audit (2026-04-20) — 100% CERRADO
+
+**Resumen final post spec 016**: los 12 gaps del audit original están resueltos vía 6 specs secuenciales. 0 gaps pendientes del audit en scope.
+
+| Categoría | Tablas | Spec resuelto |
+|---|---|---|
+| P0 RLS disabled con policies existentes | `patient_questions` + `blog_posts` | ✅ spec 006 (commit `9e15c80`) — enable RLS |
+| P0 RLS disabled + policies parciales | `marketplace_purchases` | ✅ spec 009 (commit `0b89ba3`) — 4 policies restore + enable RLS |
+| P0 RLS disabled + 0 policies (PHI-adjacent) | `pie_sessions` + `pie_students` + `pie_paci` + `pie_schedule_blocks` + `pie_therapist_schools` + `debug_signup_logs` | ✅ spec 016 (commit `d38f88c`) — lockdown deny-all + 1 policy minimal pie_therapist_schools |
+| P1 RLS enabled + 0 policies (pre-launch) | `billing_invoices` + `patient_evaluations` | ✅ spec 014 (commit `4bac0a4`) — 5 policies |
+| P1 RLS enabled + 0 policies (pre-launch) | `patient_goals` + `patient_development_areas` | ✅ spec 015 (commit `8db3c1f`) — 5 policies (shared catalog para dev_areas) |
+
+**Total**: 12 tablas procesadas · ≈20 policies activas · 0 gaps pendientes del audit original.
+
+**Forward-looking §V flag (spec 016)**: cuando `FEATURE_FLAGS.PIE_ESCOLAR` se active a `true` en el futuro, los 5 `pie_*` tablas con deny-all silencioso van a causar empty states para admin users sin policies proper. **Pre-requisito obligatorio antes de flip**: spec `write-pie-policies-full` que escriba policies patient-read, therapist-via-care_team, admin-manage para las 5 tablas (réplica del patrón aplicado a patient_evaluations en spec 014).
+
+---
+
+### 🔴 RLS coverage audit (2026-04-20) — P0 encontrado (histórico)
 
 Query a `pg_tables.rowsecurity` + `pg_policies` reveló gaps críticos de seguridad. Categorización por exposure real (cruzada con frontend greps):
 
@@ -299,10 +317,10 @@ Spec 006 (`enable-rls-quick-wins`) cerró `patient_questions` + `blog_posts` con
 
 **🔴 P0 — RLS DISABLED + 0 policies + PHI sensible**
 
-| Tabla | Nota | Spec candidato |
-|---|---|---|
-| `debug_signup_logs` | Logs de signup = emails/RUTs | `lock-down-debug-tables` |
-| `pie_sessions` + `pie_students` + `pie_paci` + `pie_schedule_blocks` + `pie_therapist_schools` | PHI de menores (PIE Escolar); FEATURE_FLAG=false en UI pero accesible directo | `write-policies-for-pie-cluster` |
+| Tabla | Nota | Spec candidato | Status |
+|---|---|---|---|
+| `debug_signup_logs` | Logs de signup = emails/RUTs | `lock-down-debug-tables` | ✅ spec 016 (lockdown deny-all) |
+| `pie_sessions` + `pie_students` + `pie_paci` + `pie_schedule_blocks` + `pie_therapist_schools` | PHI de menores (PIE Escolar); FEATURE_FLAG=false en UI pero accesible directo | `write-policies-for-pie-cluster` | ✅ spec 016 (lockdown deny-all + 1 policy minimal pie_therapist_schools) |
 
 **🟡 P1 — RLS ENABLED + 0 policies (feature posiblemente rota silenciosamente)**
 
@@ -318,11 +336,11 @@ Default PG con RLS enabled + 0 policies = "deny all" para anon+auth. Si frontend
 
 `clinical_entry_types`, `diagnosis_specialty_map`, `measure_scales`, `schools`, `specialty_keywords`, `blog_article_tags`, `blog_tags`, `patient_reviews`, `marketplace_plans`, `favorite_lists`, `moderation_logs`, `review_reports`.
 
-**Ruta de remediación priorizada:**
-1. ✅ Spec 006 — `patient_questions` + `blog_posts` enable RLS (cerrado — commit `9e15c80`)
-2. ✅ Resuelto en spec 009 commit `0b89ba3` — `marketplace_purchases` restore policies (Estrategia B + pivot X2→X1 en Phase 2 para keep Vendors policy)
-3. Spec siguiente P0 — PIE cluster + `debug_signup_logs` write policies (1-2h)
-4. ✅ Auditado en spec 012 — 22 tablas RLS enabled + 0 policies categorizadas (GROUP A=0 / B=3 / C=19 / D=0). 3 templates preparados para GROUP B (billing_invoices, patient_evaluations, patient_goals). Ver subsección siguiente.
+**Ruta de remediación priorizada (ejecutada 2026-04-20):**
+1. ✅ Spec 006 — `patient_questions` + `blog_posts` enable RLS (commit `9e15c80`)
+2. ✅ Spec 009 — `marketplace_purchases` restore policies (commit `0b89ba3`, Estrategia B + pivot X2→X1)
+3. ✅ Spec 016 — PIE cluster + `debug_signup_logs` lockdown (commit `d38f88c`, deny-all + 1 policy minimal)
+4. ✅ Spec 012 — audit 22 tablas GROUP A/B/C/D → 3 templates GROUP B resueltos en specs 014+015.
 
 ### RLS enabled zero-policies audit (2026-04-20)
 
@@ -381,4 +399,4 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
 - `docs/PATTERNS.md` — 5 patrones canónicos de DentalSpot (alias SQL · backfill+trigger · dedup audit · audit defensivo · preventive mini-audit)
 ---
-**Last updated**: 2026-04-20 | spec 015 closed — GROUP B 3/3 RESUELTOS: patient_goals (3 policies per-patient via care_team) + patient_development_areas (2 policies SHARED CATALOG) via migration `20260420000005` (commit `8db3c1f`). RLS zero-policies audit completo para GROUP B; quedan 19 GROUP C dormant como backlog pasivo | spec 014 closed — 2/3 GROUP B resueltos: billing_invoices (2 policies) + patient_evaluations (3 policies) via migration `20260420000004` (commit `4bac0a4`) | spec 013 closed — OrganizationContext persistence fix (commit `478dde4`, merged `a203768`) | spec 012 closed — RLS zero-policies audit 22 tablas categorizadas GROUP A/B/C/D (commit `ca2fb9e`) | spec 011 closed — 7 FK indexes alta prioridad aplicados (commit `bcb8448`) | spec 010 closed — voice-visualizer + src/app/ orphans eliminados (commit `1c07b26`) | spec 009 closed — marketplace_purchases RLS 4 policies (commit `0b89ba3`) | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) + spec 009 marketplace_purchases RLS restoration (20-abr, commit `0b89ba3`) + spec 010 dead code cleanup (20-abr, commit `1c07b26`) + spec 011 FK indexes high-priority (20-abr, commit `bcb8448`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags (reducido a 6 tras spec 010), health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad (🔴 alta cerrada en spec 011, 🟡 media + 🟢 baja en backlog), subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados, subsección "RLS policies restauradas (spec 009)" con 4 policies finales de marketplace_purchases, Dead code table con columna Status tracking spec 010 resolution, subsección "FKs indexados post-audit (spec 011)" con 7 índices btree + BITMAP INDEX SCAN confirmado.
+**Last updated**: 2026-04-20 | spec 016 closed — último P0 del RLS coverage audit CERRADO: 6 tablas locked down (pie_sessions, pie_students, pie_paci, pie_schedule_blocks, pie_therapist_schools, debug_signup_logs) via migration `20260420000006` (commit `d38f88c`). 6 ALTER TABLE ENABLE RLS + 1 policy minimal "Therapists manage own pie_therapist_schools" (FR-009 Option 2a — R-01 silent upsert en MyClinicsSection.jsx:205 preservado). **Audit RLS coverage 2026-04-20 = 100% cerrado** (12 tablas, ~20 policies, 0 gaps). Forward-looking §V: reactivación PIE futura requiere spec `write-pie-policies-full` ANTES del flag flip | spec 015 closed — GROUP B 3/3 RESUELTOS: patient_goals (3 policies per-patient via care_team) + patient_development_areas (2 policies SHARED CATALOG) via migration `20260420000005` (commit `8db3c1f`). RLS zero-policies audit completo para GROUP B; quedan 19 GROUP C dormant como backlog pasivo | spec 014 closed — 2/3 GROUP B resueltos: billing_invoices (2 policies) + patient_evaluations (3 policies) via migration `20260420000004` (commit `4bac0a4`) | spec 013 closed — OrganizationContext persistence fix (commit `478dde4`, merged `a203768`) | spec 012 closed — RLS zero-policies audit 22 tablas categorizadas GROUP A/B/C/D (commit `ca2fb9e`) | spec 011 closed — 7 FK indexes alta prioridad aplicados (commit `bcb8448`) | spec 010 closed — voice-visualizer + src/app/ orphans eliminados (commit `1c07b26`) | spec 009 closed — marketplace_purchases RLS 4 policies (commit `0b89ba3`) | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) + spec 009 marketplace_purchases RLS restoration (20-abr, commit `0b89ba3`) + spec 010 dead code cleanup (20-abr, commit `1c07b26`) + spec 011 FK indexes high-priority (20-abr, commit `bcb8448`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags (reducido a 6 tras spec 010), health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad (🔴 alta cerrada en spec 011, 🟡 media + 🟢 baja en backlog), subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados, subsección "RLS policies restauradas (spec 009)" con 4 policies finales de marketplace_purchases, Dead code table con columna Status tracking spec 010 resolution, subsección "FKs indexados post-audit (spec 011)" con 7 índices btree + BITMAP INDEX SCAN confirmado.
