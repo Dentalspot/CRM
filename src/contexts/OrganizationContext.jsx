@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -22,6 +22,19 @@ export const OrganizationProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const storageKey = user?.id ? `${STORAGE_PREFIX}${user.id}` : null;
+
+  const previousUserIdRef = useRef(null);
+  useEffect(() => {
+    if (user?.id) {
+      previousUserIdRef.current = user.id;
+    } else if (previousUserIdRef.current) {
+      // Transición user → null: logout detectado. Limpiar storage del user previo.
+      try {
+        sessionStorage.removeItem(`${STORAGE_PREFIX}${previousUserIdRef.current}`);
+      } catch { /* private mode */ }
+      previousUserIdRef.current = null;
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -60,13 +73,19 @@ export const OrganizationProvider = ({ children }) => {
       if (uniqueOrgs.length === 1) {
         setCurrentOrgId(uniqueOrgs[0].id);
       } else if (uniqueOrgs.length > 1 && storageKey) {
-        const stored = sessionStorage.getItem(storageKey);
+        let stored = null;
+        try { stored = sessionStorage.getItem(storageKey); } catch { /* private mode */ }
         if (stored && uniqueOrgs.some(o => o.id === stored)) {
           setCurrentOrgId(stored);
         } else {
-          // Valor inválido o ausente: limpiar y dejar null
-          if (stored) sessionStorage.removeItem(storageKey);
-          setCurrentOrgId(null);
+          // Multi-org sin stored válido: default a primera org + persistir
+          // (evita dropdown "Seleccionar organización" ambiguo en primer login)
+          const defaultOrgId = uniqueOrgs[0].id;
+          setCurrentOrgId(defaultOrgId);
+          try {
+            if (stored) sessionStorage.removeItem(storageKey);
+            sessionStorage.setItem(storageKey, defaultOrgId);
+          } catch { /* private mode: degrada a in-memory */ }
         }
       }
 
