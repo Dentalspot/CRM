@@ -9,22 +9,24 @@
 
 ## Executive summary
 
-Sesión excepcional cerrando **6 brechas P0 compliance** (todo el RLS coverage audit del día 1), **1 spec P1 schema drifts**, **1 spec P1 UX**, **1 cleanup de tech debt**, **1 spec P2 performance**, **3 discovery audits** (1 categorización + 2 descartados), y **1 spec rejected con Constitution amendment**. Material legal completo pre-armado para Fase A del pivot estratégico.
+Sesión excepcional cerrando **6 brechas P0 compliance** (todo el RLS coverage audit del día 1), **1 spec P1 schema drifts**, **1 spec P1 UX**, **1 cleanup de tech debt**, **1 spec P2 performance**, **4 discovery audits** (1 categorización + 2 descartados + 1 SYSTEMIC ISSUES revenue-critical), y **1 spec rejected con Constitution amendment**. Material legal completo pre-armado para Fase A del pivot estratégico.
 
 **🎯 Logros milestone:**
 - RLS coverage audit 2026-04-20 → **100% CERRADO** en producción (12 tablas resueltas en 6 specs)
 - Cross-org isolation audit → **LEAK DESCARTADO** (diseño intencional confirmado)
 - Therapist_id vs care_team drift audit → **NULA** (triggers spec 003 funcionando correctamente)
+- **MercadoPago subscription flow audit → SYSTEMIC ISSUES** (5 BLOCKERs P0 mapped, meta-spec propuesto, revenue at risk 12m $1.6M-$14.4M conservador, $20M-$60M+ worst-case)
 
 **Resultado medible:**
-- **13 specs ciclados + 1 rejected + 3 audits discovery concluidos** (total 17 ciclos de spec kit discipline)
+- **14 specs ciclados + 1 rejected + 3 audits discovery concluidos** (total 18 ciclos de spec kit discipline)
 - Constitution §III v1.0.0 → v1.1.0
 - PATTERNS.md de 5 a 7 patrones (con §8-§10 candidatos forward)
-- architecture.md con 8+ subsecciones nuevas preservando historial
+- architecture.md con 9+ subsecciones nuevas preservando historial (incluida spec 019 MercadoPago audit)
 - 638 líneas de material legal pre-armado para futuro outreach
-- ~80+ commits productivos en origin/main
+- ~80+ commits productivos en origin/main + 1 local pendiente merge (spec 019 close)
 - 7 migrations aplicadas en producción (`20260419000001`, `20260420000001-006`)
 - 2 hallazgos laterales confirmados como non-bugs (diseño intencional + transitorio resolved)
+- 1 audit revenue-critical con verdict sistémico + 5 follow-up templates listos (1 meta + 4 individuales)
 
 ---
 
@@ -245,6 +247,41 @@ Spec 017's 1-paciente hallazgo fue transitorio, probablemente resolved entre aud
 
 Close sin fix. Monitoring proactivo opcional (cron query α) si vuelve a aparecer.
 
+### 00:00 — 02:00 (2026-04-21) · Spec 019 (audit-mercadopago-subscription-flow)
+
+Discovery pure revenue-critical. Único componente monetario sin audit post-15 specs cerrados. 3 phases completas, 4 stop points cerrados.
+
+**Phase 1 inventario:**
+- 3 edge functions MP identificadas: `mercadopago-webhook` + `create-mp-checkout` + `create-mercadopago-preference`.
+- 14+ consumers frontend inventariados (SubscriptionContext, useInvoices, MembershipPlansPage, etc.).
+- Queries α-θ ejecutadas via SQL Editor (Danissa paste). Descubrimiento crítico: tabla `subscriptions` EXISTE pero está vacía (0 rows) → F-004 recategorizado BLOCKER → LATENT. Tabla real operacional es `therapist_subscriptions` (22 cols confirmadas).
+- RLS state: `therapist_subscriptions.rowsecurity=true` + 5 policies → R-04 DESCARTADO.
+- Ajuste en Phase 1: spec + plan originales asumieron tabla `subscriptions` (nombre incorrecto). Queries reescritas para `therapist_subscriptions` tras inventario.
+
+**Phase 2 flow analysis:**
+- Flow diagram 10 pasos end-to-end reconstruido desde inventory.
+- 5 puntos críticos: 4 FAIL BLOCKER (F-001 no-signature, F-002 no-idempotent, F-003 silent-200, retry combo) + 1 PARCIAL LATENT (F-018 no-audit-trail).
+- 6 gaps funcionales evaluados (upgrade/cancel/failed/refund/chargeback/input-validation).
+- **F-014 descubierto leyendo `create-mp-checkout:69-71`** — client-side price manipulation no previsto en Risk Register original. Elevado a BLOCKER P0 (self-exploit con DevTools, accesible a cualquier therapist autenticado). Probablemente el más peligroso en términos de probabilidad real.
+- F-015/F-016/F-017/F-018 también novel findings Phase 2.
+
+**Phase 3 verdict:**
+- 🔴 **SYSTEMIC ISSUES (nivel 4 de 4)** — 5 BLOCKERs P0 confirmados (umbral ≥3 superado por 66%).
+- **18 findings totales**: 5 BLOCKER / 4 LATENT P1 / 5 LATENT P2 / 1 EDGE / 3 ENHANCEMENT.
+- Revenue at risk 12m post-launch: **$1.6M-$14.4M CLP conservador**, **$20M-$60M+ worst-case** (F-001 explotado).
+- **Concentración arquitectural**: 4 de 5 BLOCKERs en `mercadopago-webhook` handler. 5º (F-014) en checkout creators. Patrón sistémico, no bugs puntuales → justifica meta-spec agrupado.
+
+**Deliverables finales:**
+- `specs/019-audit-mercadopago-flow/data-model.md` — 874 líneas con inventario + flow + findings matrix + revenue estimate + verdict + follow-up templates + meta-spec proposal + architecture.md draft.
+- Architecture.md: nueva subsección `§"MercadoPago subscription flow audit (spec 019 — 2026-04-21)"` + Last updated bump.
+- Commit único `c8689fd` sobre rama `019-audit-mercadopago-flow` (discovery pure: 0 edits a src/supabase — TASK-FINAL-VALIDATE PASS).
+- Meta-spec propuesto `fix-mercadopago-critical-bugs` P0 con prompt pre-cocinado listo para `/speckit-specify` sesión futura (NO escrito — FR-007, §IV).
+- 4 follow-up spec templates P1 listos copy-paste: `add-webhook-audit-trail` (prerequisite), `fix-subscription-cancellation-detection`, `fix-admin-directory-wrong-table`, `fix-process-completed-order-silent-catch`.
+
+**Decisión advisor requerida mañana**: Opción A (meta-spec agrupado, recomendado) · Opción B (5 specs separados, riesgo regresión cruzada) · Opción C (diferir con risk accept).
+
+**Known limitation**: logs webhook no accesibles via MCP — análisis bound a código estático + DB state (n=1 active sandbox). Runtime diagnostics requieren implementar `add-webhook-audit-trail` primero.
+
 ---
 
 ## Specs detalle
@@ -264,10 +301,11 @@ Close sin fix. Monitoring proactivo opcional (cron query α) si vuelve a aparece
 | 016 | lockdown-pie-debug-tables | 6 (6 ALTER + 1 policy minimal Option 2a) | ✅ En prod |
 | 017 | audit-cross-org-query-isolation | 6 (discovery pure, LEAK DESCARTADO) | ✅ En prod (verdict) |
 | 018 | audit-therapist-id-vs-care-team-drift | 5 (discovery pure, DRIFT NULA) | ✅ En prod (verdict) |
+| 019 | audit-mercadopago-subscription-flow | 4 (spec → plan → tasks → close, discovery pure, SYSTEMIC ISSUES) | ✅ Close commit local (c8689fd) — merge + push pendiente Danissa |
 | — | Legal outreach prep | 1 | ✅ Archivado |
 | — | Session log update (este doc) | 1 | ✅ Archivado |
 
-**Total: 13 specs cerrados en prod + 1 rejected con Constitution amendment + 2 discovery audits concluidos + 2 docs archives = 18 ciclos productivos completos.**
+**Total: 14 specs cerrados (13 en prod + 1 close local) + 1 rejected con Constitution amendment + 3 discovery audits concluidos + 2 docs archives = 20 ciclos productivos completos.**
 
 ---
 
@@ -409,11 +447,22 @@ El comentario explícito en `patientApi.js:375-376` ("la seguridad la da RLS, no
 
 Ningún item pendiente del audit original. 12 tablas procesadas, ~20 policies activas en producción.
 
-### 🔴 Production-critical primero (mañana)
+### 🔴 Production-critical primero (mañana) — ex-spec 019 outputs
+
+**Meta-spec P0 propuesto** (agrupa los 5 BLOCKERs spec 019):
 
 | Item | Estimación | Categoría |
 |---|---|---|
-| `audit-mercadopago-subscription-flow` | 1-1.5h | Único item revenue-critical sin audit. Verificar webhook → subscriptions → billing. Potencial bug financial |
+| `fix-mercadopago-critical-bugs` (meta) | 10-15h total (3-5h plan + 6-10h impl) | 5 BLOCKERs agrupados: F-001 signature + F-002 idempotency + F-003 silent-200 + F-005 no-dunning + F-014 client-price-manipulation. Prompt pre-cocinado en `specs/019-audit-mercadopago-flow/data-model.md §P3.3`. **Decisión advisor pendiente**: Opción A (meta) / B (5 specs separados) / C (diferir con risk accept) |
+
+**Follow-ups P1 spec 019 (templates listos copy-paste `/speckit-specify`):**
+
+| Item | Estimación | Prerequisite |
+|---|---|---|
+| `add-webhook-audit-trail` (F-018) | M (1.5-2h) | — | Prerequisite diagnóstico post-meta-spec. Recomendado PRIMERO para verificar fixes subsequent |
+| `fix-subscription-cancellation-detection` (F-010) | S (45-60min) | add-webhook-audit-trail recomendado |
+| `fix-admin-directory-wrong-table` (F-004) | XS (15-30min) | — | 1-line fix trivial `.from('subscriptions')` → `.from('therapist_subscriptions')` |
+| `fix-process-completed-order-silent-catch` (F-017) | S (45-60min) | add-webhook-audit-trail recomendado |
 
 ### 🟢 Follow-ups RESUELTOS hoy (no más pendientes)
 
@@ -421,6 +470,7 @@ Ningún item pendiente del audit original. 12 tablas procesadas, ~20 policies ac
 |---|---|---|
 | `audit-cross-org-query-isolation` | Hallazgo spec 013 | ✅ Spec 017 LEAK DESCARTADO (diseño intencional) |
 | `audit-therapist-id-vs-care-team-drift` | Hallazgo spec 017 | ✅ Spec 018 DRIFT NULA (transitorio, triggers spec 003 OK) |
+| `audit-mercadopago-subscription-flow` | Priority explícita Danissa "priorizar llevar a producción" | ✅ Spec 019 SYSTEMIC ISSUES (5 BLOCKERs P0, meta-spec + 4 follow-ups propuestos) |
 
 ### 🟡 Follow-ups pendientes mañana
 
@@ -468,30 +518,58 @@ Ningún item pendiente del audit original. 12 tablas procesadas, ~20 policies ac
 ## Prompt para retomar (cuando duermas)
 
 ```
-Buenos días. Retomamos DentalSpot post-sesión ÉPICA 2026-04-20/21 
-(trasnochada con 13 specs cerrados + 3 discovery audits concluidos).
+Buenos días. Retomamos DentalSpot post-sesión ÉPICA 2026-04-20/21
+(trasnochada 12-14h con 14 specs cerrados + 3 discovery audits
+concluidos + 1 audit revenue-critical con verdict SYSTEMIC ISSUES).
 
 Contexto activo:
-- 13 specs en prod + 1 rejected + Constitution §III v1.1.0
+- 14 specs cerrados (13 en prod + spec 019 close local pending merge)
+- 1 rejected + Constitution §III v1.1.0
 - RLS coverage audit 100% CERRADO (12 tablas, 6 specs)
-- Cross-org isolation audit → DESCARTADO (diseño intencional, spec 017)
-- Therapist_id drift audit → NULA (transitorio, spec 018)
+- Cross-org isolation audit → DESCARTADO (spec 017 diseño intencional)
+- Therapist_id drift audit → NULA (spec 018 transitorio)
+- **MercadoPago audit → SYSTEMIC ISSUES (spec 019, 5 BLOCKERs P0 mapped)**
 - PATTERNS.md 5→7 con §8-§10 candidatos documentados
-- architecture.md 8+ subsecciones nuevas preservando historial
-- docs/legal-outreach/ 638 líneas pre-armadas
+- architecture.md 9+ subsecciones nuevas (incluida §MercadoPago audit)
+- docs/legal-outreach/ 638 líneas pre-armadas (untracked, pendiente commit)
 - 7 migrations aplicadas en producción
 
-Target HOY priority 1: audit-mercadopago-subscription-flow (1-1.5h) 
-— único item revenue-critical sin audit. Con cabeza fresca.
+Primer paso mañana (5 min):
+1. Revisar rama 019-audit-mercadopago-flow (commit local c8689fd)
+2. Merge a main + push (o defer si querés releer primero)
+3. Opcional: commitear docs/legal-outreach/ como "docs: add legal outreach
+   pre-armado pre-Fase A pivot marketplace"
 
-Otros pendientes: cleanup-duplicate-fks-patient-goals (spec 015 lateral),
-audit-clinical-phi-logging (specs 014/015 lateral), hardening-assistant-role
-(Ley 20.584), rebrand-fonoaudiologo-urls (branding visible).
+TARGET HOY — decisión advisor Opción A/B/C sobre spec 019:
+- Opción A ⭐ RECOMENDADA: crear meta-spec fix-mercadopago-critical-bugs
+  P0 agrupando 5 BLOCKERs. Prompt pre-cocinado en
+  specs/019-audit-mercadopago-flow/data-model.md §P3.3. Estimate 10-15h.
+  Arranque: `/speckit-specify [pegar prompt]`
+- Opción B: 5 specs P0 separados (riesgo regresión cruzada + ventana
+  exposure más larga)
+- Opción C: diferir con risk accept documentado
 
-Session log completo en docs/session-logs/2026-04-20-extended-session.md 
-(~500+ líneas).
+Si elegís A, el orden recomendado de ejecución:
+1. add-webhook-audit-trail (P1 prerequisite, 1.5-2h) — habilita
+   diagnóstico del meta-spec subsequent.
+2. fix-mercadopago-critical-bugs (meta P0, 10-15h).
+3. fix-admin-directory-wrong-table (P1 XS, 15-30min) — trivial win.
+4. fix-cancellation-detection + fix-process-completed-order-silent-catch
+   (P1 S cada uno).
 
-¿Arrancamos MercadoPago?
+Otros pendientes (diferidos): cleanup-duplicate-fks-patient-goals (spec
+015 lateral), audit-clinical-phi-logging (specs 014/015 lateral),
+hardening-assistant-role (Ley 20.584), rebrand-fonoaudiologo-urls
+(branding visible), write-pie-policies-full (pre-requisito flag PIE).
+
+Session log completo en docs/session-logs/2026-04-20-extended-session.md
+(~600 líneas).
+
+Revenue at risk spec 019 (para calibrar urgencia): $1.6M-$14.4M CLP/año
+conservador forward-looking, $20M-$60M+ worst-case si F-001 explotado.
+Hoy n=1 active sandbox = $0 real, todos los riesgos son pre-scale.
+
+¿Opción A, B, o C?
 ```
 
 ---
