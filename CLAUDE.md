@@ -70,5 +70,5 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.
 
-**Active feature**: `007-fix-patient-dashboard-schema-drifts` — [Plan](specs/007-fix-patient-dashboard-schema-drifts/plan.md)
+**Active feature**: — entre ciclos (2026-04-21 02:55). Último cerrado: `019-audit-mercadopago-flow` — verdict **SYSTEMIC ISSUES** (5 BLOCKERs P0 MercadoPago) — [data-model](specs/019-audit-mercadopago-flow/data-model.md). Próximo paso (decisión advisor pendiente): Opción A meta-spec `fix-mercadopago-critical-bugs` / Opción B 5 specs separados / Opción C diferir con risk accept. Ver `docs/session-logs/2026-04-20-extended-session.md` §"Prompt para retomar".
 <!-- SPECKIT END -->
