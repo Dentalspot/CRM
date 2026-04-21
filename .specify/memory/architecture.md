@@ -62,7 +62,7 @@ Sub-routers en `src/app/routers/`:
 4. `AdminPermissionProvider` — permisos granulares admin
 5. `CartProvider` — carrito marketplace
 6. `AppRouter`
-`OrganizationProvider` **no está en el root** — scoped a `DashboardLayout.jsx` porque rutas públicas no consumen organization. `useCurrentOrganization` maneja el caso público con try/catch. **Diseño intencional, no bug.**
+`OrganizationProvider` **no está en el root** — scoped a `DashboardLayout.jsx` porque rutas públicas no consumen organization. `useCurrentOrganization` maneja el caso público con try/catch. **Diseño intencional, no bug.** Persiste selección en `sessionStorage` con key `dentalspot_current_org:<user_id>` + cleanup en logout vía listener interno sobre `user?.id → null` (spec 013, 2026-04-20). Multi-org sin stored default a primera org (evita dropdown ambiguo).
 ### Guards (5)
 | Guard | Responsabilidad | Path |
 |---|---|---|
