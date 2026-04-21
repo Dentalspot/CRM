@@ -18,7 +18,7 @@ Los 6 principios de la constitución (resumen):
 
 1. **Compliance-First** — sin evaluación Ley 20.584/21.719, no hay spec
 2. **RLS-First Security** — los guards React son UX, no seguridad. La seguridad vive en `supabase/policies.sql`
-3. **Append-Only Audit** — leer datos clínicos sin invocar `useClinicalAccessLogger` es violación. El hook escribe a `clinical_audit_log` (audit general, NO a `clinical_access_log` que pertenece al módulo `clinical-passport`, ver `data-compliance.md`)
+3. **Append-Only Audit** (v1.1.0) — acceso de **TERCEROS** (`dentist` / `clinic_admin` / `assistant`) a datos clínicos de paciente ajeno debe invocar `useClinicalAccessLogger`. **Auto-acceso del paciente a su propia ficha NO requiere logging** (alineado Ley 20.584 art. 13 + Ley 21.719 — transparencia sobre terceros, no auto-consulta). El hook escribe a `clinical_audit_log` (audit general, NO a `clinical_access_log` del módulo `clinical-passport`, ver `data-compliance.md`). **Antipatrón** (lección spec 008): declarar gap §III por grep sin leer body del hook (ver `PATTERNS.md §6`)
 4. **Micro-Bloques** — un PR = un bug/feature. Nunca refactor + fix + feature mezclados
 5. **UI Honesty** — ningún toast "Guardado" sin validar `.select('id').length > 0`
 6. **Schema Drift Zero** — columna usada en código = columna existente en `supabase/migrations/`
