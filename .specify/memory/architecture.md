@@ -337,11 +337,11 @@ Default PG con RLS enabled + 0 policies = "deny all" para anon+auth. Si frontend
 | 🟢 **C** (dormant intencional) | **19** | Sin callsites frontend, leave as-is hasta reactivación | Documentar, no fixear |
 | ⚪ **D** (feature-flag OFF) | **0** | Ningún callsite wrapped en `FEATURE_FLAGS.X` | — |
 
-**GROUP B (3 tablas a preparar spec de remediación)**:
+**GROUP B (3 tablas originales, 2 ✅ resueltos en spec 014, 1 pendiente)**:
 
-- `billing_invoices` — 3 callsites (`BillingHistory.jsx:27`, `useInvoices.js:13`, `commissionsApi.js:30`)
-- `patient_evaluations` — 2 callsites (`lib/patientApi.js:159 + :189`)
-- `patient_goals` — 2 callsites frontend + 4 edge functions (service_role, bypass RLS)
+- ✅ `billing_invoices` — resuelto spec 014 (commit 4bac0a4, 2 policies: Therapists read own + Admins manage)
+- ✅ `patient_evaluations` — resuelto spec 014 (commit 4bac0a4, 3 policies: Therapists manage via care_team + Patients read own + Admins manage)
+- ⏳ `patient_goals` + `patient_development_areas` — 2 callsites frontend + 4 edge functions (service_role, bypass RLS). Template 3 bundled por FK embed, **spec futura dedicada**.
 
 **Buenas noticias operativas**: ningún usuario real está viendo "sin data" por bug de policies hoy. La remediación puede ser **preventiva y planificada**, no emergency.
 
@@ -351,10 +351,10 @@ Default PG con RLS enabled + 0 policies = "deny all" para anon+auth. Si frontend
 
 **Edge functions de `patient_goals`** (`suggest-treatment`, `rag-query`, `analyze-progress`, `recommend-purchases`) usan `service_role` → bypass RLS, **no afectadas** por futuras policies.
 
-**Follow-up specs preparadas** en `specs/012-audit-rls-enabled-zero-policies/data-model.md §Follow-up specs`:
-- `write-policies-billing-invoices` — policies candidatas: `Therapists read own` (SELECT therapist_id=auth.uid()) + `Admin manage` (FOR ALL is_admin).
-- `write-policies-patient-evaluations` — policies candidatas: `Therapists manage` (FOR ALL vía care_team) + `Patients read own` (SELECT patient_id match) + `Admin manage`.
-- `write-policies-patient-goals-and-development-areas` — policies candidatas: mismo patrón via care_team, bundled patient_development_areas por FK embed.
+**Follow-up specs** (originalmente preparadas en `specs/012-audit-rls-enabled-zero-policies/data-model.md §Follow-up specs`):
+- ✅ `write-policies-billing-invoices` → **ejecutado via spec 014** (commit 4bac0a4).
+- ✅ `write-policies-patient-evaluations` → **ejecutado via spec 014** (commit 4bac0a4) con ajustes schema: `patient_care_team.dentist_id` + `is_active=true` filter, `patients.profile_id`.
+- ⏳ `write-policies-patient-goals-and-development-areas` → **pendiente**, bundled patient_development_areas por FK embed.
 
 **Scope bound explícito**: 19 tablas GROUP C quedan como-están hasta reactivación. Si alguna recibe código o flag se activa → mover a GROUP B y re-evaluar. FR-006 no disparó (GROUP A ≤ 5), no se requiere meta-spec.
 
@@ -377,4 +377,4 @@ Build pipeline: `tools/generate-llms.js` genera metadata + `vite build` emite `d
 - `.specify/memory/data-compliance.md` — referencia a compliance implementado
 - `docs/PATTERNS.md` — 5 patrones canónicos de DentalSpot (alias SQL · backfill+trigger · dedup audit · audit defensivo · preventive mini-audit)
 ---
-**Last updated**: 2026-04-20 | spec 011 closed — 7 FK indexes alta prioridad aplicados (commit `bcb8448`) | spec 010 closed — voice-visualizer + src/app/ orphans eliminados (commit `1c07b26`) | spec 009 closed — marketplace_purchases RLS 4 policies (commit `0b89ba3`) | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) + spec 009 marketplace_purchases RLS restoration (20-abr, commit `0b89ba3`) + spec 010 dead code cleanup (20-abr, commit `1c07b26`) + spec 011 FK indexes high-priority (20-abr, commit `bcb8448`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags (reducido a 6 tras spec 010), health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad (🔴 alta cerrada en spec 011, 🟡 media + 🟢 baja en backlog), subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados, subsección "RLS policies restauradas (spec 009)" con 4 policies finales de marketplace_purchases, Dead code table con columna Status tracking spec 010 resolution, subsección "FKs indexados post-audit (spec 011)" con 7 índices btree + BITMAP INDEX SCAN confirmado.
+**Last updated**: 2026-04-20 | spec 014 closed — 2/3 GROUP B resueltos: billing_invoices (2 policies) + patient_evaluations (3 policies) via migration `20260420000004` (commit `4bac0a4`); pendiente patient_goals bundle | spec 013 closed — OrganizationContext persistence fix (commit `478dde4`, merged `a203768`) | spec 012 closed — RLS zero-policies audit 22 tablas categorizadas GROUP A/B/C/D (commit `ca2fb9e`) | spec 011 closed — 7 FK indexes alta prioridad aplicados (commit `bcb8448`) | spec 010 closed — voice-visualizer + src/app/ orphans eliminados (commit `1c07b26`) | spec 009 closed — marketplace_purchases RLS 4 policies (commit `0b89ba3`) | spec 007 closed — 3 drifts resueltos + F-1 compliance finding diferido | **Audit source**: FASE 1 audit session (19-abr) + `Dentalspot_Estado_y_Roadmap.pdf` (18-abr) + spec 003 commit `c55d1a5` (20-abr) + preventive schema drift audit post-spec 005 (20-abr) + Express block 2026-04-20 (health-checks + FK performance audit + NOT NULL audit + feature flags inventory + PATTERNS.md) + spec 007 post-audit drift resolution (20-abr, commit `97c34b6`) + spec 009 marketplace_purchases RLS restoration (20-abr, commit `0b89ba3`) + spec 010 dead code cleanup (20-abr, commit `1c07b26`) + spec 011 FK indexes high-priority (20-abr, commit `bcb8448`) — añade distinción `clinical_audit_log`/`clinical_access_log`, patrón canónico "backfill+trigger", antipatrón "one-shot sin trigger", nueva migración `20260419000001`, sección "Known drift non-urgent" con 2 amarillos backlog, inventario de 7 feature flags (reducido a 6 tras spec 010), health-checks confirmando specs 003/004/005 en producción, 30+ FKs sin índice categorizados por prioridad (🔴 alta cerrada en spec 011, 🟡 media + 🟢 baja en backlog), subsección "Drifts resueltos post-audit (spec 007)" con 3 drifts patient/therapist dashboard cerrados, subsección "RLS policies restauradas (spec 009)" con 4 policies finales de marketplace_purchases, Dead code table con columna Status tracking spec 010 resolution, subsección "FKs indexados post-audit (spec 011)" con 7 índices btree + BITMAP INDEX SCAN confirmado.
