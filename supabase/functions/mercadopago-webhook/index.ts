@@ -137,7 +137,7 @@ async function handlePayment(paymentId: string, accessToken: string, supabase: a
   const payment = await response.json();
   console.log('Payment status:', payment.status, 'Ref:', payment.external_reference);
 
-  if (payment.external_reference?.startsWith('fonokit_sub_')) {
+  if (payment.external_reference?.startsWith('dentalspot_sub_')) {
     if (payment.status === 'approved') {
       const now = new Date();
       const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -164,7 +164,7 @@ async function handlePayment(paymentId: string, accessToken: string, supabase: a
         // Fallback: extract therapist_id from external_reference and create
         console.log('No matching subscription found, creating from webhook...');
         const parts = payment.external_reference.split('_');
-        const therapistId = parts.slice(2, -1).join('_'); // fonokit_sub_{uuid}_{timestamp}
+        const therapistId = parts.slice(2, -1).join('_'); // dentalspot_sub_{uuid}_{timestamp}
 
         const { error: insertError } = await supabase
           .from('therapist_subscriptions')
@@ -191,9 +191,9 @@ async function handlePayment(paymentId: string, accessToken: string, supabase: a
       }
     }
   }
-  else if (payment.external_reference?.startsWith('fonokit_order_')) {
+  else if (payment.external_reference?.startsWith('dentalspot_order_')) {
     if (payment.status === 'approved') {
-      const orderId = payment.external_reference.replace('fonokit_order_', '');
+      const orderId = payment.external_reference.replace('dentalspot_order_', '');
 
       const { error } = await supabase
         .from('marketplace_purchases')

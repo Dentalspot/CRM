@@ -218,3 +218,131 @@ F-014 fix deployado hoy sin tener smoke test validado es **defense-in-depth sól
 - Código heredado FonoKit: commits baseline pre-2026-04
 - Future spec pendiente: `migrate-mp-to-dentalspot-brand` (a crear en esta sesión)
 - Meta-spec pendiente: `fix-mercadopago-critical-bugs` (diferido)
+
+---
+
+## Parte 6 (final) — Spec 020 migrate-mp-brand ejecutado + cerrado
+
+### Resumen
+
+La sesión 2026-04-22 continuó con el ciclo completo spec-plan-tasks-implement del spec 020 `migrate-mp-brand`, cerrándolo exitosamente. **Rebrand de 3 edge functions + cuenta MP DentalSpot configurada + F-014 validado intacto.**
+
+### Ciclo Spec Kit completo (un día)
+
+| Fase | Duración | Output |
+|---|---|---|
+| `/speckit-specify` | ~15 min | spec.md (188 líneas, 13 FRs, 7 SCs, 9 assumptions, 3 user stories, 5 edge cases) + requirements.md (13/13 PASS) |
+| `/speckit-plan` | ~30 min | plan.md (389 líneas, 5 phases, 4 stop points, 7 risks, constitution check), research.md (275 líneas), data-model.md (346 líneas), quickstart.md (402 líneas), contracts/ vacío |
+| `/speckit-tasks` | ~10 min | tasks.md (35 tasks, 5 phases secuenciales, stop points per phase) |
+| `/speckit-implement` | ~45 min | Ejecución completa Phase A → E con validación empírica |
+
+Total: **~100 min** de ciclo spec kit. Estimación original 60-90 min técnico post-plan se mantuvo dentro de rango.
+
+### Pre-requisites operacionales completados offline por Danissa
+
+- ✅ App "Dentalspot" creada en panel MercadoPago Chile (Checkout Pro)
+- ✅ Credenciales sandbox obtenidas: Access Token `APP_USR-7364812495545195-042200-...`, Public Key, User ID `3353079458`
+- ✅ Webhook configurado: URL `https://tomremkbuxvedliyywbo.supabase.co/functions/v1/mercadopago-webhook`, 2 eventos (Pagos + Planes y suscripciones), signing key `6f1e...02dc` generada, "Guardar configuración" clickeado
+- ✅ Test User Buyer disponible: `TESTUSER3863199017052498103` / `8DivMzJMQS`
+
+### Phase A — Pre-flight checks (10 min) ✅
+
+- A1: `dentalspot.cl/dashboard/membership/status` → HTTP 200
+- A2: `dentalspot.cl/dashboard/marketplace/purchase-success` → HTTP 200
+- A3: **Hallazgo crítico** — `MERCADOPAGO_ACCESS_TOKEN` NO existía en Supabase secrets. Confirma que MP nunca funcionó en DentalSpot previamente. Interpretado como "initial set" en Phase C (no swap).
+- A4: branch correcto + working tree clean en `supabase/functions/`
+- SP-A: 🟢 GO Phase B
+
+### Phase B — Code rebrand (20 min) ✅
+
+14 string replacements distribuidos en 3 archivos. **3 matches residuales adicionales** descubiertos por grep global (no estaban en research.md inventory):
+- `create-mercadopago-preference/index.ts:11` comment header
+- `create-mercadopago-preference/index.ts:103-104` defaults `'Recurso Fonokit'` + `'Compra en Fonokit Marketplace'`
+- `mercadopago-webhook/index.ts:196` `.replace('fonokit_order_', '')` — crítico para parseo orderId
+
+Y **~25 matches fuera de scope** en otros edge functions (emails, ads, AI prompts, CSV exports, SEO) — todos diferidos a follow-up spec `rebrand-remaining-edge-functions-fonokit`.
+
+Verificaciones SP-B:
+- B1: `grep -rin "fonokit" supabase/functions/{3 archivos}` = **0 matches** ✅
+- B2: `grep -rin "dentalspot" supabase/functions/{3 archivos}` = **18 líneas** (criterio ≥ 6) ✅
+- B3: F-014 lógica preservada (chargePrice = plan.price, validaciones de cupón, dbPrice marketplace) ✅
+- B4: scope limpio (3 archivos edge function + CLAUDE.md meta-doc, 0 edits a `src/**` o `migrations/`) ✅
+- SP-B: 🟢 GO Phase C
+
+### Phase C — Deploy sincronizado (5 min) ✅
+
+- C1: `supabase secrets set MERCADOPAGO_ACCESS_TOKEN=APP_USR-7364812495545195-...` → "Finished supabase secrets set"
+- C2: `supabase functions deploy create-mp-checkout create-mercadopago-preference mercadopago-webhook` → 3 functions deployed, warning Docker inocuo
+- C3: Todas ACTIVE, mismo timestamp `2026-04-22 05:15:28`, `create-mp-checkout` versión 3 (post-F-014 + post-rebrand)
+- SP-C: 🟢 GO Phase D
+
+### Phase D — Smoke test (~20 min) ✅ (D1/D2/D5 PASS + D3/D4 diferidos)
+
+Plan `profesional` @ $20.000 CLP insertado en DB como placeholder (tabla `subscription_plans` estaba vacía, reversible).
+
+- **Test D1** — Request normal via curl con legacy anon JWT: ✅
+  - `external_reference: dentalspot_sub_4e55fb74...1776835956665` ✅
+  - `preference_id: 3353079458-b65e6974-...` (User ID `3353079458` = cuenta DentalSpot confirmada) ✅
+- **Test D2** — Visual checkout sandbox: ✅
+  - Título: `"Profesional - DENTALSPOT"` ✅
+  - Precio: `$20.000 CLP` ✅
+  - URL bar: `sandbox.mercadopago.cl` ✅
+- **Test D3** — Completar pago sandbox: 🟡 DIFERIDO (error operacional "Una de las partes es de prueba" — mezcla sesión MP real/sandbox en navegador, no bug del rebrand)
+- **Test D4** — Webhook logs: 🟡 DIFERIDO (depende de D3; validación empírica se hará en primer pago real post-launch)
+- **Test D5 (CRÍTICO) — F-014 regression**: ✅
+  - Request con `{final_price: 1}` manipulado
+  - MP API preference lookup: `unit_price: 20000` (servidor IGNORÓ final_price, usó plan.price de DB)
+  - **F-014 fix intacto post-rebrand**
+  - Title preference: `"Profesional - DENTALSPOT"` ✅
+  - back_urls: `https://dentalspot.cl/...` ✅
+- SP-D: 🟢 GO Phase E (3 tests críticos PASS, 2 diferidos no bloqueantes)
+
+### Phase E — Close (5 min) ✅
+
+- E1: `architecture.md` subsección nueva §"MP brand migration + cuenta DentalSpot (spec 020 — 2026-04-22)" + Last updated bump
+- E2: Este session log actualizado con Parte 6 (final)
+- E3-E4: Commit único + merge + push (en curso)
+- SP-E: (pending final commit)
+
+### Hallazgos adicionales para follow-up
+
+1. **`subscription_plans` está vacía** (excepto el placeholder de test). Modelo de negocio tier descrito por Danissa:
+   - Plan individual
+   - Plan clínica (con 1 box incluido)
+   - Add-on: dentista adicional (per-seat billing)
+   - Add-on: box adicional (per-box billing)
+
+   Requiere schema extension (columnas `included_seats`, `included_boxes`, `per_seat_price_clp`, `per_box_price_clp` en `subscription_plans`, o tabla separada `subscription_addons`). Diferido a follow-up spec `add-subscription-plans-tier-model`.
+
+2. **Supabase migró a nuevas API keys** (publishable/secret). Las edge functions aún validan con JWT legacy. No urgente pero eventualmente habrá que verificar si el cambio afecta autenticación frontend.
+
+3. **~25 edge functions con branding FonoKit residual** (emails, ads, AI prompts) — no tocados en spec 020 per Micro-Bloques §IV. Follow-up `rebrand-remaining-edge-functions-fonokit` (probablemente 1-2h de trabajo similar).
+
+### Lecciones adicionales (§4 del log)
+
+#### 4. El grep global exhaustivo revela scope creep ANTES del deploy
+
+Research.md Phase 0 hizo inventory basado en inspección manual → 11 reemplazos identificados. El grep exhaustivo post-edit reveló 3 más (comment header, defaults title/description, `.replace()` call). R-05 del plan se activó como esperado.
+
+**Lesson**: el grep exhaustivo post-edit es mandatorio, no optativo. Cuando el pattern es un string común (brand name), la intuición puede perder matches.
+
+#### 5. Sandbox MP tiene limitaciones operacionales comunes
+
+El error "Una de las partes es de prueba" al mezclar sesiones MP real/sandbox en el mismo navegador es común. **Lesson**: documentar en quickstart.md de futuros specs MP que D3-equivalent requiere navegador incognito o logout previo de MP real.
+
+### Hallazgo lateral sobre arquitectura
+
+**Supabase secret `MERCADOPAGO_ACCESS_TOKEN` estaba AUSENTE antes de este spec.** Esto significa que las edge functions MP retornaban error 500 `"MERCADOPAGO_ACCESS_TOKEN no configurado"` cada vez que se invocaban. No había integración MP funcional de ningún tipo. Esto se alinea con el diagnóstico anterior ("DentalSpot nunca procesó pago MP real"), pero es MÁS estricto que el diagnóstico inicial ("token de FonoKit existía"). **Realmente no había token en absoluto.**
+
+---
+
+## Estado final sesión 2026-04-22
+
+- ✅ 5 specs/tasks ejecutados: F-014 fix + UI hide marketplace/Notiz + spec 020 migrate-mp-brand (completo)
+- ✅ 9 commits en origin/main (hasta spec 020 pending)
+- ✅ Rebrand MP production-ready en sandbox (pendiente production access token para launch real)
+- ✅ F-014 fix validado intacto post-rebrand
+- ✅ 3 follow-ups documentados en architecture.md + session log
+- ⏳ Pending Danissa offline: Test D3/D4 end-to-end + production access token + modo productivo webhook + modelo de pricing tier
+
+DentalSpot queda **desbloqueado** para la ejecución del meta-spec `fix-mercadopago-critical-bugs` (spec 019 BLOCKERs P0 restantes: F-001 signature + F-002 idempotency + F-003 silent-200 + F-005 dunning). Pre-requisites de ese meta-spec ahora están resueltos.

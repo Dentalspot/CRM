@@ -147,14 +147,14 @@ Deno.serve(async (req) => {
       validatedCouponCode = coupon.code
     }
 
-    const external_reference = `fonokit_sub_${therapist_id}_${Date.now()}`
+    const external_reference = `dentalspot_sub_${therapist_id}_${Date.now()}`
 
     const preferenceData = {
       items: [{
         id: plan.slug,
         title: validatedCouponCode
-          ? `${plan.name} - FONOKIT (Cupón: ${validatedCouponCode})`
-          : `${plan.name} - FONOKIT`,
+          ? `${plan.name} - DENTALSPOT (Cupón: ${validatedCouponCode})`
+          : `${plan.name} - DENTALSPOT`,
         description: `Suscripción mensual - ${plan.name}`,
         quantity: 1,
         currency_id: 'CLP',
@@ -165,9 +165,9 @@ Deno.serve(async (req) => {
         name: payer_name || ''
       },
       back_urls: {
-        success: `https://fonokit.cl/dashboard/membership/status?status=approved&plan=${plan.slug}`,
-        failure: `https://fonokit.cl/dashboard/membership/status?status=failure&plan=${plan.slug}`,
-        pending: `https://fonokit.cl/dashboard/membership/status?status=pending&plan=${plan.slug}`
+        success: `https://dentalspot.cl/dashboard/membership/status?status=approved&plan=${plan.slug}`,
+        failure: `https://dentalspot.cl/dashboard/membership/status?status=failure&plan=${plan.slug}`,
+        pending: `https://dentalspot.cl/dashboard/membership/status?status=pending&plan=${plan.slug}`
       },
       auto_return: 'approved',
       external_reference,

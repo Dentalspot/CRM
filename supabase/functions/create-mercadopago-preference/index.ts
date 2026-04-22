@@ -8,7 +8,7 @@
  * Output: { init_point, sandbox_init_point, preference_id, external_reference }
  *
  * The webhook (mercadopago-webhook) handles payment confirmation
- * using external_reference prefix "fonokit_order_".
+ * using external_reference prefix "dentalspot_order_".
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     // Build external_reference using purchase_id from metadata (set by frontend)
     // This links the MP payment to our marketplace_purchases record
     const purchaseId = metadata?.purchase_id || metadata?.order_id || `unknown_${Date.now()}`
-    const external_reference = `fonokit_order_${purchaseId}`
+    const external_reference = `dentalspot_order_${purchaseId}`
 
     console.log(`[mp-preference] Creating preference for purchase ${purchaseId}`)
     console.log(`[mp-preference] Items: ${items.length}, Payer: ${payer.email}`)
@@ -100,8 +100,8 @@ Deno.serve(async (req) => {
 
       validatedItems.push({
         id: item.id,
-        title: item.title || 'Recurso Fonokit',
-        description: item.description ? item.description.substring(0, 255) : 'Compra en Fonokit Marketplace',
+        title: item.title || 'Recurso DentalSpot',
+        description: item.description ? item.description.substring(0, 255) : 'Compra en DentalSpot Marketplace',
         picture_url: item.picture_url || undefined,
         quantity: item.quantity || 1,
         unit_price: dbPrice,
@@ -118,9 +118,9 @@ Deno.serve(async (req) => {
         surname: payer.surname || '',
       },
       back_urls: {
-        success: back_urls?.success || `https://fonokit.cl/dashboard/marketplace/purchase-success?status=approved&purchase_id=${purchaseId}`,
-        failure: back_urls?.failure || `https://fonokit.cl/dashboard/marketplace/purchase-success?status=failure&purchase_id=${purchaseId}`,
-        pending: back_urls?.pending || `https://fonokit.cl/dashboard/marketplace/purchase-success?status=pending&purchase_id=${purchaseId}`,
+        success: back_urls?.success || `https://dentalspot.cl/dashboard/marketplace/purchase-success?status=approved&purchase_id=${purchaseId}`,
+        failure: back_urls?.failure || `https://dentalspot.cl/dashboard/marketplace/purchase-success?status=failure&purchase_id=${purchaseId}`,
+        pending: back_urls?.pending || `https://dentalspot.cl/dashboard/marketplace/purchase-success?status=pending&purchase_id=${purchaseId}`,
       },
       auto_return: 'approved',
       external_reference,
@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
         ...metadata,
         type: 'marketplace_purchase',
       },
-      statement_descriptor: 'FONOKIT',
+      statement_descriptor: 'DENTALSPOT',
     }
 
     const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
