@@ -100,7 +100,7 @@ serve(async (req) => {
         '{{email}}': lead.email || '',
         '{{ciudad}}': lead.city || '',
         '{{region}}': lead.region || '',
-        '{{unsubscribe_url}}': `https://fonokit.cl/unsubscribe?email=${encodeURIComponent(lead.email)}&campaign=${campaign_id}`,
+        '{{unsubscribe_url}}': `https://dentalspot.cl/unsubscribe?email=${encodeURIComponent(lead.email)}&campaign=${campaign_id}`,
       }
 
       for (const [key, val] of Object.entries(vars)) {
@@ -116,8 +116,8 @@ serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Fonokit <no-reply@fonokit.cl>',
-            reply_to: 'hola@fonokit.cl',
+            from: 'DentalSpot <no-reply@dentalspot.cl>',
+            reply_to: 'hola@dentalspot.cl',
             to: [lead.email],
             subject,
             html,

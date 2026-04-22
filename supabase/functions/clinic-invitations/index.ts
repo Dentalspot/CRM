@@ -9,7 +9,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://fonokit.cl";
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "https://dentalspot.cl";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -26,7 +26,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Fonokit <no-reply@fonokit.cl>",
+        from: "DentalSpot <no-reply@dentalspot.cl>",
         to: [to],
         subject,
         html,
@@ -96,11 +96,11 @@ Deno.serve(async (req) => {
 
       const emailHtml = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         <div style="background:linear-gradient(135deg,#0d9488,#0891b2);padding:32px 24px;text-align:center;border-radius:12px 12px 0 0">
-          <h1 style="color:white;margin:0;font-size:24px">FONOKIT</h1>
+          <h1 style="color:white;margin:0;font-size:24px">DENTALSPOT</h1>
         </div>
         <div style="padding:32px 24px">
           <h2 style="color:#111827;font-size:20px">${inviterName} te invita a unirte a ${clinic.name}</h2>
-          <p style="color:#6b7280;font-size:15px">Has sido invitado a formar parte del equipo clinico en Fonokit.</p>
+          <p style="color:#6b7280;font-size:15px">Has sido invitado a formar parte del equipo clínico en DentalSpot.</p>
           ${message ? `<div style="background:#f9fafb;border-left:3px solid #0d9488;padding:12px 16px;margin:16px 0"><p style="color:#374151;font-size:14px;margin:0">"${message}"</p></div>` : ""}
           <div style="text-align:center;margin:32px 0">
             <a href="${inviteUrl}" style="display:inline-block;background:#0d9488;color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px">Aceptar Invitacion</a>
