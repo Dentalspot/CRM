@@ -38,6 +38,7 @@ import { addDays, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { supabase } from '@/lib/supabaseClient';
 import { createReferral } from '@/features/referrals/api/referralsApi';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 import {
   createSessionRecord,
@@ -410,12 +411,14 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
               />
             </div>
 
-            <NotizInlineWidget
-              patientId={patientId}
-              therapistId={therapistId}
-              patientContext={patientName}
-              onResult={handleNotizResult}
-            />
+            {FEATURE_FLAGS.NOTIZ && (
+              <NotizInlineWidget
+                patientId={patientId}
+                therapistId={therapistId}
+                patientContext={patientName}
+                onResult={handleNotizResult}
+              />
+            )}
 
             {/* ── Referral / Derivación ── */}
             <div className="border rounded-lg overflow-hidden">

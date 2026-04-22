@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import Logo from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { USER_ROLES } from '@/constants/roles';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import SupportTicketModal from '@/components/shared/SupportTicketModal';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import logger from '@/lib/utils/logger';
@@ -151,7 +152,9 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Mi Perfil', icon: Briefcase, path: '/dashboard/profile' },
               { name: 'Calendario', icon: Calendar, path: '/dashboard/calendar' },
               { name: 'Mis Pacientes', icon: Users, path: '/dashboard/patients' },
-              { name: 'Tienda', icon: Store, path: '/dashboard/marketplace' },
+              ...(FEATURE_FLAGS.MARKETPLACE
+                ? [{ name: 'Tienda', icon: Store, path: '/dashboard/marketplace' }]
+                : []),
               { name: 'Blog & Preguntas', icon: BookOpen, path: '/dashboard/therapist/questions' },
             ],
           },
@@ -164,7 +167,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           {
             section: 'Herramientas IA',
             items: [
-              { name: 'Notiz - Notas Auto.', icon: Mic, path: '/dashboard/therapist/notiz' },
+              ...(FEATURE_FLAGS.NOTIZ
+                ? [{ name: 'Notiz - Notas Auto.', icon: Mic, path: '/dashboard/therapist/notiz' }]
+                : []),
               { name: 'Crear Plantilla', icon: Sparkles, path: '/dashboard/therapist/create-template' },
               { name: 'Evidencia Científica', icon: BookOpen, path: '/dashboard/therapist/evidence-search' },
               { name: 'Asistente Virtual', icon: MessageSquare, path: '/dashboard/chatbot' },

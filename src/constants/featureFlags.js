@@ -17,4 +17,10 @@ export const FEATURE_FLAGS = {
 
   // Módulo educativo (no-dental, requiere add-on)
   EDUCATOR: false,
+
+  // Módulos deshabilitados pre-producción (2026-04-21)
+  // Para reactivar: cambiar a true. Las rutas quedan accesibles por URL
+  // directa (defense-in-depth se mantiene en edge functions).
+  MARKETPLACE: false, // Sidebar "Tienda" oculto
+  NOTIZ: false,       // Sidebar "Notiz" + PostSessionModal widget ocultos
 };
