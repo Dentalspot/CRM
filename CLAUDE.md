@@ -70,5 +70,5 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.
 
-**Active feature**: — entre ciclos (2026-04-21 02:55). Último cerrado: `019-audit-mercadopago-flow` — verdict **SYSTEMIC ISSUES** (5 BLOCKERs P0 MercadoPago) — [data-model](specs/019-audit-mercadopago-flow/data-model.md). Próximo paso (decisión advisor pendiente): Opción A meta-spec `fix-mercadopago-critical-bugs` / Opción B 5 specs separados / Opción C diferir con risk accept. Ver `docs/session-logs/2026-04-20-extended-session.md` §"Prompt para retomar".
+**Active feature**: próxima a abrir — `migrate-mp-to-dentalspot-brand` (P0 pre-launch rebrand). **Descubrimiento 2026-04-22**: DentalSpot nunca conectó cuenta MP propia — código MP heredado de FonoKit (external_reference/back_urls/statement_descriptor = FONOKIT). F-014 client-price fix **ya deployed** (commit 3593b12). Meta-spec `fix-mercadopago-critical-bugs` diferido a P1 post-rebrand. Ver `docs/session-logs/2026-04-22-mp-deploy-and-diagnosis.md` + roadmap 6 pasos.
 <!-- SPECKIT END -->
