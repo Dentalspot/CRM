@@ -346,3 +346,110 @@ El error "Una de las partes es de prueba" al mezclar sesiones MP real/sandbox en
 - ⏳ Pending Danissa offline: Test D3/D4 end-to-end + production access token + modo productivo webhook + modelo de pricing tier
 
 DentalSpot queda **desbloqueado** para la ejecución del meta-spec `fix-mercadopago-critical-bugs` (spec 019 BLOCKERs P0 restantes: F-001 signature + F-002 idempotency + F-003 silent-200 + F-005 dunning). Pre-requisites de ese meta-spec ahora están resueltos.
+
+---
+
+## Parte 7 (final) — Spec 021 cleanup FonoKit legacy ejecutado + cerrado
+
+### Resumen
+
+Post-spec 020, ciclo completo spec-plan-tasks-implement de spec 021 `cleanup-fonokit-legacy`. Cleanup híbrido de 15 edge functions con branding FonoKit: 9 deletes + 6 rebrands + 1 diferida. **-2,716 líneas netas**.
+
+### Ciclo completo (2-3h total con /speckit-specify → /speckit-plan → /speckit-implement)
+
+| Fase | Duración | Output |
+|---|---|---|
+| `/speckit-specify` | ~10 min | spec.md (230 líneas, 12 FRs, 8 SCs, 10 assumptions, 3 user stories) + requirements.md (13/13 PASS) |
+| `/speckit-plan` | ~25 min | plan.md (421 líneas, 5 phases, 7 risks, 5 SPs), research.md (285), data-model.md (314), quickstart.md (467), contracts/ vacío |
+| `/speckit-implement` (skip tasks.md) | ~1h 30min | Ejecución directa siguiendo quickstart.md |
+
+### Phase A — Pre-flight: **scope correction crítico**
+
+El research inicial fue **INCOMPLETO** (head_limit 80 en grep de `supabase.functions.invoke`, perdió 5 callsites). Re-research exhaustivo reveló:
+
+- **`send-marketing-campaign`** es usada por `CampaignsPage.jsx:209` + `marketingApi.js:50` — NO dead code
+- **`meta-ads-manager`** es usada por `metaAdsApi.js:14` — NO dead code
+- `welcome-sequence` + `process-scheduled-emails` mencionadas en `AutomationPage.jsx:23` como "Activo" pero outdated
+
+Verificación empírica SQL:
+- Query `pg_cron` → **`relation cron.job does not exist`** (extensión NO instalada)
+- Query `information_schema.triggers` con `action_statement LIKE '%welcome-sequence%'` → 0 rows
+- Query `form-auto-responder` grep en codebase completo → 0 matches fuera del spec 021 docs
+
+**Conclusión**: migrations `.bak` de welcome/scheduled-emails nunca fueron aplicadas. Scope revisado:
+- DELETE real: 9 archivos (agregaron welcome-sequence, process-scheduled-emails, form-auto-responder, export-leads-csv al scope original)
+- REBRAND real: 6 archivos (original 4 + send-marketing-campaign + meta-ads-manager)
+- DIFERIR: og-preview (0 posts publicados confirmado con `SELECT COUNT(*) FROM blog_posts WHERE published_at IS NOT NULL`)
+
+### Phase B — 9 deletes ejecutados
+
+```
+rag-query · setup-ads · setup-ads-v3 · setup-campaigns · test-email
+welcome-sequence · process-scheduled-emails · form-auto-responder · export-leads-csv
+```
+
+**Hallazgo operacional clave**: `supabase functions delete <name>` retornó `"Function X does not exist on the Supabase project: nothing to delete"` para **las 9 functions**. Nunca estuvieron deployadas — eran puro código muerto en repo.
+
+### Phase C — 6 rebrands ejecutados
+
+| Archivo | Edits | Callsite |
+|---|---|---|
+| `clinic-invitations` | 4 (from, FRONTEND_URL default, banner HTML, tagline) | ClinicInvitationsPanel + InviteAcceptPage |
+| `prepare-training-data` | 1 (filename output) | admin fonolevel |
+| `generate-ad-copy` | 4 (default product + audience + HTTP-Referer + X-Title) | MetaAdsPage admin |
+| `marketplace-ai-description` | 1 (prompt user, defense-in-depth marketplace OFF) | AiDescriptionButton |
+| `send-marketing-campaign` | 3 (from, reply_to, unsubscribe_url) | CampaignsPage + marketingApi |
+| `meta-ads-manager` | 2 (descriptions Leads + Retargeting) | metaAdsApi |
+
+Verificación SP-C: `grep -rin "fonokit" supabase/functions/` retorna **1 archivo** (solo `og-preview` diferido). Signatures preservadas (diff review).
+
+### Phase D — Deploy + smoke
+
+- Deploy exitoso: 6 functions deployed a `tomremkbuxvedliyywbo` (Docker warning inocuo)
+- Smoke test D1 (curl a generate-ad-copy sin auth admin) retornó "Unauthorized" esperado — edge function requiere admin session
+- Smoke visuales diferidos (email invitation real, filename JSONL, ad copy output) — validación cuando se usen los flujos
+
+### Phase E — Close
+
+- architecture.md: subsección `§"Legacy FonoKit cleanup (spec 021 — 2026-04-22)"` agregada + Last updated bump
+- CLAUDE.md: Active feature actualizada (entre ciclos, spec 021 closed)
+- Session log: esta sección (Parte 7)
+- Commit único en rama `021-cleanup-fonokit-legacy`
+- Merge a main (pending push)
+
+### Lecciones aprendidas (adicionales)
+
+#### 1. El grep head_limit puede crear falsos diagnósticos
+
+Mi research inicial usó `head_limit: 80` en `supabase.functions.invoke` y perdió callsites críticos de admin marketing (`send-marketing-campaign`, `meta-ads-manager`). R-05 del plan (scope creep vía grep inesperado) se activó — y se salvó porque Phase A hace grep exhaustivo pre-edit.
+
+**Lesson**: research pre-spec debe hacer grep sin head_limit o explícitamente verificar que el output completo se revisó. O múltiples greps complementarios.
+
+#### 2. `.bak` migrations en DentalSpot NO están aplicadas
+
+Convención confirmada empíricamente: archivos `.sql.bak` son backups históricos, no están en la cadena de migrations activas. Code reviews de grep deben filtrar `.bak` o interpretarlos como "historical only".
+
+#### 3. pg_cron NO está instalado en este proyecto
+
+DentalSpot no tiene scheduling nativo de Supabase. Features que requieran cron (ej. emails programados, cleanups periódicos) van a requerir:
+- Activar extension pg_cron (requiere coordinación con Supabase support en algunos casos)
+- O usar un worker externo (Vercel Cron, GitHub Actions schedule)
+
+#### 4. Edge functions en repo pueden NO estar deployadas remotamente
+
+Las 9 deletes confirmaron que existían como código sin deploy. Esto es común en repos clonados (FonoKit → DentalSpot). Spec futuros que toquen edge functions deberían pre-check `supabase functions list` para sanity de estado local vs remoto.
+
+### Estado final post-spec 021
+
+- Working tree clean (pending commit + merge)
+- 9 edge functions eliminadas del repo + 6 rebrandeadas
+- 1 edge function diferida (`og-preview`)
+- Repo coherente con branding DentalSpot (solo queda 1 match "fonokit" en og-preview diferido)
+- Pre-requisites resueltos para meta-spec `fix-mercadopago-critical-bugs`
+
+### Follow-ups pendientes (post-spec 021)
+
+1. **Meta-spec `fix-mercadopago-critical-bugs`** (P0, 16-22h) — prompt pre-cocinado en `specs/019-audit-mercadopago-flow/data-model.md §P3.3`. Pre-requisites resueltos por specs 020 + 021.
+2. **`add-subscription-plans-tier-model`** (P1, 10-14h) — pricing real tier individual + clinic + per-seat + per-box.
+3. **`rebrand-og-preview-if-blog-activates`** (diferido, ~1h cuando blog se active).
+4. **`cleanup-automation-page-outdated-refs`** (menor, `AutomationPage.jsx:20,23` menciona edge functions eliminadas — UI cosmético).

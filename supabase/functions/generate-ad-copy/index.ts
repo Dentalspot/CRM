@@ -83,8 +83,8 @@ serve(async (req) => {
     // --- Parse body ---
     const body = await req.json()
     const {
-      product = 'Fonokit — plataforma para fonoaudiologos',
-      audience = 'Fonoaudiologos en Chile',
+      product = 'DentalSpot — plataforma para dentistas',
+      audience = 'Dentistas en Chile',
       objective = 'leads',
       tone = 'profesional y cercano',
       count = 3,
@@ -150,8 +150,8 @@ serve(async (req) => {
       headers: {
         'Authorization': `Bearer ${openRouterKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://fonokit.cl',
-        'X-Title': 'Fonokit Ad Copy Generator',
+        'HTTP-Referer': 'https://dentalspot.cl',
+        'X-Title': 'DentalSpot Ad Copy Generator',
       },
       body: JSON.stringify({
         model,

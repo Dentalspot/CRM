@@ -250,7 +250,7 @@ serve(async (req) => {
         const audienceData: Record<string, string> = {
           name: params.name,
           subtype: 'CUSTOM',
-          description: params.description || `Leads Fonokit - ${new Date().toISOString().slice(0, 10)}`,
+          description: params.description || `Leads DentalSpot - ${new Date().toISOString().slice(0, 10)}`,
           customer_file_source: 'USER_PROVIDED_ONLY',
         }
         result = await metaPost(`/${adAccountId}/customaudiences`, audienceData, accessToken)
@@ -553,7 +553,7 @@ serve(async (req) => {
         const audienceData: Record<string, string> = {
           name: params.name,
           subtype: 'WEBSITE',
-          description: params.description || `Retargeting Fonokit — ${new Date().toISOString().slice(0, 10)}`,
+          description: params.description || `Retargeting DentalSpot — ${new Date().toISOString().slice(0, 10)}`,
           rule: JSON.stringify(rule),
           prefill: '1',
         }

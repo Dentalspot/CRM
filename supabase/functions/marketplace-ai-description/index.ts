@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
           ? `hasta ${target_age_max} años`
           : 'no especificado'
 
-    const userPrompt = `Genera una descripción mejorada para este producto del marketplace de Fonokit:
+    const userPrompt = `Genera una descripción mejorada para este producto del marketplace de DentalSpot:
 
 Título: ${title}
 Descripción actual: ${description || 'Sin descripción'}

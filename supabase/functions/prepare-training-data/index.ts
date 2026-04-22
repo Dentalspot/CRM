@@ -149,7 +149,7 @@ serve(async (req) => {
 
     // Generate JSONL content
     const jsonlContent = jsonlLines.join('\n')
-    const fileName = `fonokit_${dataset_type}_${new Date().toISOString().slice(0, 10)}.jsonl`
+    const fileName = `dentalspot_${dataset_type}_${new Date().toISOString().slice(0, 10)}.jsonl`
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage
