@@ -453,3 +453,115 @@ Las 9 deletes confirmaron que existían como código sin deploy. Esto es común 
 2. **`add-subscription-plans-tier-model`** (P1, 10-14h) — pricing real tier individual + clinic + per-seat + per-box.
 3. **`rebrand-og-preview-if-blog-activates`** (diferido, ~1h cuando blog se active).
 4. **`cleanup-automation-page-outdated-refs`** (menor, `AutomationPage.jsx:20,23` menciona edge functions eliminadas — UI cosmético).
+
+---
+
+## Parte 8 — Spec 022 add-plans-tier-model Phase A+B ejecutado (IN PROGRESS)
+
+### Resumen
+
+Post-spec 021 cleanup, arrancamos el spec más grande del roadmap (spec 022) para definir el modelo de pricing tier definitivo. Incluye research de competencia Chile dental + decisiones de producto (precios, estructura) + ciclo spec kit completo hasta Phase B.
+
+### Research de competencia (ejecutado via WebSearch)
+
+Datos verificados al 2026-04-22:
+- CIMADent: $15.000 CLP/dentista principal + $7.500 adicional (dental-específico, transparent)
+- AgendaPro Individual: $15.900 + IVA (genérico multi-vertical)
+- AgendaPro Básico: $34.900 + IVA (hasta 20 profesionales)
+- AgendaPro Premium: $54.900 + IVA
+- AgendaPro Pro: $249.900 + IVA (enterprise)
+- Dentalink: ~USD $29/user (~$27.500 CLP) — líder chileno, pricing por cotización
+- Dentalware: N/D públicos (3 tiers Basic/Impulse/Clinic)
+- Nexden Esencial: GRATIS
+
+**Conclusión**: DentalSpot se posiciona 45-84% más barato que líderes, estrategia acquisition agresiva pre-launch.
+
+### Precios DentalSpot confirmados por Danissa
+
+4 planes (precios sin IVA):
+
+| Plan | Precio/mes | max_dentists | max_boxes | patient_limit | appointment_limit | trial_days |
+|---|---|---|---|---|---|---|
+| Free | $0 | 1 | 0 | 5 | 15/mes | 0 (permanente) |
+| Individual | $14.990 | 1 | 1 | ∞ | ∞ | 30 |
+| Clínica Pro | $24.990 | 5 | 3 | ∞ | ∞ | 30 |
+| Clínica Premium | $39.990 | ∞ | ∞ | ∞ | ∞ | 30 |
+
+Plus: anual -15% descuento (aplicable a paid plans), cupón BETA-3M-2026 renovable 3 meses (100% off, aplicable individual/clinic_pro, 30 slots beta).
+
+### Ciclo spec kit ejecutado
+
+| Fase | Duración | Output |
+|---|---|---|
+| Research competencia | 30 min | WebSearch + WebFetch a sitios de Dentalink/AgendaPro/CIMADent/Dentalware/Nexden |
+| `/speckit-specify` | 20 min | spec.md (264 líneas, 20 FRs, 5 user stories, 9 SCs, 12 assumptions, 9 items Out of Scope) |
+| `/speckit-plan` | 40 min | plan.md (503 líneas, 7 phases A-G, 8 risks, 7 SPs), research.md (299), data-model.md (531), quickstart.md (596) |
+| `/speckit-implement` Phase A | 15 min | 6 verificaciones pre-flight (F-014 preservation, branch, DB state) |
+| `/speckit-implement` Phase B | 30 min | Migration 351 líneas aplicada + V1-V5 verification PASS |
+
+Total sesión parcial: ~2h 15min de trabajo técnico.
+
+### Phase A hallazgos clave
+
+1. **Estado actual DB** (Q1 + Q2):
+   - 1 plan activo `profesional @ $20.000` con 1 sub activa (therapist `4e55fb74-b3b5-4233-9b5d-88d7a01a9046`)
+   - La sub es la misma del smoke test spec 020 (creada 2026-04-15 via activateFreeCouponPlan, bypass MP)
+
+2. **Cupones existentes** (Q3): 3 cupones 100% pre-existentes (DENTALSPOT2025, NOTIZ-FREE30, PLANTILLA-FREE30). Ninguno conflicto con BETA-3M-2026.
+
+3. **🚨 Tabla de sillones NO existe** (Q4): `SELECT table_name FROM information_schema.tables WHERE table_name ILIKE '%box%' OR '%sillon%'` retornó 0 rows.
+   - **Scope adjustment**: enforcement de `max_boxes` diferido a spec futuro `create-clinical-boxes-table-and-enforcement`. RPC `check_plan_limit('box')` retorna `true` temporalmente (documented).
+   - Los valores `max_boxes` se persisten en DB como "promesa UX" (Free 0, Individual 1, Pro 3, Premium ∞) pero no enforced hasta que exista la tabla.
+
+4. **F-014 preservation** (A5): `grep "let chargePrice = plan.price"` → 1 match en línea 71. F-014 intacto.
+
+### Phase B — Migration ejecutada
+
+Archivo: `supabase/migrations/20260422000001_add_plans_tier_model.sql` (351 líneas).
+
+**Estructura del archivo**:
+1. Pre-check DO $ block (tables existen, RLS enabled warning)
+2. ALTER subscription_plans (+6 columnas nullable + 2 CHECK constraints)
+3. ALTER discount_coupons (+max_renewals)
+4. ALTER therapist_subscriptions (+current_renewal_count DEFAULT 0, +applied_coupon_code)
+5. CREATE OR REPLACE FUNCTION check_plan_limit (RPC enforcement con 4 resource_types)
+6. Unique constraint en subscription_plans.slug (si no existía)
+7. UPSERT 4 planes (free, individual, clinic_pro, clinic_premium)
+8. UPDATE sub `profesional` → `individual` + deactivate plan profesional
+9. UPSERT cupón BETA-3M-2026
+10. Post-check DO $ block (validar 4 planes active + cupón + función)
+
+**Aplicación**: via SQL Editor Supabase (Docker no disponible). Output "Success no rows returned" indica DDL/DML ejecutados correctamente sin errors. Pre/Post-check DO $ blocks silenciosamente PASS.
+
+### Verificación Phase B (V1-V5 PASS)
+
+- **V1**: 4 rows activos (free/individual/clinic_pro/clinic_premium) con precios exactos
+- **V2**: cupón BETA-3M-2026 con max_renewals=3, applicable_plans=`{individual,clinic_pro}`
+- **V3**: `profesional` con `is_active=false`
+- **V4**: sub existente con `plan_name='individual'` (antes era `profesional`)
+- **V5**: RPC check_plan_limit retorna `true` para los 3 casos test (individual→patient ilimitado, no-sub→free→patient, box→deferred)
+
+### Estado final de sesión (Phase A+B cerradas)
+
+- ✅ Spec package completo en `specs/022-add-plans-tier-model/` (2,193 líneas docs)
+- ✅ Migration aplicada + verificada empíricamente
+- ✅ F-014 fix intacto (no tocado en Phase A+B, edit se hace en Phase C)
+- ⏳ Pending: Phase C (edge functions) + D (frontend rebuild) + E (enforcement) + F (smoke tests) + G (close)
+- ⏳ Estimate restante: 8-11h en 2 sesiones
+
+### Follow-ups pendientes
+
+1. **Phase C-G del spec 022** (próxima sesión): 8-11h
+2. **`create-clinical-boxes-table-and-enforcement`** (nuevo, post-spec 022): cuando se defina producto de sillones, crear tabla + activar enforcement `max_boxes` en RPC check_plan_limit
+3. **Meta-spec `fix-mercadopago-critical-bugs`** (P0, 16-22h): F-001/F-002/F-003/F-005 del audit 019
+4. **`cleanup-automation-page-outdated-refs`** (menor cosmético)
+
+### Estado de trabajo acumulado sesión 2026-04-22
+
+- spec 020 closed (MP rebrand)
+- spec 021 closed (FonoKit cleanup)
+- spec 022 **Phase A+B done** (plans tier model DB layer)
+- AutomationPage.jsx cosmético closed
+- Pushs pendientes Danissa
+
+Sesión fue ÉPICA: 3 specs completos + 1 en progreso de 5 phases + 1 cosmético. ~8-10h de trabajo técnico continuo.
