@@ -54,17 +54,64 @@ Deno.serve(async (req) => {
     console.log(`[mp-preference] Creating preference for purchase ${purchaseId}`)
     console.log(`[mp-preference] Items: ${items.length}, Payer: ${payer.email}`)
 
-    // Create MercadoPago preference
-    const preferenceData: Record<string, unknown> = {
-      items: items.map((item: any) => ({
-        id: item.id || 'marketplace-item',
+    // F-014 (spec 019): validar cada item.unit_price contra DB server-side.
+    // `item.id` puede apuntar a marketplace_plans (flujo principal) o marketplace_items (legacy).
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    const validatedItems: Array<Record<string, unknown>> = []
+    for (const item of items as any[]) {
+      if (!item?.id) {
+        return new Response(
+          JSON.stringify({ error: 'Falta item.id' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+
+      let dbPrice: number | null = null
+      const { data: plan } = await supabase
+        .from('marketplace_plans')
+        .select('price_clp')
+        .eq('id', item.id)
+        .maybeSingle()
+      if (plan) {
+        dbPrice = Number(plan.price_clp)
+      } else {
+        const { data: mpItem } = await supabase
+          .from('marketplace_items')
+          .select('price')
+          .eq('id', item.id)
+          .maybeSingle()
+        if (mpItem) dbPrice = Number(mpItem.price)
+      }
+
+      if (dbPrice === null) {
+        return new Response(
+          JSON.stringify({ error: 'Producto no encontrado' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+
+      if (Number(item.unit_price) !== dbPrice) {
+        console.warn(`[mp-preference] Price manipulation detected: item ${item.id} client=${item.unit_price} db=${dbPrice}`)
+        return new Response(
+          JSON.stringify({ error: 'Precio manipulado' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+
+      validatedItems.push({
+        id: item.id,
         title: item.title || 'Recurso Fonokit',
         description: item.description ? item.description.substring(0, 255) : 'Compra en Fonokit Marketplace',
         picture_url: item.picture_url || undefined,
         quantity: item.quantity || 1,
-        unit_price: Number(item.unit_price),
+        unit_price: dbPrice,
         currency_id: item.currency_id || 'CLP',
-      })),
+      })
+    }
+
+    // Create MercadoPago preference
+    const preferenceData: Record<string, unknown> = {
+      items: validatedItems,
       payer: {
         email: payer.email,
         name: payer.name || '',

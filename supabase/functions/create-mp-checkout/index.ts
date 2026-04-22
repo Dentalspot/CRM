@@ -13,7 +13,9 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json()
-    const { plan_name, therapist_id, payer_email, payer_name, final_price, coupon_code } = body
+    // F-014 (spec 019): `final_price` del cliente se ignora deliberadamente.
+    // El precio final se calcula server-side desde subscription_plans + discount_coupons.
+    const { plan_name, therapist_id, payer_email, payer_name, coupon_code } = body
 
     if (!plan_name || !therapist_id || !payer_email) {
       return new Response(
@@ -64,18 +66,94 @@ Deno.serve(async (req) => {
       .eq('status', 'active')
       .maybeSingle()
 
-    // 3. Crear preferencia en MercadoPago
-    // Use final_price if coupon was applied, otherwise use plan price
-    const chargePrice = (final_price !== null && final_price !== undefined && final_price >= 0)
-      ? final_price
-      : plan.price
+    // 3. Calcular chargePrice server-side.
+    // Default: precio del plan desde DB. Si hay coupon_code válido, aplicar descuento server-side.
+    let chargePrice = plan.price
+    let validatedCouponCode: string | null = null
+
+    if (coupon_code) {
+      const { data: coupon, error: couponError } = await supabase
+        .from('discount_coupons')
+        .select('id, code, discount_type, discount_value, max_discount_amount, min_purchase_amount, applicable_plans, is_active, valid_from, expiration_date, max_uses, current_uses')
+        .eq('code', coupon_code)
+        .maybeSingle()
+
+      if (couponError || !coupon) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cupón inválido' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+
+      const nowTs = new Date()
+      if (!coupon.is_active) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cupón inactivo' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      if (coupon.valid_from && new Date(coupon.valid_from) > nowTs) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cupón aún no vigente' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      if (coupon.expiration_date && new Date(coupon.expiration_date) <= nowTs) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cupón expirado' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      if (coupon.max_uses !== null && coupon.max_uses !== undefined
+          && (coupon.current_uses ?? 0) >= coupon.max_uses) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cupón agotado' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      if (Array.isArray(coupon.applicable_plans) && coupon.applicable_plans.length > 0
+          && !coupon.applicable_plans.includes(plan.slug)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Cupón no aplicable a este plan' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      if (coupon.min_purchase_amount !== null && coupon.min_purchase_amount !== undefined
+          && Number(coupon.min_purchase_amount) > Number(plan.price)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Monto mínimo del cupón no alcanzado' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+
+      const basePrice = Number(plan.price)
+      if (coupon.discount_type === 'percentage') {
+        const pct = Number(coupon.discount_value)
+        chargePrice = Math.round(basePrice * (1 - pct / 100))
+      } else if (coupon.discount_type === 'fixed') {
+        let discount = Number(coupon.discount_value)
+        if (coupon.max_discount_amount !== null && coupon.max_discount_amount !== undefined) {
+          discount = Math.min(discount, Number(coupon.max_discount_amount))
+        }
+        chargePrice = Math.max(basePrice - discount, 0)
+      } else {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Tipo de cupón inválido' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+
+      if (chargePrice < 0) chargePrice = 0
+      validatedCouponCode = coupon.code
+    }
+
     const external_reference = `fonokit_sub_${therapist_id}_${Date.now()}`
 
     const preferenceData = {
       items: [{
         id: plan.slug,
-        title: coupon_code
-          ? `${plan.name} - FONOKIT (Cupón: ${coupon_code})`
+        title: validatedCouponCode
+          ? `${plan.name} - FONOKIT (Cupón: ${validatedCouponCode})`
           : `${plan.name} - FONOKIT`,
         description: `Suscripción mensual - ${plan.name}`,
         quantity: 1,
@@ -131,7 +209,7 @@ Deno.serve(async (req) => {
           plan_name: plan.slug,
           price: chargePrice,
           original_price: plan.price,
-          discount_percent: coupon_code && plan.price > 0 ? Math.round((1 - chargePrice / plan.price) * 100) : 0,
+          discount_percent: validatedCouponCode && plan.price > 0 ? Math.round((1 - chargePrice / plan.price) * 100) : 0,
           preference_id: mpResult.id,
           external_reference,
           current_period_start: now.toISOString().split('T')[0],
@@ -147,7 +225,7 @@ Deno.serve(async (req) => {
         plan_name: plan.slug,
         price: chargePrice,
         original_price: plan.price,
-        discount_percent: coupon_code && plan.price > 0 ? Math.round((1 - chargePrice / plan.price) * 100) : 0,
+        discount_percent: validatedCouponCode && plan.price > 0 ? Math.round((1 - chargePrice / plan.price) * 100) : 0,
         currency: 'CLP',
         billing_cycle: 'monthly',
         status: 'pending',
