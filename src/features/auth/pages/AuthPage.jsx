@@ -3,12 +3,13 @@ import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthForm from '@/features/auth/components/AuthForm';
 import RolePicker from '@/features/auth/components/RolePicker';
-import { getPublicRoles } from '@/constants/roles';
+import { getPublicRoles, USER_ROLES } from '@/constants/roles';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMetaTracking } from '@/hooks/useMetaTracking';
-import { CheckCircle, Users, Calendar, Shield, Star, X, Gift, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Users, Calendar, Shield, Star, X, Gift, ArrowLeft, Search, FileText, Bell, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Contenido orientado al PROFESIONAL (dentista / clínica / asistente)
 const BENEFITS = [
   { icon: Users, text: 'Aparece en el buscador y recibe pacientes nuevos' },
   { icon: Calendar, text: 'Agenda online con recordatorios automáticos' },
@@ -21,6 +22,34 @@ const STATS = [
   { value: '100%', label: 'Gratis para comenzar' },
   { value: '11+', label: 'Pacientes activos' },
 ];
+
+const PROFESSIONAL_TESTIMONIAL = {
+  initials: 'DK',
+  name: 'Danissa Klagges',
+  role: 'Dentista, Temuco',
+  quote: '"DentalSpot me ha permitido organizar mi consulta, automatizar las notas de sesión y recibir pacientes nuevos desde el buscador. Lo recomiendo a todos mis colegas."',
+};
+
+// Contenido orientado al PACIENTE
+const PATIENT_BENEFITS = [
+  { icon: Search, text: 'Busca dentistas por especialidad y cercanía' },
+  { icon: Calendar, text: 'Reserva citas online en minutos' },
+  { icon: FileText, text: 'Tu ficha clínica siempre disponible' },
+  { icon: Bell, text: 'Recibe recordatorios automáticos de tus citas' },
+];
+
+const PATIENT_STATS = [
+  { value: '46+', label: 'Dentistas verificados' },
+  { value: '100%', label: 'Gratis para pacientes' },
+  { value: '3 min', label: 'Para reservar' },
+];
+
+const PATIENT_TESTIMONIAL = {
+  initials: 'CR',
+  name: 'Carolina R.',
+  role: 'Paciente, Santiago',
+  quote: '"Encontré dentista cerca de mi oficina en minutos. Reservar fue súper fácil y los recordatorios automáticos me salvan de olvidar las citas."',
+};
 
 // Exit-intent popup
 const ExitIntentPopup = ({ onClose }) => (
@@ -101,17 +130,21 @@ export default function AuthPage() {
     }
   }, [user, action, isLogin, trackEvent]);
 
-  // Exit-intent detection (mouse leaves viewport top)
+  // Exit-intent detection (mouse leaves viewport top).
+  // Solo se dispara en registro profesional (dentista/clínica/asistente).
+  // Para paciente no tiene sentido — el registro es simple y gratuito.
+  const isPatientRegister = !isLogin && roleParam === USER_ROLES.PATIENT;
+
   const handleMouseLeave = useCallback((e) => {
-    if (isLogin || exitPopupShown || user) return;
+    if (isLogin || exitPopupShown || user || isPatientRegister) return;
     if (e.clientY <= 0) {
       setShowExitPopup(true);
       setExitPopupShown(true);
     }
-  }, [isLogin, exitPopupShown, user]);
+  }, [isLogin, exitPopupShown, user, isPatientRegister]);
 
   useEffect(() => {
-    if (isLogin || user) return;
+    if (isLogin || user || isPatientRegister) return;
     // Desktop: mouse leave detection
     document.addEventListener('mouseleave', handleMouseLeave);
     // Mobile fallback: show after 45 seconds
@@ -125,7 +158,7 @@ export default function AuthPage() {
       document.removeEventListener('mouseleave', handleMouseLeave);
       clearTimeout(timer);
     };
-  }, [handleMouseLeave, isLogin, user, exitPopupShown]);
+  }, [handleMouseLeave, isLogin, user, exitPopupShown, isPatientRegister]);
 
   if (authLoading || user) return null;
 
@@ -166,12 +199,27 @@ export default function AuthPage() {
     );
   }
 
-  // Register: two-column Doctoralia-style layout
+  // Register: two-column Doctoralia-style layout.
+  // El contenido del panel izquierdo cambia según el rol elegido:
+  //   - PATIENT → orientado al paciente (buscar dentistas, reservar)
+  //   - otros (dentista/clínica/asistente) → orientado al profesional
+  const isPatientView = selectedRole === USER_ROLES.PATIENT;
+  const activeBenefits = isPatientView ? PATIENT_BENEFITS : BENEFITS;
+  const activeStats = isPatientView ? PATIENT_STATS : STATS;
+  const activeTestimonial = isPatientView ? PATIENT_TESTIMONIAL : PROFESSIONAL_TESTIMONIAL;
+
   return (
     <>
       <Helmet>
-        <title>Regístrate Gratis | DentalSpot</title>
-        <meta name="description" content="Crea tu perfil profesional gratuito en DentalSpot. Aparece en las búsquedas y recibe pacientes." />
+        <title>{isPatientView ? 'Regístrate Gratis — Paciente' : 'Regístrate Gratis'} | DentalSpot</title>
+        <meta
+          name="description"
+          content={
+            isPatientView
+              ? 'Regístrate gratis en DentalSpot. Busca dentistas cerca de ti, reserva citas online y accedé a tu ficha clínica desde donde estés.'
+              : 'Crea tu perfil profesional gratuito en DentalSpot. Aparece en las búsquedas y recibe pacientes.'
+          }
+        />
       </Helmet>
 
       <div className="min-h-screen bg-white">
@@ -193,22 +241,37 @@ export default function AuthPage() {
         <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
 
-            {/* Left: Value proposition */}
+            {/* Left: Value proposition (content changes per role) */}
             <div className="space-y-8 lg:sticky lg:top-24">
               <div>
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                  Crea tu perfil profesional
-                  <span className="block text-teal-600">gratuito en DentalSpot</span>
-                </h1>
-                <p className="mt-4 text-lg text-gray-500 leading-relaxed">
-                  Miles de pacientes buscan dentistas cada mes. Aparece en las búsquedas,
-                  recibe reservas online y gestiona tu consulta con herramientas inteligentes.
-                </p>
+                {isPatientView ? (
+                  <>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+                      Encuentra el dentista ideal
+                      <span className="block text-teal-600">cerca de ti</span>
+                    </h1>
+                    <p className="mt-4 text-lg text-gray-500 leading-relaxed">
+                      Regístrate gratis para buscar dentistas cerca, reservar citas online
+                      y mantener tu ficha clínica siempre disponible.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+                      Crea tu perfil profesional
+                      <span className="block text-teal-600">gratuito en DentalSpot</span>
+                    </h1>
+                    <p className="mt-4 text-lg text-gray-500 leading-relaxed">
+                      Miles de pacientes buscan dentistas cada mes. Aparece en las búsquedas,
+                      recibe reservas online y gestiona tu consulta con herramientas inteligentes.
+                    </p>
+                  </>
+                )}
               </div>
 
               {/* Benefits */}
               <div className="space-y-4">
-                {BENEFITS.map((b, i) => (
+                {activeBenefits.map((b, i) => (
                   <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                     <div className="p-2.5 rounded-lg bg-teal-50 text-teal-600 shrink-0">
                       <b.icon className="h-5 w-5" />
@@ -220,7 +283,7 @@ export default function AuthPage() {
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                {STATS.map((s, i) => (
+                {activeStats.map((s, i) => (
                   <div key={i} className="text-center">
                     <p className="text-2xl font-bold text-teal-600">{s.value}</p>
                     <p className="text-xs text-gray-500 mt-1">{s.label}</p>
@@ -232,16 +295,15 @@ export default function AuthPage() {
               <div className="bg-gray-50 rounded-xl p-5 border">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-600">
-                    DK
+                    {activeTestimonial.initials}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">Danissa Klagges</p>
-                    <p className="text-xs text-gray-500">Dentista, Temuco</p>
+                    <p className="font-semibold text-gray-900 text-sm">{activeTestimonial.name}</p>
+                    <p className="text-xs text-gray-500">{activeTestimonial.role}</p>
                   </div>
                 </div>
                 <p className="text-sm text-gray-600 italic">
-                  "DentalSpot me ha permitido organizar mi consulta, automatizar las notas de sesión y
-                  recibir pacientes nuevos desde el buscador. Lo recomiendo a todos mis colegas."
+                  {activeTestimonial.quote}
                 </p>
                 <div className="flex gap-0.5 mt-2">
                   {[1,2,3,4,5].map(s => <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />)}

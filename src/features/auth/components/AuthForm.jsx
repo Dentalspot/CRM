@@ -444,31 +444,35 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
               </AlertDescription>
             </Alert>
           ) : (
-            <Collapsible className="mb-4 bg-primary/5 p-3 rounded-lg border border-primary/10">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full justify-start text-slate-600 font-normal hover:bg-transparent p-0 h-auto">
-                  <Gift className="mr-2 h-4 w-4 text-primary" />
-                  ¿Tienes un codigo de descuento?
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-3 space-y-2">
-                <div className="relative">
-                  <Input
-                    placeholder="Ej: DENTAL20"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                    disabled={isLoading}
-                    maxLength={20}
-                    className="font-mono tracking-widest uppercase"
-                  />
-                </div>
-                {discountCode && (
-                  <p className="text-xs text-slate-500">
-                    El descuento se aplicara al momento de elegir tu plan.
-                  </p>
-                )}
-              </CollapsibleContent>
-            </Collapsible>
+            // Código de descuento solo para profesionales (dentista/clínica/asistente).
+            // Para paciente el registro es siempre gratis → no mostrar el campo.
+            initialRole !== 'patient' && (
+              <Collapsible className="mb-4 bg-primary/5 p-3 rounded-lg border border-primary/10">
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-start text-slate-600 font-normal hover:bg-transparent p-0 h-auto">
+                    <Gift className="mr-2 h-4 w-4 text-primary" />
+                    ¿Tienes un codigo de descuento?
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3 space-y-2">
+                  <div className="relative">
+                    <Input
+                      placeholder="Ej: DENTAL20"
+                      value={discountCode}
+                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                      disabled={isLoading}
+                      maxLength={20}
+                      className="font-mono tracking-widest uppercase"
+                    />
+                  </div>
+                  {discountCode && (
+                    <p className="text-xs text-slate-500">
+                      El descuento se aplicara al momento de elegir tu plan.
+                    </p>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            )
           )
         )}
 
@@ -653,7 +657,9 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
                 {isLogin ? 'Iniciando sesión...' : 'Registrando...'}
               </>
             ) : (
-              isLogin ? 'Iniciar Sesión' : 'Registrarse'
+              isLogin
+                ? 'Iniciar Sesión'
+                : (initialRole === 'patient' ? 'Regístrate gratis' : 'Registrarse')
             )}
           </Button>
         </form>
