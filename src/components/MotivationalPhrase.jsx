@@ -32,7 +32,7 @@ const MotivationalPhrase = ({ type = 'therapist' }) => {
       // Default phrase fallback
       setPhrase({
         content: "Cada día es una nueva oportunidad para hacer la diferencia.",
-        author: "FonoKit"
+        author: "DentalSpot"
       });
     } finally {
       setLoading(false);

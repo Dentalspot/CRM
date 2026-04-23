@@ -23,8 +23,8 @@ const AdminDashboardPage = () => {
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl space-y-6">
       <Helmet>
-        <title>Panel de Administrador | FonoKit</title>
-        <meta name="description" content="Panel de administración para gestionar la plataforma FonoKit." />
+        <title>Panel de Administrador | DentalSpot</title>
+        <meta name="description" content="Panel de administración para gestionar la plataforma DentalSpot." />
       </Helmet>
 
       <div className="flex justify-between items-end">

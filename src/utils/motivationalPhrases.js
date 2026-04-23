@@ -3,9 +3,9 @@ import logger from '@/lib/utils/logger';
 import { useState, useEffect, useCallback } from 'react';
 
 const defaultPhrases = [
-  { content: "Tu dedicación transforma vidas, una sesión a la vez.", author: "FonoKit" },
-  { content: "La comunicación es el corazón de la conexión humana. Gracias por construir puentes.", author: "FonoKit" },
-  { content: "Cada pequeño progreso es un gran logro. ¡Sigue adelante!", author: "FonoKit" }
+  { content: "Tu dedicación transforma vidas, una sesión a la vez.", author: "DentalSpot" },
+  { content: "La comunicación es el corazón de la conexión humana. Gracias por construir puentes.", author: "DentalSpot" },
+  { content: "Cada pequeño progreso es un gran logro. ¡Sigue adelante!", author: "DentalSpot" }
 ];
 
 let phrasesCache = [];
