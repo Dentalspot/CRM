@@ -1,6 +1,7 @@
 
 import React from 'react';
 import logger from '@/lib/utils/logger';
+import { captureException } from '@/lib/sentry';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -15,6 +16,11 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     this.setState({ error, errorInfo });
     logger.error("ErrorBoundary atrapó un error:", error, errorInfo);
+    captureException(error, {
+      tags: { source: 'ErrorBoundary' },
+      extra: { componentStack: errorInfo?.componentStack },
+      level: 'error',
+    });
   }
 
   componentDidMount() {
@@ -23,6 +29,10 @@ class ErrorBoundary extends React.Component {
       // Prevent the error from crashing the app — log silently
       event.preventDefault();
       logger.warn('Unhandled promise rejection (non-blocking):', event.reason?.message || event.reason);
+      captureException(event.reason instanceof Error ? event.reason : new Error(String(event.reason)), {
+        tags: { source: 'unhandledrejection' },
+        level: 'warning',
+      });
     });
   }
 

@@ -5,6 +5,11 @@ import { BrowserRouter } from 'react-router-dom';
 import App from '@/App';
 import '@/index.css';
 import 'leaflet/dist/leaflet.css';
+import { initSentry } from '@/lib/sentry';
+
+// Sentry: inicializar lo antes posible para capturar errores del bootstrap.
+// No-op si VITE_SENTRY_DSN no está seteado.
+initSentry();
 
 // Detect auth tokens in URL before React mounts
 // With PKCE flow, Supabase uses ?code= in query params (not hash)

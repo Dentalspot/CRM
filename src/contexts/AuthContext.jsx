@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import logger from '@/lib/utils/logger';
 import { USER_ROLES } from '@/constants/roles';
 import useIdleTimeout from '@/hooks/useIdleTimeout';
+import { setSentryUser } from '@/lib/sentry';
 
 const AuthContext = createContext({});
 
@@ -30,6 +31,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+
+  // Sincronizar user id a Sentry para error context. Solo id — no email por privacidad.
+  useEffect(() => {
+    setSentryUser(user?.id || null);
+  }, [user?.id]);
 
   // Helper to fetch profile data
   const fetchProfile = useCallback(async (userId) => {
