@@ -18,7 +18,7 @@ import { getPublicRoles } from '@/constants/roles';
 export default function RolePicker({ isLogin }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const roles = getPublicRoles();
+  const roles = getPublicRoles(isLogin ? 'login' : 'register');
 
   const handlePick = (roleValue) => {
     // Preserva otros query params, agrega ?role=X

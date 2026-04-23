@@ -9,21 +9,21 @@ import { useMetaTracking } from '@/hooks/useMetaTracking';
 import { CheckCircle, Users, Calendar, Shield, Star, X, Gift, ArrowLeft, Search, FileText, Bell, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Contenido orientado al PROFESIONAL (dentista / clínica / asistente)
-const BENEFITS = [
+// Contenido orientado al DENTISTA individual
+const THERAPIST_BENEFITS = [
   { icon: Users, text: 'Aparece en el buscador y recibe pacientes nuevos' },
   { icon: Calendar, text: 'Agenda online con recordatorios automáticos' },
   { icon: Shield, text: 'Ficha clínica digital segura y trazable' },
   { icon: Star, text: 'Herramientas IA: Notiz, plantillas y más' },
 ];
 
-const STATS = [
+const THERAPIST_STATS = [
   { value: '46+', label: 'Profesionales registrados' },
   { value: '100%', label: 'Gratis para comenzar' },
   { value: '11+', label: 'Pacientes activos' },
 ];
 
-const PROFESSIONAL_TESTIMONIAL = {
+const THERAPIST_TESTIMONIAL = {
   initials: 'DK',
   name: 'Danissa Klagges',
   role: 'Dentista, Temuco',
@@ -50,6 +50,20 @@ const PATIENT_TESTIMONIAL = {
   role: 'Paciente, Santiago',
   quote: '"Encontré dentista cerca de mi oficina en minutos. Reservar fue súper fácil y los recordatorios automáticos me salvan de olvidar las citas."',
 };
+
+// Contenido orientado a la CLÍNICA (organización con múltiples dentistas)
+const CLINIC_BENEFITS = [
+  { icon: Users, text: 'Gestiona a todo tu equipo de dentistas' },
+  { icon: Calendar, text: 'Agenda unificada para toda la clínica' },
+  { icon: Shield, text: 'Fichas clínicas centralizadas y seguras' },
+  { icon: Star, text: 'Reportes del desempeño de tu clínica' },
+];
+
+const CLINIC_STATS = [
+  { value: '46+', label: 'Profesionales en la red' },
+  { value: '100%', label: 'Gratis para comenzar' },
+  { value: 'Multi-dentista', label: 'Equipo ilimitado' },
+];
 
 // Exit-intent popup
 const ExitIntentPopup = ({ onClose }) => (
@@ -113,7 +127,7 @@ export default function AuthPage() {
   // Si el rol no es válido (no está en getPublicRoles), se ignora y mostramos
   // el RolePicker. Esto permite que Admin / Lab no sean seleccionables via URL.
   const roleParam = searchParams.get('role');
-  const validRoles = getPublicRoles().map((r) => r.value);
+  const validRoles = getPublicRoles(isLogin ? 'login' : 'register').map((r) => r.value);
   const selectedRole = validRoles.includes(roleParam) ? roleParam : null;
 
   useEffect(() => {
@@ -202,21 +216,42 @@ export default function AuthPage() {
   // Register: two-column Doctoralia-style layout.
   // El contenido del panel izquierdo cambia según el rol elegido:
   //   - PATIENT → orientado al paciente (buscar dentistas, reservar)
-  //   - otros (dentista/clínica/asistente) → orientado al profesional
+  //   - CLINIC  → orientado a la clínica (equipo, agenda unificada, reportes)
+  //   - default → dentista individual
+  // ASSISTANT no se expone en register (invite-only via organization_members),
+  // por eso no tiene rama propia aquí.
   const isPatientView = selectedRole === USER_ROLES.PATIENT;
-  const activeBenefits = isPatientView ? PATIENT_BENEFITS : BENEFITS;
-  const activeStats = isPatientView ? PATIENT_STATS : STATS;
-  const activeTestimonial = isPatientView ? PATIENT_TESTIMONIAL : PROFESSIONAL_TESTIMONIAL;
+  const isClinicView = selectedRole === USER_ROLES.CLINIC;
+  const activeBenefits = isPatientView
+    ? PATIENT_BENEFITS
+    : isClinicView
+    ? CLINIC_BENEFITS
+    : THERAPIST_BENEFITS;
+  const activeStats = isPatientView
+    ? PATIENT_STATS
+    : isClinicView
+    ? CLINIC_STATS
+    : THERAPIST_STATS;
+  const activeTestimonial = isPatientView ? PATIENT_TESTIMONIAL : THERAPIST_TESTIMONIAL;
 
   return (
     <>
       <Helmet>
-        <title>{isPatientView ? 'Regístrate Gratis — Paciente' : 'Regístrate Gratis'} | DentalSpot</title>
+        <title>
+          {isPatientView
+            ? 'Regístrate Gratis — Paciente'
+            : isClinicView
+            ? 'Registra tu Clínica Dental'
+            : 'Regístrate Gratis'}{' '}
+          | DentalSpot
+        </title>
         <meta
           name="description"
           content={
             isPatientView
               ? 'Regístrate gratis en DentalSpot. Busca dentistas cerca de ti, reserva citas online y accedé a tu ficha clínica desde donde estés.'
+              : isClinicView
+              ? 'Registra tu clínica dental en DentalSpot. Centraliza agenda, equipo y fichas clínicas. Haz crecer tu clínica con pacientes que te encuentran online.'
               : 'Crea tu perfil profesional gratuito en DentalSpot. Aparece en las búsquedas y recibe pacientes.'
           }
         />
@@ -253,6 +288,17 @@ export default function AuthPage() {
                     <p className="mt-4 text-lg text-gray-500 leading-relaxed">
                       Regístrate gratis para buscar dentistas cerca, reservar citas online
                       y mantener tu ficha clínica siempre disponible.
+                    </p>
+                  </>
+                ) : isClinicView ? (
+                  <>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+                      Gestiona tu clínica dental
+                      <span className="block text-teal-600">desde un solo lugar</span>
+                    </h1>
+                    <p className="mt-4 text-lg text-gray-500 leading-relaxed">
+                      Centraliza agenda, equipo y fichas clínicas. Haz crecer tu clínica con
+                      pacientes que te encuentran online.
                     </p>
                   </>
                 ) : (

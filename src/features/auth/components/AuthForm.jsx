@@ -67,7 +67,7 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
   const [discountStatus, setDiscountStatus] = useState('none'); // none, loading, valid, invalid
   const [discountInfo, setDiscountInfo] = useState(null);
 
-  const availableRoles = getPublicRoles();
+  const availableRoles = getPublicRoles(isLogin ? 'login' : 'register');
 
   useEffect(() => {
     const validateInvite = async () => {
@@ -659,7 +659,11 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
             ) : (
               isLogin
                 ? 'Iniciar Sesión'
-                : (initialRole === 'patient' ? 'Regístrate gratis' : 'Registrarse')
+                : initialRole === 'patient'
+                  ? 'Regístrate gratis'
+                  : initialRole === 'clinic'
+                    ? 'Registrar clínica'
+                    : 'Registrarse'
             )}
           </Button>
         </form>
