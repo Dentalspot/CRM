@@ -13,12 +13,16 @@ import { supabase } from '@/lib/supabaseClient';
 import { createPatientAccount } from '@/services/patientAccountService';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
+import useActivePlanLimits from '@/hooks/useActivePlanLimits';
+import UpgradeModal from '@/components/modals/UpgradeModal';
 
 const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
   const { toast } = useToast();
   const { handleUpsertPatient } = usePatients();
   const { user } = useAuth();
   const { currentOrganizationId, isMultiOrg } = useCurrentOrganization();
+  const { canCreate, currentPlan } = useActivePlanLimits();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -164,6 +168,14 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
           return;
         }
 
+        // Spec 022 Phase E — Enforcement UX: bloquear si plan alcanzó límite
+        const allowed = await canCreate('patient');
+        if (!allowed) {
+          setLoading(false);
+          setShowUpgradeModal(true);
+          return;
+        }
+
         const result = await createPatientAccount({
           therapistId: user.id,
           organizationId: currentOrganizationId,
@@ -246,6 +258,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -373,6 +386,16 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Spec 022 Phase E — Modal de upgrade cuando alcanza límite de plan */}
+    <UpgradeModal
+      isOpen={showUpgradeModal}
+      onClose={() => setShowUpgradeModal(false)}
+      featureName="más pacientes"
+      requiredPlan="individual"
+      currentPlan={currentPlan}
+    />
+    </>
   );
 };
 

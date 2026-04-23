@@ -14,6 +14,8 @@ import { format, parse, isValid } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import useDebounce from '@/hooks/useDebounce';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
+import useActivePlanLimits from '@/hooks/useActivePlanLimits';
+import UpgradeModal from '@/components/modals/UpgradeModal';
 import logger from "@/lib/utils/logger";
 import {
   searchPatientsForAgenda,
@@ -26,6 +28,8 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
   const { user } = useAuth();
   const { toast } = useToast();
   const { currentOrganizationId } = useCurrentOrganization();
+  const { canCreate, currentPlan } = useActivePlanLimits();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientSearchTerm, setPatientSearchTerm] = useState('');
@@ -150,6 +154,19 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
     }
 
     setIsSubmitting(true);
+
+    // Spec 022 Phase E — Enforcement UX: bloquear si plan alcanzó límite mensual de citas
+    // NOTA edge case: RPC check_plan_limit cuenta citas del MES ACTUAL. Si el usuario
+    // programa recurrentes que span varios meses, el guard pasa cuando el mes actual
+    // tiene cupo pero podría exceder el límite en el mes calendario donde caen.
+    // Riesgo aceptado en MVP — el exceso es small y el RPC es fail-safe OPEN.
+    const allowed = await canCreate('appointment');
+    if (!allowed) {
+      setIsSubmitting(false);
+      setShowUpgradeModal(true);
+      return;
+    }
+
     try {
       // Robust Date Parsing
       let baseDate;
@@ -227,6 +244,7 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
   };
 
   return (
+    <>
     <div className="space-y-4">
       {/* Patient Selection */}
       <div className="space-y-2">
@@ -369,6 +387,16 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
       {/* Hidden Submit Trigger */}
       <button id="new-appointment-submit" type="button" onClick={handleSaveAppointment} className="hidden" />
     </div>
+
+    {/* Spec 022 Phase E — Modal de upgrade cuando alcanza límite de citas/mes */}
+    <UpgradeModal
+      isOpen={showUpgradeModal}
+      onClose={() => setShowUpgradeModal(false)}
+      featureName="más citas por mes"
+      requiredPlan="individual"
+      currentPlan={currentPlan}
+    />
+    </>
   );
 };
 

@@ -15,10 +15,14 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Mail, Send } from 'lucide-react';
 import logger from '@/lib/utils/logger';
 import { supabase } from '@/lib/supabaseClient';
+import useActivePlanLimits from '@/hooks/useActivePlanLimits';
+import UpgradeModal from '@/components/modals/UpgradeModal';
 
 const InviteTherapistModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const { canCreate, currentPlan } = useActivePlanLimits();
   const [formData, setFormData] = useState({
     email: '',
     message: ''
@@ -59,6 +63,14 @@ const InviteTherapistModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
         throw new Error('Este terapeuta ya está vinculado a tu clínica.');
       }
 
+      // Spec 022 Phase E — Enforcement UX: bloquear si plan alcanzó límite de dentistas
+      const allowed = await canCreate('dentist');
+      if (!allowed) {
+        setLoading(false);
+        setShowUpgradeModal(true);
+        return;
+      }
+
       // Link therapist to clinic
       const { error: linkError } = await supabase
         .from('clinic_therapists')
@@ -92,6 +104,7 @@ const InviteTherapistModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={(open) => !open && !loading && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -150,6 +163,16 @@ const InviteTherapistModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Spec 022 Phase E — Modal de upgrade cuando alcanza límite de dentistas */}
+    <UpgradeModal
+      isOpen={showUpgradeModal}
+      onClose={() => setShowUpgradeModal(false)}
+      featureName="más dentistas en tu clínica"
+      requiredPlan="professional"
+      currentPlan={currentPlan}
+    />
+    </>
   );
 };
 
