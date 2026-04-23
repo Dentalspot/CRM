@@ -217,7 +217,8 @@ export const PLAN_FEATURES = {
     brandCustomization: true,
     customTemplates: false,
     multiClinic: false,
-    marketplaceBuy: true,
+    // marketplaceBuy: diferido — ver docs/product/feature-backlog.md §Marketplace
+    marketplaceBuy: false,
     marketplaceSell: false,
     saveMaterials: false,
     supportLevel: 'email',
@@ -227,7 +228,8 @@ export const PLAN_FEATURES = {
     clinicalHistory: true,
     basicReports: true,
     emailReminders: true,
-    whatsappReminders: true,
+    // whatsappReminders: diferido — ver docs/product/feature-backlog.md §WhatsApp
+    whatsappReminders: false,
     metricsPanel: true,
     aiAssistant: true,
     aiReports: true,
@@ -237,17 +239,19 @@ export const PLAN_FEATURES = {
     brandCustomization: true,
     customTemplates: true,
     multiClinic: true,
-    marketplaceBuy: true,
-    marketplaceSell: true,
+    // marketplaceBuy/Sell: diferido — ver docs/product/feature-backlog.md §Marketplace
+    marketplaceBuy: false,
+    marketplaceSell: false,
     saveMaterials: true,
-    supportLevel: 'whatsapp',
+    supportLevel: 'priority',
   },
   [PLAN_NAMES.CENTER]: {
     scheduling: true,
     clinicalHistory: true,
     basicReports: true,
     emailReminders: true,
-    whatsappReminders: true,
+    // whatsappReminders: diferido — ver docs/product/feature-backlog.md §WhatsApp
+    whatsappReminders: false,
     metricsPanel: true,
     aiAssistant: true,
     aiReports: true,
@@ -257,8 +261,9 @@ export const PLAN_FEATURES = {
     brandCustomization: true,
     customTemplates: true,
     multiClinic: true,
-    marketplaceBuy: true,
-    marketplaceSell: true,
+    // marketplaceBuy/Sell: diferido — ver docs/product/feature-backlog.md §Marketplace
+    marketplaceBuy: false,
+    marketplaceSell: false,
     saveMaterials: true,
     supportLevel: 'vip',
     // Extras Centro
@@ -297,12 +302,16 @@ export const FEATURE_INFO = {
     icon: 'Mail',
     minimumPlan: PLAN_NAMES.INDIVIDUAL,
   },
+  // DIFERIDO (2026-04-23): ver docs/product/feature-backlog.md §WhatsApp.
+  // Feature mantiene definición para que el código que la referencia no rompa,
+  // pero PLAN_FEATURES la tiene en `false` en todos los planes. No ofrecer en UI.
   whatsappReminders: {
     key: 'whatsappReminders',
     name: 'Recordatorios por WhatsApp',
     description: 'Envía recordatorios automáticos por WhatsApp',
     icon: 'MessageCircle',
     minimumPlan: PLAN_NAMES.PROFESSIONAL,
+    deferred: true,
   },
   metricsPanel: {
     key: 'metricsPanel',
@@ -368,12 +377,17 @@ export const FEATURE_INFO = {
     icon: 'Building2',
     minimumPlan: PLAN_NAMES.PROFESSIONAL,
   },
+  // DIFERIDO (2026-04-23): ver docs/product/feature-backlog.md §Marketplace.
+  // MVP DentalSpot no habilita marketplace (sólo cobros dentista→DentalSpot).
+  // Las rutas siguen existiendo tras PlanGuard; la feature queda en false en
+  // todos los planes para que no se muestre en UI de pricing/upgrade.
   marketplaceBuy: {
     key: 'marketplaceBuy',
     name: 'Marketplace (comprar)',
     description: 'Accede a materiales y plantillas del marketplace',
     icon: 'ShoppingBag',
     minimumPlan: PLAN_NAMES.INDIVIDUAL,
+    deferred: true,
   },
   marketplaceSell: {
     key: 'marketplaceSell',
@@ -381,6 +395,7 @@ export const FEATURE_INFO = {
     description: 'Vende tus propios materiales y plantillas',
     icon: 'Store',
     minimumPlan: PLAN_NAMES.PROFESSIONAL,
+    deferred: true,
   },
   saveMaterials: {
     key: 'saveMaterials',

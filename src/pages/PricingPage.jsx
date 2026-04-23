@@ -77,14 +77,13 @@ const pricingPlans = [
       { text: 'Pacientes ilimitados', included: true, highlight: true },
       { text: '2 usuarios incluidos', included: true },
       { text: 'Agendamiento avanzado', included: true },
-      { text: 'Recordatorios email + WhatsApp', included: true, highlight: true },
+      { text: 'Recordatorios por email', included: true, highlight: true },
       { text: 'Generación de informes con IA', included: true, highlight: true },
       { text: 'Integración con calendario', included: true },
-      { text: 'Soporte prioritario WhatsApp', included: true },
+      { text: 'Soporte prioritario', included: true },
       { text: 'Panel de métricas avanzadas', included: true },
       { text: 'Multiclínica', included: true },
       { text: 'Plantillas personalizables', included: true },
-      { text: 'Marketplace (comprar y vender)', included: true },
     ],
     cta: 'Elegir Profesional',
     popular: true,
@@ -176,7 +175,6 @@ const comparisonCategories = [
       { name: 'Agendamiento de sesiones', gratis: true, individual: true, profesional: true, centro: true },
       { name: 'Historial clínico digital', gratis: true, individual: true, profesional: true, centro: true },
       { name: 'Recordatorios por email', gratis: false, individual: true, profesional: true, centro: true },
-      { name: 'Recordatorios por WhatsApp', gratis: false, individual: false, profesional: true, centro: true },
       { name: 'Panel de métricas', gratis: false, individual: true, profesional: true, centro: true },
     ],
   },
@@ -206,15 +204,9 @@ const comparisonCategories = [
     ],
   },
   {
-    name: 'Marketplace',
-    features: [
-      { name: 'Acceso al marketplace', gratis: false, individual: 'Solo comprar', profesional: 'Comprar y vender', centro: 'Comprar y vender' },
-    ],
-  },
-  {
     name: 'Soporte',
     features: [
-      { name: 'Tipo de soporte', gratis: 'Email', individual: 'Email', profesional: 'WhatsApp prioritario', centro: 'VIP + Onboarding' },
+      { name: 'Tipo de soporte', gratis: 'Email', individual: 'Email', profesional: 'Prioritario', centro: 'VIP + Onboarding' },
     ],
   },
 ];
@@ -250,7 +242,7 @@ const faqs = [
   },
   {
     question: '¿Qué soporte recibiré para aprovechar al máximo mi suscripción?',
-    answer: 'Todos los planes incluyen acceso a nuestra base de conocimientos y tutoriales en video. Los planes pagados incluyen soporte por email, el plan Profesional agrega WhatsApp prioritario, y el plan Centro incluye onboarding personalizado con un especialista.',
+    answer: 'Todos los planes incluyen acceso a nuestra base de conocimientos y tutoriales en video. Los planes pagados incluyen soporte por email, el plan Profesional agrega soporte prioritario, y el plan Centro incluye onboarding personalizado con un especialista.',
   },
   {
     question: '¿Mis datos y los de mis pacientes están seguros?',

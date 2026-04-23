@@ -158,15 +158,18 @@ function getHighlightFeatures(planName) {
   const features = PLAN_FEATURES[planName] || {};
   const highlighted = [];
 
-  // Priorizar features importantes
+  // Priorizar features importantes.
+  // whatsappReminders + marketplaceSell removidos por ahora (deferred, ver
+  // docs/product/feature-backlog.md). El filter por `features[key] === true`
+  // igual los bloquearía, pero los sacamos para no confundir al lector.
   const priorityFeatures = [
     'aiReports',
     'aiPlanGenerator',
-    'whatsappReminders',
     'metricsPanel',
-    'marketplaceSell',
     'customTemplates',
     'multiClinic',
+    'landingPage',
+    'brandCustomization',
   ];
 
   for (const key of priorityFeatures) {
