@@ -207,6 +207,8 @@ const Sidebar = ({ isOpen, onClose }) => {
             items: [
               { name: 'Tablero principal', icon: Home, path: '/dashboard/clinic' },
               { name: 'Mi clínica', icon: Building2, path: '/dashboard/profile' },
+              { name: 'Agendas', icon: Calendar, path: '/dashboard/clinic/agendas' },
+              { name: 'Pacientes', icon: Users, path: '/dashboard/clinic/patients' },
               { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
               { name: 'Reportes', icon: BarChart, path: '/dashboard/clinic/reports' },
               { name: 'Membresía', icon: DollarSign, path: '/dashboard/membership' },
