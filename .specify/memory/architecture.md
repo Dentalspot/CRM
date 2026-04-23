@@ -111,12 +111,12 @@ Fases identificadas:
 | Marketplace | `marketplace-ai-description`, `marketplace-ai-image`, `marketplace-product-chat` |
 | Ads | `generate-ad-copy`, `meta-ads-manager`, `new-meta-capi` |
 | Ops | `backup-database`, `process-notiz`, `og-preview`, `clinic-invitations` |
-### Policies (`supabase/policies.sql` 3.016 líneas stale; DB live ~458 policies)
+### Policies (`supabase/policies.sql`, 1.376 líneas — regenerado 2026-04-22 PM)
 Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|delete}_{role}`. Incluye baseline `.bak` para rollback de referencia.
 
-**Estado 2026-04-22**: `policies.sql` es snapshot histórico stale. Autoridad = `supabase/schema.sql` regenerado (458 `CREATE POLICY` interleaved con defs de tablas). Delta +27 policies post spec 022 viene de migraciones `20260420000004_apply_policies_billing_evaluations` + `20260420000005_apply_policies_goals_development_areas` + cambios incrementales spec 022.
+**Estado actual (2026-04-22 PM)**: **458 CREATE POLICY + 181 ALTER TABLE ENABLE ROW LEVEL SECURITY** en DB live, extraídas del `schema.sql` regenerado vía pg_dump 17.9. Archivos derivados (`supabase/policies.sql` + `supabase/tables_list.txt` 194 tablas) sincronizados en el mismo batch. Fuente de verdad siguen siendo las migraciones; `policies.sql` es snapshot legible estructurado + referencia para revisiones cross-table de RLS.
 
-**Tech debt low-priority**: `supabase/policies.sql` + `supabase/tables_list.txt` (173 entries) están stale y no se han regenerado. Source of truth son `supabase/migrations/` + `schema.sql`. Regenerar estos dos archivos es un micro-bloque pendiente; mientras tanto, no confiar en sus conteos.
+Para regenerar: ver `docs/local-dev/pg-dump-notes.md`.
 ## Frontend ↔ Supabase bridges
 | Propósito | Archivo(s) |
 |---|---|

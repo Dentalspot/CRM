@@ -1,3 +1,9 @@
+# DentalSpot — supabase/tables_list.txt
+#
+# 194 tablas en schema `public` (PostgreSQL 17.6), extraídas 2026-04-22.
+# Fuente: schema.sql regenerado post spec 022.
+# Para regenerar: grep -oE '^CREATE TABLE IF NOT EXISTS "public"\."[^"]+"' schema.sql | sed 's/.*\."//;s/"$//' | sort -u
+
 activity_categories
 activity_library
 adir_evaluations
@@ -6,11 +12,13 @@ admin_audit_logs
 admin_permissions
 ados2_evaluations
 ados2_item_responses
+ados2_score_descriptions
 ai_chat_messages
 ai_chat_sessions
 ai_conversation_analysis
 ai_feedback
 ai_plan_limits
+ai_prompt_templates
 ai_recommendation_feedback
 ai_settings
 ai_usage_quotas
@@ -31,12 +39,14 @@ clinic_invitations
 clinic_invoices
 clinic_therapists
 clinical_access_log
+clinical_audit_log
 clinical_entry_types
 clinical_history
 clinical_reports
 clinics
 commissions
 cookie_consents
+coupon_redemptions
 coupon_uses
 course_enrollments
 course_lessons
@@ -51,6 +61,8 @@ discount_coupons
 education_recommendations
 email_notifications
 email_templates
+evidence_chat_training
+exceptional_access_grants
 faq_chatbot
 favorite_lists
 generated_templates
@@ -60,6 +72,7 @@ legal_document_versions
 legal_documents
 legal_policies
 legal_signatures
+marketing_campaigns
 marketing_leads
 marketplace_favorites
 marketplace_items
@@ -73,17 +86,25 @@ marketplace_saved_searches
 measure_scales
 membership_plans
 metrics_summary
+migration_review_queue
 moderation_logs
 motivational_patient
 motivational_phrases
 notifications
 notiz_sessions
+odontogram_evaluations
+odontograms
 order_items
 orders
+organization_members
+organizations
+paci_training_examples
 patient_access_grants
 patient_activities
 patient_activity_logs
 patient_assigned_plans
+patient_care_team
+patient_clinical_record
 patient_development_areas
 patient_diagnoses
 patient_document_templates
@@ -94,6 +115,7 @@ patient_materials
 patient_payments
 patient_private_notes
 patient_questions
+patient_quick_notes
 patient_reviews
 patients
 payments
@@ -110,6 +132,7 @@ plan_sessions
 plan_template_exercises
 planification_types
 platform_feedback
+processing_lawful_basis
 products
 profiles
 progress_reports
@@ -131,6 +154,7 @@ session_activities
 specialties
 specialty_change_logs
 specialty_keywords
+stsg_evaluations
 subscription_payments
 subscription_plans
 subscriptions
@@ -141,7 +165,10 @@ support_ticket_notes
 support_tickets
 symptom_profiles
 system_logs
+tea_training_examples
 team_members
+tecal_evaluations
+teprosif_evaluations
 therapist_availabilities
 therapist_branding
 therapist_commissions
