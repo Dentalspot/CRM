@@ -18,7 +18,7 @@ import { isValidPassword } from '@/lib/utils/validators';
 import logger from '@/lib/utils/logger';
 import { supabase } from '@/lib/supabaseClient';
 
-const AuthForm = ({ isLogin, initialRole = null }) => {
+const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initialEmail = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, signInWithGoogle } = useAuth();
@@ -30,7 +30,8 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
   const isPaidPlan = urlPlan && urlPlan !== 'free' && urlPlan !== 'gratis';
 
   const [formData, setFormData] = useState({
-    email: '',
+    // Pre-fill email si viene de invitación (spec 023 US2)
+    email: initialEmail || '',
     password: '',
     fullName: '',
     // Si initialRole viene del RolePicker, usarlo como default. Si no, patient.
@@ -133,6 +134,42 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
     setFormData(prev => ({ ...prev, role: value }));
   };
 
+  // Spec 023 US2: si venimos de un link de invitación, post-auth invocar accept
+  // y navegar a redirect_to contextual (/dashboard/assistant o /dashboard/therapist)
+  const acceptInvitationIfPresent = async () => {
+    if (!invitationToken) return false;
+
+    try {
+      const { data: acceptRes, error: acceptErr } = await supabase.functions.invoke(
+        'clinic-invitations',
+        { body: { action: 'accept', token: invitationToken } }
+      );
+
+      if (acceptErr || !acceptRes?.success) {
+        logger.error('Accept invitation failed:', acceptErr, acceptRes);
+        toast({
+          variant: 'destructive',
+          title: 'Error aceptando invitación',
+          description: acceptRes?.message || acceptErr?.message || 'No pudimos completar la invitación. Contactá a quien te invitó.',
+        });
+        // Navegar igual al dashboard genérico — el user quedó autenticado
+        navigate('/dashboard', { replace: true });
+        return true;
+      }
+
+      toast({
+        title: '¡Bienvenido al equipo!',
+        description: 'Tu invitación fue aceptada.',
+      });
+      navigate(acceptRes.redirect_to || '/dashboard', { replace: true });
+      return true;
+    } catch (err) {
+      logger.error('acceptInvitationIfPresent exception:', err);
+      navigate('/dashboard', { replace: true });
+      return true;
+    }
+  };
+
   // ============ LOGIN ============
   const handleLogin = async () => {
     const { error } = await signIn(formData.email, formData.password);
@@ -149,6 +186,9 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
       });
       return false;
     }
+
+    // Spec 023 US2: si venimos de invitación, aceptar antes de que AuthPage redirija
+    await acceptInvitationIfPresent();
 
     // Don't redirect here — AuthPage's useEffect handles it when user state updates.
     // This avoids a race condition where the page reloads before the session is ready.
@@ -259,9 +299,19 @@ const AuthForm = ({ isLogin, initialRole = null }) => {
     }
 
     if (needsEmailConfirmation) {
-      navigate('/auth/confirm-email', { state: { email: formData.email } });
+      // Spec 023 US2: si viene invitación pero email confirmation está activa,
+      // no podemos aceptar ahora (session no válida hasta confirmar). Preservamos
+      // el token en state del confirm-email para accept post-confirmación (futura
+      // extensión). MVP asume email confirmation OFF en testing.
+      navigate('/auth/confirm-email', {
+        state: { email: formData.email, pendingInvitationToken: invitationToken },
+      });
       return;
     } else {
+      // Spec 023 US2: si venimos de invitación, aceptar antes del redirect
+      const handled = await acceptInvitationIfPresent();
+      if (handled) return;
+
       toast({
         title: "¡Cuenta creada!",
         description: "Bienvenido a DentalSpot.",

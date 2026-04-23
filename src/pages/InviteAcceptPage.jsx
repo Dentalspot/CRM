@@ -57,17 +57,19 @@ const InviteAcceptPage = () => {
         }
       });
 
-      if (error || !data?.success) throw new Error("Error al procesar la solicitud");
+      if (error || !data?.success) throw new Error(data?.message || "Error al procesar la solicitud");
 
       setActionComplete(action === 'accept' ? 'accepted' : 'rejected');
-      
+
       if (action === 'accept') {
         toast({
           title: "¡Bienvenido al equipo!",
           description: `Te has unido exitosamente a ${inviteData?.clinics?.name || 'la clínica'}.`,
         });
-        // Delay redirect to show success state
-        setTimeout(() => navigate('/dashboard'), 3000);
+        // Spec 023: el edge function retorna redirect_to contextual según role
+        // (ej. /dashboard/assistant para asistentes). Fallback a /dashboard si no viene.
+        const dest = data?.redirect_to || '/dashboard';
+        setTimeout(() => navigate(dest), 2500);
       } else {
         toast({ title: "Invitación rechazada" });
       }
@@ -127,24 +129,47 @@ const InviteAcceptPage = () => {
     );
   }
 
+  // Spec 023: contextualizar copy + botones según role de la invitación
+  const isAssistant = inviteData?.role === 'assistant';
+  const existingPatient = inviteData?.existing_patient === true;
+  const inviteEmail = encodeURIComponent(inviteData?.email || '');
+  const roleQuery = isAssistant ? '&role=assistant' : '';
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white p-4">
       <Card className="w-full max-w-lg shadow-xl">
         <CardHeader className="text-center pb-2">
-          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building2 className="h-8 w-8 text-blue-600" />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isAssistant ? 'bg-teal-100' : 'bg-blue-100'}`}>
+            <Building2 className={`h-8 w-8 ${isAssistant ? 'text-teal-600' : 'text-blue-600'}`} />
           </div>
-          <CardTitle className="text-2xl font-bold">Invitación a Clínica</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            {isAssistant ? 'Invitación a colaborar' : 'Invitación a Clínica'}
+          </CardTitle>
           <CardDescription className="text-base mt-2">
-            Has sido invitado a formar parte del equipo de
+            {isAssistant
+              ? 'Te invitaron como asistente administrativo a'
+              : 'Has sido invitado a formar parte del equipo de'}
           </CardDescription>
           <h2 className="text-xl font-semibold text-primary mt-1">{inviteData?.clinics?.name}</h2>
           {inviteData?.clinics?.address && (
             <p className="text-sm text-gray-500 mt-1">{inviteData.clinics.address}</p>
           )}
+          {/* Role badge */}
+          {isAssistant && (
+            <div className="inline-flex items-center gap-1 mt-3 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-semibold">
+              🧑‍💼 Rol: Asistente administrativo
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="pt-6 pb-2">
+          {/* Nota de permisos si es asistente */}
+          {isAssistant && (
+            <div className="bg-teal-50 border border-teal-200 rounded-md p-3 mb-4 text-teal-800 text-xs">
+              <strong>Como asistente podrás</strong> gestionar agenda y listado de pacientes. La ficha clínica detallada queda reservada a dentistas por Ley 20.584.
+            </div>
+          )}
+
           {inviteData?.message && (
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-6 italic text-gray-600 text-center">
               "{inviteData.message}"
@@ -154,19 +179,39 @@ const InviteAcceptPage = () => {
           {!user ? (
             <div className="space-y-4">
               <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-amber-800 text-sm">
-                Necesitas una cuenta en DentalSpot para aceptar esta invitación.
+                {isAssistant && existingPatient ? (
+                  <>Tu email ya tiene cuenta en DentalSpot. <strong>Iniciá sesión</strong> para aceptar la invitación.</>
+                ) : (
+                  <>Necesitas una cuenta en DentalSpot para aceptar esta invitación.</>
+                )}
               </div>
               <div className="grid gap-3">
-                <Button className="w-full" asChild>
-                  <Link to={`/auth/login?redirectTo=/invite/${token}`}>
-                    <LogIn className="mr-2 h-4 w-4" /> Iniciar Sesión
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to={`/auth/register?redirectTo=/invite/${token}`}>
-                    <UserPlus className="mr-2 h-4 w-4" /> Crear Cuenta Profesional
-                  </Link>
-                </Button>
+                {/* Primary: login si existing_patient; register si no */}
+                {isAssistant && existingPatient ? (
+                  <>
+                    <Button className="w-full" asChild>
+                      <Link to={`/auth/login?token=${token}&email=${inviteEmail}${roleQuery}`}>
+                        <LogIn className="mr-2 h-4 w-4" /> Iniciar Sesión
+                      </Link>
+                    </Button>
+                    <p className="text-center text-xs text-gray-500">
+                      Al iniciar sesión, tu cuenta se amplía para tener acceso como asistente a esta clínica.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Button className="w-full" asChild>
+                      <Link to={`/auth/register?token=${token}&email=${inviteEmail}${roleQuery}`}>
+                        <UserPlus className="mr-2 h-4 w-4" /> Crear Cuenta
+                      </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link to={`/auth/login?token=${token}&email=${inviteEmail}${roleQuery}`}>
+                        <LogIn className="mr-2 h-4 w-4" /> Ya tengo cuenta — Iniciar Sesión
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           ) : (
