@@ -178,6 +178,29 @@ ORDER BY ts.current_period_end ASC;
 
 **Acción**: contactar a cada uno antes de que venza el período. Preguntar por qué cancelan — feedback oro.
 
+### 4.1b — ⏰ Subs beta próximas a expirar (early warning Opción A)
+```sql
+-- Detectar subs BETA-3M-2026 que en los próximos 14 días llegan a mes 3.
+-- Correr SEMANAL durante los meses 2-3 post primer signup.
+SELECT
+  ts.therapist_id,
+  p.email,
+  ts.current_period_end,
+  ts.created_at,
+  (ts.current_period_end - INTERVAL '30 days' * 2) AS month_3_milestone,
+  ((ts.current_period_end - INTERVAL '30 days' * 2) - NOW()) AS time_to_milestone
+FROM therapist_subscriptions ts
+LEFT JOIN profiles p ON p.id = ts.therapist_id
+WHERE ts.applied_coupon_code = 'BETA-3M-2026'
+  AND ts.status = 'active'
+  AND (ts.current_period_end - INTERVAL '30 days' * 2) BETWEEN NOW() AND NOW() + INTERVAL '14 days'
+ORDER BY time_to_milestone ASC;
+```
+
+**Acción**: a los listados, mandar email/WhatsApp "tu período beta termina el [fecha]. Si querés continuar, suscribite al plan real [link]". 7 días de anticipación mínimo.
+
+Si ninguno responde "quiero seguir", al mes 3 ejecutar `docs/launch-beta/ops-commands.sql §1`.
+
 ### 4.2 — Renovaciones del cupón (¿cuántos ciclos cumplió?)
 ```sql
 SELECT

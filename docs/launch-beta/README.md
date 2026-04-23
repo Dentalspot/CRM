@@ -12,10 +12,11 @@
 
 Orden recomendado:
 
-1. **`known-issues.md`** — [TÚ, leer PRIMERO] 2 blockers críticos identificados en el audit del 2026-04-22 PM + 3 workarounds propuestos. Decisión bloqueante antes de seguir.
+1. **`known-issues.md`** — [TÚ, leer PRIMERO] 2 blockers críticos identificados en el audit del 2026-04-22 PM. **Opción A oficial elegida** (ver §"DECISIÓN").
 2. **`checklist-preflight.md`** — [TÚ, antes de invitar] Marcá los ~25 items antes de mandar la primera invitación. Detecta fallos conocidos antes de que los encuentre un dentista.
 3. **`onboarding-dentista.md`** — [Dentista, al invitar] 1-pager enviable por WhatsApp/email. Explica qué es DentalSpot, el beta, y los 3 pasos para arrancar.
 4. **`metrics-manual.md`** — [TÚ, cadencia semanal] Queries SQL copy-paste para saber si el beta está funcionando (subs activas, signups, errores).
+5. **`ops-commands.sql`** — [TÚ, ops manuales] SQL reutilizables para expirar subs al mes 3, extender período, downgrade a Free, etc. Copy-paste a Supabase SQL Editor cuando corresponda.
 
 ---
 
