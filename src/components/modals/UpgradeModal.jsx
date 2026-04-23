@@ -53,7 +53,9 @@ const UpgradeModal = ({
 
   const handleUpgrade = () => {
     onClose();
-    navigate('/planes');
+    // Usuarios logueados van al dashboard donde pueden suscribirse.
+    // La landing pública `/planes` (PricingPage) es para prospects sin sesión.
+    navigate('/dashboard/membership');
   };
 
   return (
