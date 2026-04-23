@@ -1,27 +1,185 @@
 /**
  * @file src/pages/clinic/ClinicPatientsPage.jsx
  *
- * STUB — Gestión de pacientes del dashboard de clínica.
+ * Listado de pacientes de la clínica (vista admin-level).
+ * Spec: `clinic-dashboard-sections-expansion` Phase B2.
  *
- * Spec futuro: `clinic-dashboard-sections-expansion` Phase B3
- * - Listado de pacientes de la organización (scopeado por organization_id,
- *   no por therapist_id como en el flow actual de dentista)
- * - Acciones admin-level: crear paciente, editar contacto, agendar cita
- * - Vista detalle limitada a info admin — NO ficha clínica detallada
- *   (Ley 20.584 art. 12 — clinic_admin requiere exceptional_access_grant
- *   para ver clinical_history, odontograms, treatments)
- * - RLS ya lo soporta via pat_admin_select/insert/update policies
+ * Scope:
+ * - Query scoped por organization_id (RLS pat_admin_* enforces que el
+ *   clinic_admin solo ve pacientes de su org).
+ * - Columnas admin-level: nombre, contacto (email, phone), dentista
+ *   asignado, última cita, acciones (agendar cita — stub por ahora).
+ * - Búsqueda por nombre/email
+ * - Filtro por dentista asignado
  *
- * Por ahora placeholder con mensaje "Próximamente" + explicación del alcance
- * legal (admin-level, no clínico) para claridad del user.
+ * NO incluye (Ley 20.584 art. 12 — RLS lo bloquea automáticamente):
+ * - Ficha clínica detallada (historial, tratamientos, evoluciones)
+ * - Odontograma, radiografías, notas clínicas
+ * - Diagnósticos
+ *
+ * Click en paciente → por ahora no abre ficha detallada. Queda como
+ * follow-up: crear vista `ClinicPatientDetailModal` admin-level con
+ * contacto + historial de citas (sin clinical_history).
+ *
+ * Fuera de scope MVP (backlog):
+ * - Integrar NewAppointmentForm real para agendar desde este listado
+ *   (requiere adaptar form para aceptar dentist seleccionable por admin)
+ * - Edición inline de contacto (email, phone)
+ * - CSV export/import
+ * - Vista admin-level de detalle de paciente (modal con citas)
  */
 
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, CheckCircle2, XCircle, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
+import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Users,
+  Search,
+  CalendarPlus,
+  Phone,
+  Mail,
+  Loader2,
+  RefreshCw,
+  Plus,
+  Shield,
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import logger from '@/lib/utils/logger';
 
 const ClinicPatientsPage = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [clinic, setClinic] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [dentists, setDentists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDentist, setSelectedDentist] = useState('all');
+
+  const fetchData = useCallback(async () => {
+    try {
+      if (!user) return;
+      setRefreshing(true);
+
+      // 1. Clinic + organization_id
+      const { data: myClinic, error: clinicErr } = await supabase
+        .from('clinics')
+        .select('id, name, organization_id')
+        .eq('therapist_id', user.id)
+        .maybeSingle();
+
+      if (clinicErr) throw clinicErr;
+      if (!myClinic) {
+        setClinic(null);
+        return;
+      }
+      setClinic(myClinic);
+
+      // 2. Dentistas activos (para filter + mostrar asignación)
+      const { data: ctData, error: ctErr } = await supabase
+        .from('clinic_therapists')
+        .select(`
+          therapist_id,
+          profiles:therapist_id (id, full_name, email)
+        `)
+        .eq('clinic_id', myClinic.id)
+        .eq('is_active', true);
+
+      if (ctErr) throw ctErr;
+      setDentists((ctData || []).map(ct => ct.profiles).filter(Boolean));
+
+      // 3. Pacientes de la org (RLS pat_admin_select enforces)
+      // Incluye JOIN a profile del therapist_id para mostrar dentista asignado
+      const { data: patData, error: patErr } = await supabase
+        .from('patients')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          status,
+          therapist_id,
+          last_appointment_date,
+          created_at,
+          therapist:therapist_id (id, full_name, email)
+        `)
+        .eq('organization_id', myClinic.organization_id)
+        .order('created_at', { ascending: false });
+
+      if (patErr) throw patErr;
+      setPatients(patData || []);
+    } catch (err) {
+      logger.error('ClinicPatientsPage fetch error:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error al cargar pacientes',
+        description: err.message || 'Inténtalo de nuevo.',
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Filtrado client-side
+  const filteredPatients = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    return patients.filter(p => {
+      const matchesSearch = !term
+        || p.full_name?.toLowerCase().includes(term)
+        || p.email?.toLowerCase().includes(term);
+      const matchesDentist = selectedDentist === 'all'
+        || p.therapist_id === selectedDentist;
+      return matchesSearch && matchesDentist;
+    });
+  }, [patients, searchTerm, selectedDentist]);
+
+  if (loading && !refreshing) {
+    return (
+      <div className="flex h-[calc(100vh-100px)] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!clinic) {
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-2xl font-bold text-gray-800">No se encontró una clínica asociada</h2>
+        <p className="text-gray-500 mt-2">Primero tenés que registrar tu clínica.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -29,61 +187,163 @@ const ClinicPatientsPage = () => {
       </Helmet>
 
       <div className="space-y-6 p-6 max-w-7xl mx-auto">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pacientes</h1>
-          <p className="text-muted-foreground mt-1">
-            Gestión administrativa de los pacientes de tu clínica.
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Pacientes</h1>
+            <p className="text-muted-foreground mt-1">
+              Gestión administrativa · <strong>{clinic.name}</strong> ·{' '}
+              <span className="text-sm">{patients.length} paciente{patients.length !== 1 ? 's' : ''}</span>
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchData} disabled={refreshing} title="Refrescar">
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              onClick={() => toast({
+                title: 'Crear paciente — próximamente',
+                description: 'El formulario de alta desde la clínica se integrará en la próxima iteración. Por ahora, los dentistas crean pacientes desde su panel.',
+              })}
+              className="bg-primary"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo paciente
+            </Button>
+          </div>
+        </div>
+
+        {/* Nota legal admin-level */}
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
+          <Shield className="h-4 w-4 text-amber-700 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800">
+            Vista admin-level. Podés gestionar contacto y citas, pero las fichas clínicas detalladas son accesibles solo por el dentista tratante (Ley 20.584 art. 12).
           </p>
         </div>
 
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Users className="h-6 w-6 text-primary" />
-              Próximamente
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <p className="text-muted-foreground">
-              Desde esta sección vas a poder gestionar el listado de pacientes de tu clínica con funciones administrativas.
-            </p>
-
-            <div className="space-y-3">
-              <div>
-                <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2 mb-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  Qué vas a poder hacer
-                </h4>
-                <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
-                  <li>Ver listado completo de pacientes de la clínica</li>
-                  <li>Crear y editar información de contacto (nombre, email, teléfono)</li>
-                  <li>Agendar citas con cualquier dentista del equipo</li>
-                  <li>Filtrar por dentista asignado</li>
-                </ul>
+        {/* Filtros */}
+        <Card>
+          <CardContent className="pt-6 pb-4">
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por nombre o email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-
-              <div>
-                <h4 className="font-semibold text-sm text-gray-900 flex items-center gap-2 mb-2">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  Qué NO vas a poder hacer
-                </h4>
-                <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
-                  <li>Ver fichas clínicas detalladas, diagnósticos o tratamientos</li>
-                  <li>Ver odontograma, radiografías o notas del dentista</li>
-                </ul>
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 mt-4">
-                <Shield className="h-4 w-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800">
-                  <strong>Ley 20.584 art. 12:</strong> el acceso de personal no-sanitario a información clínica detallada requiere consent explícito del paciente. Como admin de la clínica, tu acceso está limitado a datos administrativos necesarios para la gestión.
-                </p>
+              <div className="w-full md:w-72">
+                <Select value={selectedDentist} onValueChange={setSelectedDentist}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filtrar por dentista" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los dentistas</SelectItem>
+                    {dentists.map(d => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.full_name || d.email}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="__none__">Sin dentista asignado</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <p className="text-xs text-muted-foreground italic pt-3 border-t">
-              Por ahora podés gestionar pacientes desde el perfil de cada dentista. Vista consolidada disponible en próxima versión.
-            </p>
+        {/* Tabla */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Paciente</TableHead>
+                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                    <TableHead className="hidden lg:table-cell">Dentista asignado</TableHead>
+                    <TableHead className="hidden lg:table-cell">Última cita</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPatients.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                        {patients.length === 0
+                          ? 'Aún no hay pacientes en la clínica.'
+                          : 'No se encontraron pacientes con los filtros aplicados.'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredPatients.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center">
+                              <Users className="h-4 w-4 text-slate-400" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-semibold">{p.full_name || 'Sin Nombre'}</div>
+                              <div className="text-xs text-muted-foreground md:hidden">{p.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="text-sm space-y-0.5">
+                            {p.email && (
+                              <div className="flex items-center gap-1 text-gray-700">
+                                <Mail className="h-3 w-3 text-gray-400" /> {p.email}
+                              </div>
+                            )}
+                            {p.phone && (
+                              <div className="flex items-center gap-1 text-gray-500 text-xs">
+                                <Phone className="h-3 w-3 text-gray-400" /> {p.phone}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-gray-600">
+                          {p.therapist?.full_name || <span className="italic text-gray-400">Sin asignar</span>}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-gray-600">
+                          {p.last_appointment_date
+                            ? format(new Date(p.last_appointment_date), "d MMM yyyy", { locale: es })
+                            : <span className="italic text-gray-400">—</span>}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={
+                              p.status === 'active'
+                                ? 'bg-green-100 text-green-700 border-0'
+                                : 'bg-gray-100 text-gray-700 border-0'
+                            }
+                          >
+                            {p.status === 'active' ? 'Activo' : (p.status || 'Inactivo')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toast({
+                              title: 'Agendar cita — próximamente',
+                              description: 'La integración con el formulario de citas llega en la próxima iteración.',
+                            })}
+                          >
+                            <CalendarPlus className="h-4 w-4 mr-1" />
+                            <span className="hidden sm:inline">Agendar</span>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
