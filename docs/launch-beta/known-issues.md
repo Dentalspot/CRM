@@ -82,12 +82,14 @@ Hay 2 implementaciones de activación con cupón 100%:
 
 ### Opciones
 
-#### Opción E1 — Redactar doc mínimo con IA (SIN abogado)
+#### Opción E1 — Redactar doc mínimo con IA (SIN abogado) ✅ TEMPLATE LISTO
 Armar template cubriendo Ley 20.584 + 21.719 con checklist estándar del sector. Insertarlo via admin UI o SQL. **Status="published"** con version=1. Ir refinando con abogado después.
 
 **Pros**: activa el sistema en 1-2h, permite launchar con compliance básica
 **Cons**: texto no validado legalmente, abogado podría cambiar todo después (users firmarían v1 → versión obsoleta al publicar v2)
 **Tiempo**: 1-2h redacción + 5min insert
+
+📄 **Template v1 listo en `docs/legal/consentimiento-clinico-v1.md`** — cubre secciones A-I (Ley 20.584 + 21.719 + ARCO + retención + transferencia internacional + Notiz opt-in + revocación). Incluye SQL INSERT copy-paste. Placeholders marcados para rellenar antes de sembrar.
 
 #### Opción E2 — Esperar redacción abogado ✅ recomendado para compliance real
 Contratar o consultar abogado chileno especializado en salud digital. Redactar el doc. Insertarlo.
