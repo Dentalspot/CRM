@@ -205,9 +205,11 @@ const Sidebar = ({ isOpen, onClose }) => {
           {
             section: 'General',
             items: [
-              { name: 'Dashboard', icon: Home, path: '/dashboard/clinic' },
-              { name: 'Mi Perfil Clínica', icon: Building2, path: '/dashboard/profile' },
-              { name: 'Gestión de Dentistas', icon: Users, path: '/dashboard/clinic/therapists' },
+              { name: 'Tablero principal', icon: Home, path: '/dashboard/clinic' },
+              { name: 'Mi clínica', icon: Building2, path: '/dashboard/profile' },
+              { name: 'Agendas', icon: Calendar, path: '/dashboard/clinic/agendas' },
+              { name: 'Pacientes', icon: Users, path: '/dashboard/clinic/patients' },
+              { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
               { name: 'Reportes', icon: BarChart, path: '/dashboard/clinic/reports' },
               { name: 'Membresía', icon: DollarSign, path: '/dashboard/membership' },
               { name: 'Asistente Virtual', icon: MessageSquare, path: '/dashboard/chatbot' },

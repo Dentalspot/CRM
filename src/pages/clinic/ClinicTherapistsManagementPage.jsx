@@ -58,8 +58,9 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-// Reuse existing modals
+// Reuse existing modals + new assistant modal
 import InviteTherapistModal from '@/components/clinic/InviteTherapistModal';
+import InviteAssistantModal from '@/components/clinic/InviteAssistantModal';
 import TherapistManagementModal from '@/components/clinic/TherapistManagementModal';
 import logger from '@/lib/utils/logger';
 
@@ -71,14 +72,17 @@ const ClinicTherapistsManagementPage = () => {
   
   // Data
   const [therapists, setTherapists] = useState([]);
-  const [invitations, setInvitations] = useState([]);
-  
+  const [assistants, setAssistants] = useState([]);
+  const [invitations, setInvitations] = useState([]); // all clinic_invitations rows (filtered by role en render)
+
   // Filtering
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeRole, setActiveRole] = useState('therapist'); // top-level tab: 'therapist' | 'assistant'
+  const [activeTab, setActiveTab] = useState('active'); // sub-tab per role: 'active' | 'invitations'
 
   // Modals state
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isInviteTherapistModalOpen, setIsInviteTherapistModalOpen] = useState(false);
+  const [isInviteAssistantModalOpen, setIsInviteAssistantModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
   
@@ -92,10 +96,10 @@ const ClinicTherapistsManagementPage = () => {
       setLoading(true);
       if (!user) return;
 
-      // 1. Get Clinic owned by user
+      // 1. Get Clinic owned by user (ahora con organization_id post spec 023)
       const { data: myClinic, error: clinicError } = await supabase
         .from('clinics')
-        .select('id, name')
+        .select('id, name, organization_id')
         .eq('therapist_id', user.id)
         .limit(1)
         .maybeSingle();
@@ -103,32 +107,77 @@ const ClinicTherapistsManagementPage = () => {
       if (clinicError) throw clinicError;
       setClinicInfo(myClinic);
 
-      if (myClinic) {
-        // 2. Fetch Active Therapists
-        const { data: ctData, error: ctError } = await supabase
-          .from('clinic_therapists')
+      if (!myClinic) {
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fetch Active Therapists (flow legacy via clinic_therapists)
+      const { data: ctData, error: ctError } = await supabase
+        .from('clinic_therapists')
+        .select(`
+          id,
+          therapist_id,
+          is_active,
+          joined_at,
+          profiles:therapist_id (
+            id,
+            full_name,
+            email,
+            phone,
+            therapist_branding (avatar_url)
+          )
+        `)
+        .eq('clinic_id', myClinic.id)
+        .eq('is_active', true);
+
+      if (ctError) throw ctError;
+      setTherapists(ctData || []);
+
+      // 3. Fetch Active Assistants (spec 023 — via organization_members)
+      if (myClinic.organization_id) {
+        const { data: omData, error: omError } = await supabase
+          .from('organization_members')
           .select(`
             id,
-            therapist_id,
+            user_id,
+            role,
             is_active,
             joined_at,
-            profiles:therapist_id (
+            profiles:user_id (
               id,
               full_name,
               email,
-              phone,
-              therapist_branding (avatar_url)
+              phone
             )
           `)
-          .eq('clinic_id', myClinic.id)
+          .eq('organization_id', myClinic.organization_id)
+          .eq('role', 'assistant')
           .eq('is_active', true);
 
-        if (ctError) throw ctError;
-        setTherapists(ctData || []);
+        if (omError) {
+          logger.warn('Error fetching assistants (non-fatal):', omError);
+          setAssistants([]);
+        } else {
+          setAssistants(omData || []);
+        }
+      } else {
+        setAssistants([]);
+        logger.warn('Clinic sin organization_id — asistentes no se pueden listar. Migración 20260423000002 pendiente?');
+      }
 
-        // 3. Invitations - Edge Function doesn't exist, skip silently
-        // TODO: implement invitation tracking table if needed
+      // 4. Fetch invitations (all roles, filter client-side)
+      const { data: invData, error: invError } = await supabase
+        .from('clinic_invitations')
+        .select('id, email, role, status, created_at, expires_at, existing_patient, message')
+        .eq('clinic_id', myClinic.id)
+        .order('created_at', { ascending: false });
+
+      if (invError) {
+        logger.warn('Error fetching invitations (non-fatal):', invError);
         setInvitations([]);
+      } else {
+        setInvitations(invData || []);
       }
     } catch (error) {
       logger.error("Error loading management data:", error);
@@ -148,45 +197,89 @@ const ClinicTherapistsManagementPage = () => {
 
   // --- Handlers ---
 
-  const handleResendInvite = async (invitation) => {
-    toast({ title: "No disponible", description: "Usa el botón 'Invitar Terapeuta' para agregar profesionales por email." });
+  const handleResendInvite = async (_invitation) => {
+    toast({ title: "No disponible", description: "Reenvío manual de invitaciones aún no implementado. Cancelá y crear una nueva." });
   };
 
   const handleCancelInvite = async (invitationId) => {
-    toast({ title: "No disponible", description: "Las invitaciones pendientes se gestionan desde el listado de terapeutas activos." });
+    setActionLoading(invitationId);
+    try {
+      const { data, error } = await supabase.functions.invoke('clinic-invitations', {
+        body: { action: 'cancel', invite_id: invitationId },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || 'No se pudo cancelar');
+      toast({ title: 'Invitación cancelada' });
+      fetchClinicData();
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error al cancelar', description: err.message });
+    } finally {
+      setActionLoading(null);
+    }
   };
 
-  const handleRemoveTherapist = (therapist) => {
-    setTherapistToRemove(therapist);
+  // Unified handler — funciona para dentistas (clinic_therapists) y asistentes (organization_members)
+  const handleRemove = (row, kind) => {
+    // kind: 'therapist' | 'assistant'
+    setTherapistToRemove({ ...row, _kind: kind });
     setIsRemoveDialogOpen(true);
   };
 
-  const confirmRemoveTherapist = async () => {
+  const confirmRemove = async () => {
     if (!therapistToRemove) return;
     try {
-        const { error } = await supabase
-            .from('clinic_therapists')
-            .update({ is_active: false })
-            .eq('id', therapistToRemove.id);
-            
-        if (error) throw error;
-        toast({ title: "Terapeuta desvinculado", description: "El acceso a la clínica ha sido revocado." });
-        setIsRemoveDialogOpen(false);
-        setTherapistToRemove(null);
-        fetchClinicData();
+      const kind = therapistToRemove._kind || 'therapist';
+      let error;
+      if (kind === 'assistant') {
+        // Soft delete en organization_members (spec 023 FR-032)
+        const { error: errOm } = await supabase
+          .from('organization_members')
+          .update({ is_active: false, deactivated_at: new Date().toISOString() })
+          .eq('id', therapistToRemove.id);
+        error = errOm;
+      } else {
+        // Legacy: clinic_therapists soft delete
+        const { error: errCt } = await supabase
+          .from('clinic_therapists')
+          .update({ is_active: false })
+          .eq('id', therapistToRemove.id);
+        error = errCt;
+      }
+
+      if (error) throw error;
+      toast({
+        title: kind === 'assistant' ? 'Asistente desvinculado' : 'Dentista desvinculado',
+        description: 'El acceso a la clínica ha sido revocado.',
+      });
+      setIsRemoveDialogOpen(false);
+      setTherapistToRemove(null);
+      fetchClinicData();
     } catch (error) {
-        toast({ variant: "destructive", title: "Error", description: error.message });
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
 
   // --- Render Helpers ---
 
-  const filteredTherapists = therapists.filter(t => 
-    t.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filterByTerm = (list) => list.filter(row =>
+    row.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    row.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const pendingInvitations = invitations.filter(i => i.status === 'pending');
+  const filteredTherapists = filterByTerm(therapists);
+  const filteredAssistants = filterByTerm(assistants);
+
+  // Split invitaciones por role (spec 023)
+  const pendingTherapistInvitations = invitations.filter(i =>
+    i.status === 'pending' && (i.role === 'therapist' || !i.role)
+  );
+  const pendingAssistantInvitations = invitations.filter(i =>
+    i.status === 'pending' && i.role === 'assistant'
+  );
+
+  // Invitación expirada visual helper
+  const isInvitationExpired = (inv) =>
+    inv.expires_at && new Date(inv.expires_at) < new Date();
 
   if (loading) {
     return (
@@ -208,43 +301,97 @@ const ClinicTherapistsManagementPage = () => {
     );
   }
 
-  return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Equipo</h1>
-          <p className="text-muted-foreground mt-1">
-            Administra los terapeutas de <strong>{clinicInfo.name}</strong> y sus accesos.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchClinicData} title="Refrescar">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button onClick={() => setIsInviteModalOpen(true)} className="bg-primary">
-            <Mail className="h-4 w-4 mr-2" />
-            Invitar Terapeuta
-          </Button>
-        </div>
-      </div>
+  // Helper render: una row activa (dentista o asistente) — generaliza avatar + nombre + email + fecha + acciones
+  const renderActiveRow = (row, kind) => {
+    const profile = row.profiles;
+    const avatarUrl = profile?.therapist_branding?.avatar_url;
+    return (
+      <TableRow key={row.id}>
+        <TableCell className="font-medium">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <Users className="h-4 w-4 text-slate-400" />
+              )}
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{profile?.full_name || 'Sin Nombre'}</div>
+              <div className="text-xs text-muted-foreground md:hidden">{profile?.email}</div>
+            </div>
+          </div>
+        </TableCell>
+        <TableCell className="hidden md:table-cell">{profile?.email}</TableCell>
+        <TableCell className="text-muted-foreground text-sm">
+          {format(new Date(row.joined_at || row.created_at || new Date()), "d MMM yyyy", { locale: es })}
+        </TableCell>
+        <TableCell>
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-0">Activo</Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menú</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+              {/* Ver/Editar disponible solo para dentistas (legacy TherapistManagementModal). Asistente queda sin editor en MVP. */}
+              {kind === 'therapist' && (
+                <>
+                  <DropdownMenuItem onClick={() => {
+                    setSelectedTherapist(row);
+                    setIsEditModalOpen(true);
+                  }}>
+                    Ver Detalles / Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                onClick={() => handleRemove(row, kind)}
+              >
+                <UserMinus className="mr-2 h-4 w-4" />
+                Desvincular
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    );
+  };
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+  // Helper render: sub-tabs (Activos / Invitaciones) — reutilizado por cada top-level tab
+  const renderRoleSection = ({
+    kind,
+    activeItems,
+    pendingItems,
+    emptyActiveText,
+    emptyPendingText,
+    onInviteClick,
+    emptyRoleLabel,
+  }) => (
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row justify-between gap-4">
             <TabsList className="w-full md:w-auto">
-                <TabsTrigger value="active">
-                  Activos
-                  <Badge variant="secondary" className="ml-2 bg-slate-100 text-slate-700">{therapists.length}</Badge>
-                </TabsTrigger>
-                <TabsTrigger value="invitations">
-                  Invitaciones
-                  {pendingInvitations.length > 0 && (
-                    <Badge variant="secondary" className="ml-2 bg-yellow-100 text-yellow-700">{pendingInvitations.length}</Badge>
-                  )}
-                </TabsTrigger>
+              <TabsTrigger value="active">
+                Activos
+                <Badge variant="secondary" className="ml-2 bg-slate-100 text-slate-700">{activeItems.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="invitations">
+                Invitaciones
+                {pendingItems.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 bg-yellow-100 text-yellow-700">{pendingItems.length}</Badge>
+                )}
+              </TabsTrigger>
             </TabsList>
-            
+
             {activeTab === 'active' && (
               <div className="relative w-full md:w-72">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
@@ -265,75 +412,21 @@ const ClinicTherapistsManagementPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Profesional</TableHead>
-                    <TableHead>Contacto</TableHead>
+                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
                     <TableHead>Fecha Ingreso</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTherapists.length === 0 ? (
+                  {activeItems.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                        No se encontraron terapeutas activos.
+                        {emptyActiveText}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredTherapists.map((ct) => (
-                      <TableRow key={ct.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border">
-                              {ct.profiles?.therapist_branding?.avatar_url ? (
-                                <img src={ct.profiles.therapist_branding.avatar_url} alt="" className="h-full w-full object-cover" />
-                              ) : (
-                                <Users className="h-4 w-4 text-slate-400" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="text-sm font-semibold">{ct.profiles?.full_name || 'Sin Nombre'}</div>
-                              <div className="text-xs text-muted-foreground md:hidden">{ct.profiles?.email}</div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">{ct.profiles?.email}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {format(new Date(ct.joined_at || ct.created_at || new Date()), "d MMM yyyy", { locale: es })}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-0">
-                            Activo
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Abrir menú</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => {
-                                setSelectedTherapist(ct);
-                                setIsEditModalOpen(true);
-                              }}>
-                                Ver Detalles / Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                                onClick={() => handleRemoveTherapist(ct)}
-                              >
-                                <UserMinus className="mr-2 h-4 w-4" />
-                                Desvincular
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    activeItems.map((row) => renderActiveRow(row, kind))
                   )}
                 </TableBody>
               </Table>
@@ -342,68 +435,149 @@ const ClinicTherapistsManagementPage = () => {
 
           <TabsContent value="invitations" className="mt-0">
             <div className="grid gap-4">
-              {pendingInvitations.length === 0 ? (
+              {pendingItems.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <Mail className="h-10 w-10 text-slate-300 mx-auto mb-2" />
-                  <p className="text-slate-500">No hay invitaciones pendientes.</p>
-                  <Button variant="link" onClick={() => setIsInviteModalOpen(true)} className="mt-2">
-                    Enviar una nueva invitación
+                  <p className="text-slate-500">{emptyPendingText}</p>
+                  <Button variant="link" onClick={onInviteClick} className="mt-2">
+                    Enviar una nueva invitación {emptyRoleLabel}
                   </Button>
                 </div>
               ) : (
-                pendingInvitations.map((inv) => (
-                  <div key={inv.id} className="flex flex-col sm:flex-row items-center justify-between p-4 border rounded-lg bg-white shadow-sm gap-4">
-                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                      <div className="h-10 w-10 rounded-full bg-yellow-50 flex items-center justify-center shrink-0">
-                        <Clock className="h-5 w-5 text-yellow-600" />
+                pendingItems.map((inv) => {
+                  const expired = isInvitationExpired(inv);
+                  return (
+                    <div key={inv.id} className={`flex flex-col sm:flex-row items-center justify-between p-4 border rounded-lg bg-white shadow-sm gap-4 ${expired ? 'opacity-60 border-red-200' : ''}`}>
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${expired ? 'bg-red-50' : 'bg-yellow-50'}`}>
+                          <Clock className={`h-5 w-5 ${expired ? 'text-red-600' : 'text-yellow-600'}`} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{inv.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Enviada el {format(new Date(inv.created_at), "d MMM yyyy, HH:mm", { locale: es })}
+                            {inv.expires_at && (
+                              <> · {expired ? 'Expirada' : `Expira ${format(new Date(inv.expires_at), "d MMM yyyy", { locale: es })}`}</>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{inv.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Enviada el {format(new Date(inv.created_at), "d MMM yyyy, HH:mm", { locale: es })}
-                        </p>
+
+                      <div className="flex gap-2 w-full sm:w-auto justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancelInvite(inv.id)}
+                          disabled={actionLoading === inv.id}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        >
+                          {actionLoading === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3 mr-1" />}
+                          Cancelar
+                        </Button>
                       </div>
                     </div>
-                    
-                    <div className="flex gap-2 w-full sm:w-auto justify-end">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleCancelInvite(inv.id)}
-                        disabled={actionLoading === inv.id}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                      >
-                        {actionLoading === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Ban className="h-3 w-3 mr-1" />}
-                        Cancelar
-                      </Button>
-                      <Button 
-                        variant="default" 
-                        size="sm"
-                        onClick={() => handleResendInvite(inv)}
-                        disabled={actionLoading === inv.id}
-                      >
-                        <Send className="h-3 w-3 mr-1" />
-                        Reenviar
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
-              
-              {/* History of processed invitations could go here if needed */}
             </div>
           </TabsContent>
         </CardContent>
       </Card>
+    </Tabs>
+  );
+
+  const handleInviteClick = () => {
+    if (activeRole === 'assistant') {
+      setIsInviteAssistantModalOpen(true);
+    } else {
+      setIsInviteTherapistModalOpen(true);
+    }
+  };
+
+  return (
+    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Personal</h1>
+          <p className="text-muted-foreground mt-1">
+            Administra dentistas y asistentes de <strong>{clinicInfo.name}</strong> y sus accesos.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchClinicData} title="Refrescar">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <Button onClick={handleInviteClick} className="bg-primary">
+            <Mail className="h-4 w-4 mr-2" />
+            {activeRole === 'assistant' ? 'Invitar Asistente' : 'Invitar Dentista'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Top-level tabs: Dentistas / Asistentes (spec 023) */}
+      <Tabs
+        value={activeRole}
+        onValueChange={(v) => {
+          setActiveRole(v);
+          setActiveTab('active');   // reset sub-tab al cambiar role
+          setSearchTerm('');        // reset búsqueda (el state es compartido)
+        }}
+      >
+        <TabsList className="grid w-full grid-cols-2 md:inline-flex md:w-auto">
+          <TabsTrigger value="therapist" className="gap-2">
+            <Users className="h-4 w-4" /> Dentistas
+            <Badge variant="secondary" className="ml-1">{therapists.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="assistant" className="gap-2">
+            <Shield className="h-4 w-4" /> Asistentes
+            <Badge variant="secondary" className="ml-1">{assistants.length}</Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="therapist" className="mt-4">
+          {renderRoleSection({
+            kind: 'therapist',
+            activeItems: filteredTherapists,
+            pendingItems: pendingTherapistInvitations,
+            emptyActiveText: 'No se encontraron dentistas activos.',
+            emptyPendingText: 'No hay invitaciones de dentistas pendientes.',
+            onInviteClick: () => setIsInviteTherapistModalOpen(true),
+            emptyRoleLabel: 'de dentista',
+          })}
+        </TabsContent>
+
+        <TabsContent value="assistant" className="mt-4">
+          {renderRoleSection({
+            kind: 'assistant',
+            activeItems: filteredAssistants,
+            pendingItems: pendingAssistantInvitations,
+            emptyActiveText: 'No hay asistentes activos. Invitá al primero desde el botón arriba.',
+            emptyPendingText: 'No hay invitaciones de asistente pendientes.',
+            onInviteClick: () => setIsInviteAssistantModalOpen(true),
+            emptyRoleLabel: 'de asistente',
+          })}
+        </TabsContent>
       </Tabs>
 
       {/* Modals */}
       <InviteTherapistModal
-        isOpen={isInviteModalOpen}
-        onClose={() => setIsInviteModalOpen(false)}
+        isOpen={isInviteTherapistModalOpen}
+        onClose={() => setIsInviteTherapistModalOpen(false)}
         clinicId={clinicInfo.id}
         onSuccess={() => {
           fetchClinicData();
+          setActiveRole('therapist');
+          setActiveTab('invitations');
+        }}
+      />
+
+      <InviteAssistantModal
+        isOpen={isInviteAssistantModalOpen}
+        onClose={() => setIsInviteAssistantModalOpen(false)}
+        clinicId={clinicInfo.id}
+        onSuccess={() => {
+          fetchClinicData();
+          setActiveRole('assistant');
           setActiveTab('invitations');
         }}
       />
@@ -420,15 +594,21 @@ const ClinicTherapistsManagementPage = () => {
       <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Desvincular terapeuta?</AlertDialogTitle>
+            <AlertDialogTitle>
+              ¿Desvincular {therapistToRemove?._kind === 'assistant' ? 'asistente' : 'dentista'}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción revocará el acceso de <strong>{therapistToRemove?.profiles?.full_name}</strong> a la información de la clínica.
-              El historial de citas se mantendrá, pero no podrá gestionar nuevos pacientes.
+              {therapistToRemove?._kind === 'assistant' ? (
+                <> El usuario mantendrá su cuenta en DentalSpot pero perderá acceso a la agenda y pacientes de esta clínica.</>
+              ) : (
+                <> El historial de citas se mantendrá, pero no podrá gestionar nuevos pacientes.</>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRemoveTherapist} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={confirmRemove} className="bg-red-600 hover:bg-red-700">
               Confirmar Desvinculación
             </AlertDialogAction>
           </AlertDialogFooter>

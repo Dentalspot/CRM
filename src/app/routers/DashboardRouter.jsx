@@ -92,6 +92,8 @@ const AssistantPatientsPage = lazy(() => import('@/features/assistant/pages/Assi
 const ClinicDashboardPage = lazy(() => import('@/features/clinic-dashboard/ClinicDashboardPageV2.jsx'));
 const ClinicTherapistsManagementPage = lazy(() => import('@/pages/clinic/ClinicTherapistsManagementPage.jsx'));
 const ClinicReportsPage = lazy(() => import('@/pages/clinic/ClinicReportsPage.jsx'));
+const ClinicAgendasPage = lazy(() => import('@/pages/clinic/ClinicAgendasPage.jsx'));
+const ClinicPatientsPage = lazy(() => import('@/pages/clinic/ClinicPatientsPage.jsx'));
 
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage.jsx'));
 
@@ -235,6 +237,8 @@ const DashboardRouter = () => {
             <Route index element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicDashboardPage /></RoleGuard>} />
             <Route path="therapists" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicTherapistsManagementPage /></RoleGuard>} />
             <Route path="reports" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicReportsPage /></RoleGuard>} />
+            <Route path="agendas" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicAgendasPage /></RoleGuard>} />
+            <Route path="patients" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicPatientsPage /></RoleGuard>} />
           </Route>
 
           {/* Shared Marketplace */}

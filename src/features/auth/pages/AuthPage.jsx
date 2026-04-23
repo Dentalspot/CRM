@@ -123,16 +123,29 @@ export default function AuthPage() {
   const [exitPopupShown, setExitPopupShown] = useState(false);
   const [searchParams] = useSearchParams();
 
+  // Spec 023 US2: si viene ?token= (invitación) → AuthForm maneja el post-auth
+  // (accept invitation + redirect a redirect_to del edge function). Skippeamos
+  // el auto-redirect a /dashboard para que no haga race con el accept flow.
+  const invitationToken = searchParams.get('token');
+  const initialEmail = searchParams.get('email');
+
   // Rol seleccionado (viene de query string, ej. /auth/login?role=therapist).
-  // Si el rol no es válido (no está en getPublicRoles), se ignora y mostramos
-  // el RolePicker. Esto permite que Admin / Lab no sean seleccionables via URL.
+  // Si el rol no es válido, se ignora y mostramos RolePicker.
+  //
+  // Contexto de validación (spec 023):
+  // - Sin invitationToken + register → 'register' context (excluye assistant,
+  //   porque asistente es invite-only en registro público)
+  // - Sin invitationToken + login → 'login' context (incluye todos los roles)
+  // - Con invitationToken → 'login' context (aunque sea register, el token valida
+  //   que la invitación para rol asistente es legítima; viene de email link real).
   const roleParam = searchParams.get('role');
-  const validRoles = getPublicRoles(isLogin ? 'login' : 'register').map((r) => r.value);
+  const validationContext = (invitationToken || isLogin) ? 'login' : 'register';
+  const validRoles = getPublicRoles(validationContext).map((r) => r.value);
   const selectedRole = validRoles.includes(roleParam) ? roleParam : null;
 
   useEffect(() => {
-    if (user) navigate('/dashboard', { replace: true });
-  }, [user, navigate]);
+    if (user && !invitationToken) navigate('/dashboard', { replace: true });
+  }, [user, navigate, invitationToken]);
 
   useEffect(() => {
     if (user) {
@@ -206,7 +219,12 @@ export default function AuthPage() {
             >
               <ArrowLeft className="w-4 h-4" /> Cambiar tipo de cuenta
             </button>
-            <AuthForm isLogin={true} initialRole={selectedRole} />
+            <AuthForm
+              isLogin={true}
+              initialRole={selectedRole}
+              invitationToken={invitationToken}
+              initialEmail={initialEmail}
+            />
           </div>
         </div>
       </>
@@ -367,7 +385,12 @@ export default function AuthPage() {
                 <ArrowLeft className="w-4 h-4" /> Cambiar tipo de cuenta
               </button>
               <div className="bg-white rounded-2xl border shadow-lg p-1">
-                <AuthForm isLogin={false} initialRole={selectedRole} />
+                <AuthForm
+                  isLogin={false}
+                  initialRole={selectedRole}
+                  invitationToken={invitationToken}
+                  initialEmail={initialEmail}
+                />
               </div>
 
               <p className="text-xs text-gray-400 text-center mt-4 max-w-sm mx-auto">
