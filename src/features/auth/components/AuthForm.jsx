@@ -68,7 +68,11 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
   const [discountStatus, setDiscountStatus] = useState('none'); // none, loading, valid, invalid
   const [discountInfo, setDiscountInfo] = useState(null);
 
-  const availableRoles = getPublicRoles(isLogin ? 'login' : 'register');
+  // Spec 023 US2: si hay invitationToken, el rol viene validado desde el
+  // edge function (no es URL-hack). Usar contexto 'login' (incluye assistant)
+  // para que el badge de rol pueda mostrar "Asistente" correctamente en register
+  // coming from an invitation.
+  const availableRoles = getPublicRoles((invitationToken || isLogin) ? 'login' : 'register');
 
   useEffect(() => {
     const validateInvite = async () => {
