@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthForm from '@/features/auth/components/AuthForm';
+import RolePicker from '@/features/auth/components/RolePicker';
+import { getPublicRoles } from '@/constants/roles';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMetaTracking } from '@/hooks/useMetaTracking';
-import { CheckCircle, Users, Calendar, Shield, Star, X, Gift } from 'lucide-react';
+import { CheckCircle, Users, Calendar, Shield, Star, X, Gift, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const BENEFITS = [
@@ -76,6 +78,14 @@ export default function AuthPage() {
   const { trackEvent } = useMetaTracking();
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [exitPopupShown, setExitPopupShown] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  // Rol seleccionado (viene de query string, ej. /auth/login?role=therapist).
+  // Si el rol no es válido (no está en getPublicRoles), se ignora y mostramos
+  // el RolePicker. Esto permite que Admin / Lab no sean seleccionables via URL.
+  const roleParam = searchParams.get('role');
+  const validRoles = getPublicRoles().map((r) => r.value);
+  const selectedRole = validRoles.includes(roleParam) ? roleParam : null;
 
   useEffect(() => {
     if (user) navigate('/dashboard', { replace: true });
@@ -119,6 +129,20 @@ export default function AuthPage() {
 
   if (authLoading || user) return null;
 
+  // Step 1 — Si no hay rol válido seleccionado, mostrar RolePicker.
+  // Vale para login y register.
+  if (!selectedRole) {
+    return (
+      <>
+        <Helmet>
+          <title>{isLogin ? 'Iniciar Sesión' : 'Crear cuenta'} | DentalSpot</title>
+        </Helmet>
+        <RolePicker isLogin={isLogin} />
+      </>
+    );
+  }
+
+  // Step 2 — Rol seleccionado: mostrar el AuthForm.
   // Login: simple centered layout
   if (isLogin) {
     return (
@@ -127,7 +151,16 @@ export default function AuthPage() {
           <title>Iniciar Sesión | DentalSpot</title>
         </Helmet>
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-pink-100 to-teal-100 p-4">
-          <AuthForm isLogin={true} />
+          <div className="w-full max-w-md">
+            <button
+              type="button"
+              onClick={() => navigate('/auth/login')}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
+            >
+              <ArrowLeft className="w-4 h-4" /> Cambiar tipo de cuenta
+            </button>
+            <AuthForm isLogin={true} initialRole={selectedRole} />
+          </div>
         </div>
       </>
     );
@@ -218,8 +251,15 @@ export default function AuthPage() {
 
             {/* Right: Registration form */}
             <div className="lg:pl-8">
+              <button
+                type="button"
+                onClick={() => navigate('/auth/register')}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3"
+              >
+                <ArrowLeft className="w-4 h-4" /> Cambiar tipo de cuenta
+              </button>
               <div className="bg-white rounded-2xl border shadow-lg p-1">
-                <AuthForm isLogin={false} />
+                <AuthForm isLogin={false} initialRole={selectedRole} />
               </div>
 
               <p className="text-xs text-gray-400 text-center mt-4 max-w-sm mx-auto">

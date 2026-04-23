@@ -16,25 +16,34 @@ export const ROLE_LABELS = {
   [USER_ROLES.ASSISTANT]: 'Asistente'
 };
 
+// Roles visibles en el selector público de signup/login.
+// ADMIN y LAB quedan fuera del selector (ADMIN se asigna internamente,
+// LAB diferido — ver docs/product/feature-backlog.md).
+// ASSISTANT está en el selector pero su UX completa está a medio
+// construir (rol real se deriva de organization_members, ver backlog).
 export const getPublicRoles = () => [
   {
     value: USER_ROLES.PATIENT,
     label: ROLE_LABELS[USER_ROLES.PATIENT],
-    description: 'Busco atención odontológica para mí o un familiar'
+    description: 'Busco atención dental para mí o un familiar',
+    icon: '👤',
   },
   {
     value: USER_ROLES.THERAPIST,
     label: ROLE_LABELS[USER_ROLES.THERAPIST],
-    description: 'Soy odontólogo/a y quiero gestionar mis pacientes'
+    description: 'Soy dentista y quiero gestionar mis pacientes',
+    icon: '🦷',
   },
   {
     value: USER_ROLES.CLINIC,
     label: ROLE_LABELS[USER_ROLES.CLINIC],
-    description: 'Gestiono un centro médico o clínica dental'
+    description: 'Administro un centro o clínica dental',
+    icon: '🏥',
   },
   {
-    value: USER_ROLES.LAB,
-    label: ROLE_LABELS[USER_ROLES.LAB],
-    description: 'Soy laboratorio dental o de radiología'
+    value: USER_ROLES.ASSISTANT,
+    label: ROLE_LABELS[USER_ROLES.ASSISTANT],
+    description: 'Colaboro en la coordinación de una clínica',
+    icon: '🧑‍💼',
   }
 ];

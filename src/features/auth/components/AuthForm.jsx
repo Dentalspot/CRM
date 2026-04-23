@@ -18,7 +18,7 @@ import { isValidPassword } from '@/lib/utils/validators';
 import logger from '@/lib/utils/logger';
 import { supabase } from '@/lib/supabaseClient';
 
-const AuthForm = ({ isLogin }) => {
+const AuthForm = ({ isLogin, initialRole = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, signInWithGoogle } = useAuth();
@@ -33,7 +33,8 @@ const AuthForm = ({ isLogin }) => {
     email: '',
     password: '',
     fullName: '',
-    role: 'patient',
+    // Si initialRole viene del RolePicker, usarlo como default. Si no, patient.
+    role: initialRole || 'patient',
     rut: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -539,7 +540,27 @@ const AuthForm = ({ isLogin }) => {
             )}
           </div>
 
-          {!isLogin && (
+          {/*
+            Dropdown de rol:
+            - Si initialRole viene del RolePicker (step 1 del AuthPage), no mostramos el dropdown
+              porque el usuario ya eligió — mostramos un badge de confirmación.
+            - Si NO viene (caso legacy: entrar directo al form sin pasar por RolePicker),
+              mostramos el dropdown normal.
+          */}
+          {!isLogin && initialRole && (
+            <div className="space-y-2">
+              <Label>Tipo de Cuenta</Label>
+              <div className="flex items-center gap-2 rounded-md border bg-teal-50 border-teal-200 px-3 py-2 text-sm">
+                <span className="font-semibold text-teal-800">
+                  {availableRoles.find((r) => r.value === formData.role)?.label || 'Usuario'}
+                </span>
+                <span className="text-xs text-teal-600">
+                  — {availableRoles.find((r) => r.value === formData.role)?.description}
+                </span>
+              </div>
+            </div>
+          )}
+          {!isLogin && !initialRole && (
             <div className="space-y-2">
               <Label htmlFor="role">Tipo de Cuenta *</Label>
               <Select

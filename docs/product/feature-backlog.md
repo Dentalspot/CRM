@@ -80,6 +80,50 @@ Plataforma donde dentistas:
 
 ---
 
+## 🟡 Asistente — Login + Dashboard completo
+
+**Estado**: Selector de signup sí lo muestra (2026-04-23) · Implementación backend incompleta · **Intención**: ALTA
+
+### Qué es
+Rol "Asistente" dentro de una clínica: persona que no es dentista pero ayuda con agenda, recepción, recordatorios a pacientes, etc. Puede ver pacientes de la clínica, agendar citas, pero no tocar ficha clínica propiamente.
+
+### Estado actual (2026-04-23)
+- ✅ Rol definido en `src/constants/roles.js` → `USER_ROLES.ASSISTANT`
+- ✅ Aparece en `getPublicRoles()` → visible en RolePicker del signup
+- ✅ Dashboard existe: `src/features/assistant/pages/AssistantDashboard` + `AssistantAgendaPage` + `AssistantPatientsPage`
+- ✅ Rutas configuradas: `/dashboard/assistant/*` protegidas por `<AuthGuard>` (solo "está logueado")
+- ✅ `getDashboardPathByRole('assistant')` → routea a `/dashboard/assistant`
+- ❌ **Gap crítico**: el rol real del asistente se determina por `organization_members` (tabla de membresías clínica), NO por `profiles.role='assistant'`. Ver comentario en `roles.js:7` → `"Rol operativo determinado por organization_members, no por profiles.role"`
+- ❌ Flow de invitación asistente → unirse a clínica específica: no implementado
+
+### Implicación de estado actual
+Si un usuario se registra como "Asistente" desde el RolePicker:
+- `profile.role` se setea como `'assistant'`
+- Post-login va a `/dashboard/assistant` (por getDashboardPathByRole)
+- Pero NO está asociado a ninguna clínica (no hay row en `organization_members`)
+- `AssistantDashboard` probablemente muestra estado vacío o error
+
+### Plan de activación (spec futura `assistant-onboarding-v1`)
+1. Definir flow de invitación:
+   - Clínica (owner) manda invitación a email
+   - Asistente recibe link, se registra con rol asistente
+   - Al registrarse, se crea row en `organization_members` con `role='assistant'` y la clínica correcta
+2. `AssistantDashboard`: query de la clínica asociada via `organization_members`, mostrar agenda de esa clínica + pacientes
+3. Permisos RLS: policies que dejen al asistente READ de pacientes de su clínica pero NOT WRITE de ficha clínica
+4. UI de gestión: clínica ve lista de asistentes, puede revocar acceso
+
+### Workaround pre-activación (para testing ahora)
+Al registrar un asistente test:
+1. Signup normal con rol "asistente" → `profile.role='assistant'`
+2. Después, **manualmente via SQL**, crear row en `organization_members`:
+```sql
+INSERT INTO organization_members (user_id, organization_id, role, is_active)
+VALUES ('<uuid-asistente>', '<uuid-clinica-existente>', 'assistant', true);
+```
+3. Al login debería ver el dashboard con data de esa clínica
+
+---
+
 ## 🟢 Cobros Paciente → Dentista via Plataforma
 
 **Estado**: Diferido, decisión explícita 2026-04-22 · **Intención**: Por definir post-beta
