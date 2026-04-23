@@ -108,6 +108,8 @@ WHERE therapist_id = '<UUID>';
 - [ ] Sistema crea sub directo (NO redirect a MercadoPago)
 - [ ] DB: sub `active`, `plan_name='individual'`, `payment_status='approved'`, `price=0`
 
+> ⚠️ **Nota audit 2026-04-22 PM**: este flow usa `activateFreeCouponPlan` (client Path A) que crea sub con `cancel_at_period_end=true`. El flag **no se respeta automáticamente** (no hay cron). Ver `known-issues.md` para detalle + workarounds. Para el beta recomendamos **Opción A** de known-issues: correr UPDATE manual al mes 3.
+
 Query de verificación:
 ```sql
 SELECT therapist_id, plan_name, status, price, discount_percent,

@@ -1,8 +1,10 @@
 # Launch beta — DentalSpot
 
-**Estado actual**: 🟡 **PRE-LAUNCH** — preparado, pendiente ejecución del preflight + definir canal comunicación.
+**Estado actual**: 🟡 **PRE-LAUNCH con blocker técnico conocido** — preparado, pendiente ejecución del preflight + definir canal comunicación + **decidir workaround de `known-issues.md`**.
 
-**Scope beta**: 5-10 dentistas usando cupón `BETA-3M-2026` (100% off, 3 meses de renovación). Ventana: 180 días desde 2026-04-22 (expira ~2026-10-19). Primeros 30 usos permitidos.
+**⚠️ ANTES DE INVITAR**: leé `known-issues.md`. El cupón `BETA-3M-2026` tiene 2 bugs críticos en renewal/expiration flow (detectados audit 2026-04-22 PM). Hay 3 opciones de workaround — la **Opción A** permite launchar hoy con riesgo aceptado (N≤10 trusted dentistas).
+
+**Scope beta**: 5-10 dentistas usando cupón `BETA-3M-2026` (100% off, 3 meses de renovación en design intent). Ventana cupón: 180 días desde 2026-04-22 (expira ~2026-10-19). Primeros 30 usos permitidos.
 
 ---
 
@@ -10,9 +12,10 @@
 
 Orden recomendado:
 
-1. **`checklist-preflight.md`** — [TÚ, antes de invitar] Marcá los ~25 items antes de mandar la primera invitación. Detecta fallos conocidos antes de que los encuentre un dentista.
-2. **`onboarding-dentista.md`** — [Dentista, al invitar] 1-pager enviable por WhatsApp/email. Explica qué es DentalSpot, el beta, y los 3 pasos para arrancar.
-3. **`metrics-manual.md`** — [TÚ, cadencia semanal] Queries SQL copy-paste para saber si el beta está funcionando (subs activas, signups, errores).
+1. **`known-issues.md`** — [TÚ, leer PRIMERO] 2 blockers críticos identificados en el audit del 2026-04-22 PM + 3 workarounds propuestos. Decisión bloqueante antes de seguir.
+2. **`checklist-preflight.md`** — [TÚ, antes de invitar] Marcá los ~25 items antes de mandar la primera invitación. Detecta fallos conocidos antes de que los encuentre un dentista.
+3. **`onboarding-dentista.md`** — [Dentista, al invitar] 1-pager enviable por WhatsApp/email. Explica qué es DentalSpot, el beta, y los 3 pasos para arrancar.
+4. **`metrics-manual.md`** — [TÚ, cadencia semanal] Queries SQL copy-paste para saber si el beta está funcionando (subs activas, signups, errores).
 
 ---
 
