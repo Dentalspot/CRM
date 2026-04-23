@@ -57,6 +57,63 @@ Hay 2 implementaciones de activación con cupón 100%:
 
 ---
 
+## 🔴 BLOQUEANTE 5 — Documento de consent clínico NO existe en DB (CONFIRMADO 2026-04-22)
+
+**Verificado en prod**: `SELECT * FROM legal_documents WHERE slug='consentimiento-clinico'` retorna **0 filas**.
+
+**Qué pasa**: el sistema de consent (Ley 20.584) está técnicamente implementado — hook `useClinicalConsent`, gate `ClinicalConsentGate`, RPC `get_patient_consent_status`, tabla `legal_signatures` — pero **no hay documento para firmar**. Sin doc, el código hace early return `setHasSigned(true)` → **todos pasan sin firmar**.
+
+**Root cause**: ninguna migración siembra el row inicial. Se espera que se cree via admin UI (`DocumentDetailPage.jsx`) o SQL manual. Al parecer nunca se hizo.
+
+**Archivos relevantes**:
+- `src/hooks/useClinicalConsent.js:26-30` — early return cuando no hay doc
+- `src/features/admin/modules/legal/pages/DocumentDetailPage.jsx` — admin UI para crear
+- `supabase/schema.sql:5513` — RPC `get_patient_consent_status`
+
+**Implicación compliance**:
+- **Ley 20.584 Chile** (derechos del paciente en salud) exige consentimiento informado antes de iniciar tratamiento. Hoy ningún paciente lo firma.
+- **Ley 21.719** (datos personales) exige consent para tratamiento de datos. Misma situación.
+- El sistema DEL CÓDIGO está OK. Falta CONTENIDO.
+
+**Riesgo si lanzás así**:
+- Técnico: ninguno — la app funciona
+- Legal: alto — operando sin base legal de consent
+- Reputacional: bajo para beta N≤10 trusted, alto para scale
+
+### Opciones
+
+#### Opción E1 — Redactar doc mínimo con IA (SIN abogado)
+Armar template cubriendo Ley 20.584 + 21.719 con checklist estándar del sector. Insertarlo via admin UI o SQL. **Status="published"** con version=1. Ir refinando con abogado después.
+
+**Pros**: activa el sistema en 1-2h, permite launchar con compliance básica
+**Cons**: texto no validado legalmente, abogado podría cambiar todo después (users firmarían v1 → versión obsoleta al publicar v2)
+**Tiempo**: 1-2h redacción + 5min insert
+
+#### Opción E2 — Esperar redacción abogado ✅ recomendado para compliance real
+Contratar o consultar abogado chileno especializado en salud digital. Redactar el doc. Insertarlo.
+
+**Pros**: texto sólido, base legal real, no hay que reemplazar después
+**Cons**: tarda 1-2 semanas, bloquea launch beta
+**Tiempo**: 1-2 sem trámites
+
+#### Opción E3 — Launchar beta sin consent activado (riesgo aceptado)
+Igual que los otros bloqueantes: beta N≤10 dentistas trusted, riesgo de que algún paciente use sus derechos ARCO y descubra que no firmó nada → reclamo al SERNAC o demanda.
+
+**Pros**: 0 tiempo
+**Cons**: probablemente ilegal operar así. Responsabilidad legal personal del founder.
+
+### Recomendación
+
+**Opción E1 HOY** + **E2 en paralelo**:
+- Generás template con IA (incluyéndome) que cubra: Ley 20.584 (tratamiento), Ley 21.719 (datos), derechos ARCO, retención, transferencia internacional, Notiz opt-in
+- Activa el sistema para beta
+- En paralelo, abogado redacta v2 "real"
+- Cuando v2 esté listo, aumentás `version` en DB → firmas v1 dejan de contar, users firman nuevamente
+
+Para activar el tracking desde hoy con algo de base legal, es la opción pragmática.
+
+---
+
 ## 🟡 Issue 4 — RPC no valida expiración
 
 El RPC `check_plan_limit` usa:

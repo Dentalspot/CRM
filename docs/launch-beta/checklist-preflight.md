@@ -102,6 +102,25 @@ WHERE therapist_id = '<UUID>';
 - [ ] Abrir `InviteTherapistModal` de una clínica propia
 - [ ] Invitar a otro dentista (con cuenta existente) → `UpgradeModal` "Desbloquea más dentistas" (required=professional)
 
+### 3.0 — 🔴 BLOQUEANTE LEGAL — Documento de consent clínico publicado
+- [ ] Query retorna ≥1 fila con `status='published'`:
+```sql
+SELECT id, slug, version, status, published_at
+FROM legal_documents
+WHERE slug = 'consentimiento-clinico' AND status = 'published'
+ORDER BY version DESC LIMIT 1;
+```
+
+**Si 0 filas**: ⛔ **NO INVITAR DENTISTAS**. El sistema de consent (Ley 20.584) está desactivado sin doc publicado. Ver `known-issues.md §BLOQUEANTE 5` para opciones (E1/E2/E3).
+
+**Si ≥1 fila**: validar manualmente que el contenido cubre:
+- [ ] Ley 20.584 (consentimiento informado médico)
+- [ ] Ley 21.719 (tratamiento de datos personales)
+- [ ] Derechos ARCO
+- [ ] Retención post-cancelación
+- [ ] Transferencia internacional (Supabase AWS East US)
+- [ ] Opt-in opcional para features que graben audio (Notiz)
+
 ### 3.4 — Cupón 100% bypass MP funciona
 - [ ] Dentista Free elige plan Individual
 - [ ] Aplica cupón `BETA-3M-2026`
