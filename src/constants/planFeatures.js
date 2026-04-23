@@ -6,42 +6,50 @@
  */
 
 // ============================================
-// PLAN IDENTIFIERS
+// PLAN IDENTIFIERS (spec 022 — 2026-04-22 update)
 // ============================================
 export const PLAN_NAMES = {
-  FREE: 'free', // DEPRECADO en DentalSpot — no se muestra en UI pero se mantiene para compatibilidad
+  FREE: 'free', // spec 022: AHORA se muestra en UI con límites 5 pacientes / 15 citas mes
   INDIVIDUAL: 'individual',
-  PROFESSIONAL: 'profesional',
-  CENTER: 'centro',
+  CLINIC_PRO: 'clinic_pro',  // spec 022: nuevo slug (reemplaza PROFESSIONAL)
+  CLINIC_PREMIUM: 'clinic_premium',  // spec 022: nuevo slug (reemplaza CENTER)
+  // Legacy slugs preservados para backward compatibility con código que aún los referencia
+  PROFESSIONAL: 'profesional', // DEPRECADO post-spec 022 — desactivado en DB
+  CENTER: 'centro', // DEPRECADO post-spec 022
 };
 
 /**
- * Planes visibles en la UI (excluye FREE)
- * Usar esto en PricingPage, MembershipPlansPage, etc.
+ * Planes visibles en la UI — spec 022 tier model (4 planes)
+ * Free ahora sí se muestra (con límites) como entry-level del funnel.
  */
-export const VISIBLE_PLAN_NAMES = ['individual', 'profesional', 'centro'];
+export const VISIBLE_PLAN_NAMES = ['free', 'individual', 'clinic_pro', 'clinic_premium'];
 
 // ============================================
 // ADD-ONS
 // ============================================
 export const ADD_ON_PIE = "pie_escolar";
 
-// Orden jerárquico (para comparaciones)
+// Orden jerárquico (para comparaciones) — spec 022
 export const PLAN_HIERARCHY = {
   [PLAN_NAMES.FREE]: 0,
   [PLAN_NAMES.INDIVIDUAL]: 1,
+  [PLAN_NAMES.CLINIC_PRO]: 2,
+  [PLAN_NAMES.CLINIC_PREMIUM]: 3,
+  // Legacy aliases para backward compat
   [PLAN_NAMES.PROFESSIONAL]: 2,
   [PLAN_NAMES.CENTER]: 3,
 };
 
 // ============================================
-// PRICING
+// PRICING (spec 022 — valores oficiales DentalSpot pre-launch)
+// Fuente de verdad real: DB subscription_plans. Estos constants son fallback + UI hints.
+// Anual = mensual × 12 × 0.85 (15% descuento, spec 022 annual_discount_percent)
 // ============================================
 export const PLAN_PRICING = {
   [PLAN_NAMES.FREE]: {
     id: 'free',
-    name: 'Gratis',
-    subtitle: 'Empieza',
+    name: 'Free',
+    subtitle: 'Empezá sin fricción',
     priceCLP: 0,
     priceUSD: 0,
     priceCLPYearly: 0,
@@ -52,65 +60,111 @@ export const PLAN_PRICING = {
   [PLAN_NAMES.INDIVIDUAL]: {
     id: 'individual',
     name: 'Individual',
-    subtitle: 'Organízate',
-    priceCLP: 25778,
-    priceUSD: 29,
-    priceCLPYearly: 257780, // 10 meses (2 gratis)
-    priceUSDYearly: 290,
+    subtitle: 'Dentista solo',
+    priceCLP: 14990,
+    priceUSD: 17,
+    priceCLPYearly: 152898, // 14990 × 12 × 0.85
+    priceUSDYearly: 173,
     color: 'blue',
     popular: false,
   },
-  [PLAN_NAMES.PROFESSIONAL]: {
-    id: 'profesional',
-    name: 'Profesional',
-    subtitle: 'Destaca',
-    priceCLP: 52556,
-    priceUSD: 59,
-    priceCLPYearly: 525560,
-    priceUSDYearly: 590,
+  [PLAN_NAMES.CLINIC_PRO]: {
+    id: 'clinic_pro',
+    name: 'Clínica Pro',
+    subtitle: 'Clínica con equipo',
+    priceCLP: 24990,
+    priceUSD: 28,
+    priceCLPYearly: 254898, // 24990 × 12 × 0.85
+    priceUSDYearly: 289,
     color: 'pink',
     popular: true,
   },
+  [PLAN_NAMES.CLINIC_PREMIUM]: {
+    id: 'clinic_premium',
+    name: 'Clínica Premium',
+    subtitle: 'Sin límites',
+    priceCLP: 39990,
+    priceUSD: 45,
+    priceCLPYearly: 407898, // 39990 × 12 × 0.85
+    priceUSDYearly: 459,
+    color: 'teal',
+    popular: false,
+  },
+  // Legacy aliases para backward compat con código que todavía referencia los slugs viejos
+  [PLAN_NAMES.PROFESSIONAL]: {
+    id: 'profesional',
+    name: 'Profesional (legacy)',
+    subtitle: 'Deprecado — ver Clínica Pro',
+    priceCLP: 24990,
+    priceUSD: 28,
+    priceCLPYearly: 254898,
+    priceUSDYearly: 289,
+    color: 'pink',
+    popular: false,
+  },
   [PLAN_NAMES.CENTER]: {
     id: 'centro',
-    name: 'Centro de Salud',
-    subtitle: 'Lidera',
-    priceCLP: 88222,
-    priceUSD: 99,
-    priceCLPYearly: 882220,
-    priceUSDYearly: 990,
+    name: 'Centro (legacy)',
+    subtitle: 'Deprecado — ver Clínica Premium',
+    priceCLP: 39990,
+    priceUSD: 45,
+    priceCLPYearly: 407898,
+    priceUSDYearly: 459,
     color: 'teal',
     popular: false,
   },
 };
 
 // ============================================
-// LIMITS
+// LIMITS (spec 022 — tier model)
+// maxDentists + maxBoxes nuevos campos
+// Source of truth real: DB subscription_plans.max_dentists/max_boxes/patient_limit/appointment_limit
 // ============================================
 export const PLAN_LIMITS = {
   [PLAN_NAMES.FREE]: {
     maxPatients: 5,
+    maxAppointmentsMonth: 15,  // spec 022
+    maxDentists: 1,  // spec 022
+    maxBoxes: 0,  // spec 022 (enforcement diferido)
     maxUsers: 1,
     maxClinics: 1,
     maxStorageMB: 500,
   },
   [PLAN_NAMES.INDIVIDUAL]: {
-    maxPatients: 30,
+    maxPatients: Infinity,  // spec 022
+    maxAppointmentsMonth: Infinity,
+    maxDentists: 1,
+    maxBoxes: 1,
     maxUsers: 1,
     maxClinics: 1,
     maxStorageMB: 2000,
   },
-  [PLAN_NAMES.PROFESSIONAL]: {
+  [PLAN_NAMES.CLINIC_PRO]: {
     maxPatients: Infinity,
-    maxUsers: 2,
-    maxClinics: 5,
+    maxAppointmentsMonth: Infinity,
+    maxDentists: 5,
+    maxBoxes: 3,
+    maxUsers: 5,
+    maxClinics: 1,
     maxStorageMB: 10000,
   },
-  [PLAN_NAMES.CENTER]: {
+  [PLAN_NAMES.CLINIC_PREMIUM]: {
     maxPatients: Infinity,
-    maxUsers: 5,
+    maxAppointmentsMonth: Infinity,
+    maxDentists: Infinity,
+    maxBoxes: Infinity,
+    maxUsers: Infinity,
     maxClinics: Infinity,
     maxStorageMB: 50000,
+  },
+  // Legacy aliases
+  [PLAN_NAMES.PROFESSIONAL]: {
+    maxPatients: Infinity, maxAppointmentsMonth: Infinity, maxDentists: 5, maxBoxes: 3,
+    maxUsers: 2, maxClinics: 5, maxStorageMB: 10000,
+  },
+  [PLAN_NAMES.CENTER]: {
+    maxPatients: Infinity, maxAppointmentsMonth: Infinity, maxDentists: Infinity, maxBoxes: Infinity,
+    maxUsers: 5, maxClinics: Infinity, maxStorageMB: 50000,
   },
 };
 

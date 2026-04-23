@@ -202,11 +202,25 @@ const MembershipPlansPage = () => {
           fullName: profile?.full_name || user.email,
           clinic_id: clinicData?.clinicId || null,
           discount_percent: discount?.discount || 0,
-          final_price: priceAfterCoupon,
+          final_price: priceAfterCoupon,  // F-014: ignorado server-side
           original_price: planPricing.priceCLP,
           coupon_id: couponApplied?.id || null,
           coupon_code: couponApplied?.code || null,
+          // Spec 022: pasar billing_cycle según toggle UI isYearly
+          billing_cycle: isYearly ? 'annual' : 'monthly',
         });
+
+        // Spec 022: si el edge function retornó bypass_mp=true (cupón 100%),
+        // la sub ya está activa sin MP checkout. Recargar data + show success.
+        if (result?.bypass_mp) {
+          toast({
+            title: 'Suscripción activada',
+            description: result.message || 'Tu plan está activo sin cobro (cupón 100%).',
+          });
+          await loadData();
+          setProcessingPlan(null);
+          return;
+        }
 
         // Increment coupon usage
         if (couponApplied && result.success) {
@@ -266,7 +280,8 @@ const MembershipPlansPage = () => {
   }
 
   const currentPlan = subscription?.plan_name || PLAN_NAMES.FREE;
-  const upgradePlans = [PLAN_NAMES.INDIVIDUAL, PLAN_NAMES.PROFESSIONAL, PLAN_NAMES.CENTER];
+  // Spec 022: 3 planes pagos del tier model (Free se muestra aparte en el header current plan)
+  const upgradePlans = [PLAN_NAMES.INDIVIDUAL, PLAN_NAMES.CLINIC_PRO, PLAN_NAMES.CLINIC_PREMIUM];
 
   return (
     <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
@@ -313,7 +328,7 @@ const MembershipPlansPage = () => {
               <span className={cn("text-sm font-medium px-4 py-2 rounded-full transition-all", isYearly ? "bg-white text-gray-900 shadow-sm" : "text-gray-500")}>
                 Anual
               </span>
-              {isYearly && <Badge className="bg-green-100 text-green-700 border-0">2 meses gratis</Badge>}
+              {isYearly && <Badge className="bg-green-100 text-green-700 border-0">15% descuento</Badge>}
             </div>
           </div>
 

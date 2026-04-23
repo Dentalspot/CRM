@@ -212,8 +212,10 @@ export const subscribeToPlan = async (userId, planDetails) => {
         therapist_id: userId,
         payer_email: planDetails.email,
         payer_name: planDetails.fullName || planDetails.name || planDetails.email,
-        final_price: planDetails.final_price || null,
+        final_price: planDetails.final_price || null,  // F-014: ignorado server-side
         coupon_code: planDetails.coupon_code || null,
+        // Spec 022: billing_cycle 'monthly' | 'annual' (default monthly si no viene)
+        billing_cycle: planDetails.billing_cycle || 'monthly',
       },
       method: 'POST'
     });

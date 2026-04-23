@@ -15,7 +15,9 @@ Deno.serve(async (req) => {
     const body = await req.json()
     // F-014 (spec 019): `final_price` del cliente se ignora deliberadamente.
     // El precio final se calcula server-side desde subscription_plans + discount_coupons.
+    // Spec 022: billing_cycle del cliente se acepta (monthly | annual), default monthly.
     const { plan_name, therapist_id, payer_email, payer_name, coupon_code } = body
+    const billing_cycle: 'monthly' | 'annual' = body.billing_cycle === 'annual' ? 'annual' : 'monthly'
 
     if (!plan_name || !therapist_id || !payer_email) {
       return new Response(
@@ -37,9 +39,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // 1. Leer precio dinámico desde subscription_plans
+    // Spec 022: incluir annual_discount_percent para cálculo de billing_cycle annual
     const { data: plan, error: planError } = await supabase
       .from('subscription_plans')
-      .select('name, price, slug')
+      .select('name, price, slug, annual_discount_percent')
       .eq('slug', plan_name.toLowerCase())
       .eq('is_active', true)
       .single()
@@ -70,11 +73,13 @@ Deno.serve(async (req) => {
     // Default: precio del plan desde DB. Si hay coupon_code válido, aplicar descuento server-side.
     let chargePrice = plan.price
     let validatedCouponCode: string | null = null
+    // Spec 022: tracking de cupón con max_renewals para renovaciones controladas
+    let couponMaxRenewals: number | null = null
 
     if (coupon_code) {
       const { data: coupon, error: couponError } = await supabase
         .from('discount_coupons')
-        .select('id, code, discount_type, discount_value, max_discount_amount, min_purchase_amount, applicable_plans, is_active, valid_from, expiration_date, max_uses, current_uses')
+        .select('id, code, discount_type, discount_value, max_discount_amount, min_purchase_amount, applicable_plans, is_active, valid_from, expiration_date, max_uses, current_uses, max_renewals')
         .eq('code', coupon_code)
         .maybeSingle()
 
@@ -145,9 +150,86 @@ Deno.serve(async (req) => {
 
       if (chargePrice < 0) chargePrice = 0
       validatedCouponCode = coupon.code
+      // Spec 022: capturar max_renewals para tracking de renovaciones (cupón beta)
+      couponMaxRenewals = coupon.max_renewals ?? null
+    }
+
+    // Spec 022: si billing_cycle === 'annual', aplicar descuento anual server-side.
+    // Fórmula: chargePrice_annual = chargePrice_monthly × 12 × (1 - annual_discount_percent/100)
+    // Aplica DESPUÉS del cupón (si lo hubo), sobre el chargePrice ya calculado.
+    const annualDiscountPercent = Number(plan.annual_discount_percent) || 0
+    if (billing_cycle === 'annual' && annualDiscountPercent > 0) {
+      chargePrice = Math.round(chargePrice * 12 * (1 - annualDiscountPercent / 100))
     }
 
     const external_reference = `dentalspot_sub_${therapist_id}_${Date.now()}`
+
+    // Spec 022: si chargePrice === 0 (ej. cupón 100% off como BETA-3M-2026), bypass MP
+    // MercadoPago API rechaza unit_price=0. Creamos sub activa directamente preservando
+    // tracking de applied_coupon_code + current_renewal_count para renovaciones futuras.
+    if (chargePrice <= 0) {
+      const nowBypass = new Date()
+      const periodDaysBypass = billing_cycle === 'annual' ? 365 : 30
+      const periodEndBypass = new Date(nowBypass.getTime() + periodDaysBypass * 24 * 60 * 60 * 1000)
+      const initialRenewalCountBypass = validatedCouponCode && couponMaxRenewals !== null ? 1 : 0
+      const appliedCouponCodeBypass = validatedCouponCode && couponMaxRenewals !== null ? validatedCouponCode : null
+
+      // UPSERT directo en therapist_subscriptions
+      if (existing) {
+        await supabase.from('therapist_subscriptions').update({
+          plan_name: plan.slug,
+          price: 0,
+          original_price: plan.price,
+          discount_percent: 100,
+          status: 'active',
+          payment_status: 'approved',
+          payment_method: 'coupon_free',
+          billing_cycle,
+          current_renewal_count: initialRenewalCountBypass,
+          applied_coupon_code: appliedCouponCodeBypass,
+          external_reference,
+          current_period_start: nowBypass.toISOString().split('T')[0],
+          current_period_end: periodEndBypass.toISOString().split('T')[0],
+          updated_at: nowBypass.toISOString(),
+        }).eq('id', existing.id)
+      } else {
+        await supabase.from('therapist_subscriptions').insert({
+          therapist_id,
+          plan_name: plan.slug,
+          price: 0,
+          original_price: plan.price,
+          discount_percent: 100,
+          currency: 'CLP',
+          billing_cycle,
+          current_renewal_count: initialRenewalCountBypass,
+          applied_coupon_code: appliedCouponCodeBypass,
+          status: 'active',
+          payment_status: 'approved',
+          payment_method: 'coupon_free',
+          external_reference,
+          current_period_start: nowBypass.toISOString().split('T')[0],
+          current_period_end: periodEndBypass.toISOString().split('T')[0],
+          cancel_at_period_end: false,
+        })
+      }
+
+      console.log('✓ Free subscription activated (chargePrice=0, bypass MP):', external_reference, 'coupon:', appliedCouponCodeBypass)
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          bypass_mp: true,  // flag para que el frontend sepa no redirigir a MP checkout
+          message: 'Suscripción activada sin cobro (cupón 100%)',
+          external_reference,
+          billing_cycle,
+          charge_price: 0,
+          applied_coupon: appliedCouponCodeBypass
+            ? { code: appliedCouponCodeBypass, renewals_remaining: (couponMaxRenewals ?? 0) - 1 }
+            : null,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
 
     const preferenceData = {
       items: [{
@@ -155,7 +237,9 @@ Deno.serve(async (req) => {
         title: validatedCouponCode
           ? `${plan.name} - DENTALSPOT (Cupón: ${validatedCouponCode})`
           : `${plan.name} - DENTALSPOT`,
-        description: `Suscripción mensual - ${plan.name}`,
+        description: billing_cycle === 'annual'
+          ? `Suscripción anual - ${plan.name} (ahorra ${annualDiscountPercent}%)`
+          : `Suscripción mensual - ${plan.name}`,
         quantity: 1,
         currency_id: 'CLP',
         unit_price: chargePrice
@@ -199,8 +283,14 @@ Deno.serve(async (req) => {
     }
 
     // 4. Guardar en Supabase
+    // Spec 022: period_end según billing_cycle (30 días mensual, 365 días anual)
     const now = new Date()
-    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const periodDays = billing_cycle === 'annual' ? 365 : 30
+    const periodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000)
+
+    // Spec 022: tracking inicial del cupón si tiene max_renewals
+    const initialRenewalCount = validatedCouponCode && couponMaxRenewals !== null ? 1 : 0
+    const appliedCouponCode = validatedCouponCode && couponMaxRenewals !== null ? validatedCouponCode : null
 
     if (existing) {
       // Upgrade: update plan, price, and preference for webhook confirmation
@@ -212,13 +302,16 @@ Deno.serve(async (req) => {
           discount_percent: validatedCouponCode && plan.price > 0 ? Math.round((1 - chargePrice / plan.price) * 100) : 0,
           preference_id: mpResult.id,
           external_reference,
+          billing_cycle,  // spec 022: preservar 'monthly' | 'annual'
+          current_renewal_count: initialRenewalCount,  // spec 022
+          applied_coupon_code: appliedCouponCode,  // spec 022
           current_period_start: now.toISOString().split('T')[0],
           current_period_end: periodEnd.toISOString().split('T')[0],
           updated_at: now.toISOString(),
         })
         .eq('id', existing.id)
       if (updateError) console.error('DB UPDATE ERROR:', JSON.stringify(updateError))
-      else console.log('DB UPDATE OK (upgrade):', external_reference)
+      else console.log('DB UPDATE OK (upgrade):', external_reference, 'cycle:', billing_cycle, 'coupon:', appliedCouponCode)
     } else {
       await supabase.from('therapist_subscriptions').insert({
         therapist_id,
@@ -227,7 +320,9 @@ Deno.serve(async (req) => {
         original_price: plan.price,
         discount_percent: validatedCouponCode && plan.price > 0 ? Math.round((1 - chargePrice / plan.price) * 100) : 0,
         currency: 'CLP',
-        billing_cycle: 'monthly',
+        billing_cycle,  // spec 022: 'monthly' | 'annual' (antes hardcoded 'monthly')
+        current_renewal_count: initialRenewalCount,  // spec 022
+        applied_coupon_code: appliedCouponCode,  // spec 022
         status: 'pending',
         preference_id: mpResult.id,
         external_reference,
@@ -245,6 +340,12 @@ Deno.serve(async (req) => {
         sandbox_init_point: mpResult.sandbox_init_point,
         preference_id: mpResult.id,
         external_reference,
+        // Spec 022: info adicional para UX (opcional)
+        billing_cycle,
+        charge_price: chargePrice,
+        applied_coupon: appliedCouponCode
+          ? { code: appliedCouponCode, renewals_remaining: (couponMaxRenewals ?? 0) - 1 }
+          : null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )

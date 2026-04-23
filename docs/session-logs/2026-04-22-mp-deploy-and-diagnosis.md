@@ -565,3 +565,104 @@ Archivo: `supabase/migrations/20260422000001_add_plans_tier_model.sql` (351 lín
 - Pushs pendientes Danissa
 
 Sesión fue ÉPICA: 3 specs completos + 1 en progreso de 5 phases + 1 cosmético. ~8-10h de trabajo técnico continuo.
+
+---
+
+## Parte 9 — Spec 022 Phases C+D+G ejecutadas (MVP Lean DONE)
+
+### Resumen
+
+Continuación de sesión post-descanso. Danissa eligió **Opción 1 MVP Lean** (C+D+G sin Phase E enforcement ni Phase F smoke E2E completo) — launch rápido con riesgo conocido aceptado.
+
+### Phase C — Edge functions extendidas (~45min)
+
+**`create-mp-checkout/index.ts`** (7 edits quirúrgicos):
+1. Body destructuring: + `billing_cycle` con default 'monthly'
+2. Plan select: + `annual_discount_percent` column
+3. Coupon select: + `max_renewals` column
+4. Variable scope nueva: `let couponMaxRenewals: number | null = null`
+5. Post-coupon validation: capturar `couponMaxRenewals` + aplicar descuento anual si cycle='annual'
+6. Description dinámica según cycle
+7. **NEW bypass MP flow**: si chargePrice <= 0 (cupones 100%), crear sub activa directo preservando tracking, retornar `bypass_mp: true`. Response extendido con `billing_cycle`, `charge_price`, `applied_coupon: {code, renewals_remaining}`.
+
+**`mercadopago-webhook/index.ts`**:
+- Lee sub existente ANTES del UPDATE para respetar `billing_cycle` (periodEnd 30 vs 365 días)
+- Después del UPDATE: si sub tiene `applied_coupon_code`, query coupon y si `current_renewal_count < max_renewals` incrementa en +1. Log explícito cuando cupón se agota.
+
+**F-014 preservation verified**: grep muestra líneas 16, 74, 152 intactas (comment F-014, `chargePrice = plan.price`, `validatedCouponCode = coupon.code`).
+
+**Deploy**: `supabase functions deploy create-mp-checkout mercadopago-webhook` → OK.
+
+**Smoke tests API-level**:
+- ✅ F-014 regression: `{final_price: 1}` → servidor ignora, `charge_price: 14990`
+- ✅ Annual discount: Individual anual → `charge_price: 152898` (14990×12×0.85)
+- ✅ Bypass MP: Clinic Pro + BETA-3M-2026 → `bypass_mp: true`, `charge_price: 0`, `applied_coupon: {code: BETA-3M-2026, renewals_remaining: 2}`
+
+### Phase D — Frontend update MVP Lean (~30min)
+
+**Decisión crítica**: NO rebuild completo de MembershipPlansPage (438 líneas con lógica compleja de clinic_membership, cupones, billing history). En su lugar:
+
+**`src/constants/planFeatures.js`** (source of truth):
+- PLAN_NAMES extendido: agregados `CLINIC_PRO`, `CLINIC_PREMIUM`. Legacy `PROFESSIONAL`, `CENTER` preservados para backward compat.
+- VISIBLE_PLAN_NAMES: `['free', 'individual', 'clinic_pro', 'clinic_premium']` (Free ahora visible)
+- PLAN_HIERARCHY ajustado con mapeo legacy
+- PLAN_PRICING: 4 nuevos planes con precios spec 022 ($0/$14.990/$24.990/$39.990) + anual 15% off ($0/$152.898/$254.898/$407.898). Legacy aliases (PROFESSIONAL/CENTER) mapean a precios nuevos.
+- PLAN_LIMITS: nuevos campos `maxDentists`, `maxBoxes`, `maxAppointmentsMonth` del tier model.
+
+**`src/features/membership/api/membershipApi.js`** (subscribeToPlan):
+- Agrega `billing_cycle: planDetails.billing_cycle || 'monthly'` al body del invoke
+- Preserva F-014 comment ("ignorado server-side")
+
+**`src/features/membership/pages/MembershipPlansPage.jsx`**:
+- handleSelectPlan pasa `billing_cycle: isYearly ? 'annual' : 'monthly'`
+- **NEW handler bypass_mp**: si result.bypass_mp=true, toast éxito + loadData() + return sin redirigir a MP checkout
+- Badge anual actualizada: "2 meses gratis" → "15% descuento"
+- upgradePlans: `[INDIVIDUAL, CLINIC_PRO, CLINIC_PREMIUM]` (reemplaza slugs viejos)
+
+**Componentes downstream NO tocados** (PlanUpgradeCard, CurrentPlanHeader, MembershipStatusWidget, ActiveServices): reciben precios correctos automáticamente via PLAN_PRICING[slug].
+
+### Phase E (enforcement UX) DIFERIDA
+
+Por decisión MVP Lean:
+- Hook `useActivePlanLimits` NO creado
+- Integración en patient/appointment/dentist/box flows NO hecha
+- `PlanUpgradeModal` genérico NO creado
+- **Riesgo aceptado**: plan Free permite crear >5 pacientes y >15 citas/mes sin bloqueo. Mitigación operacional: admin monitorea abusos, avisa manual. Phase E se implementa post-launch si detecta abuso o pre-scale a 50+ users.
+
+### Phase F (smoke E2E completo) DIFERIDA
+
+Solo ejecutados F1+F3+F4 (API-level). F2 (pago anual real sandbox), F5 (enforcement Free 6º paciente), F6 (enforcement Clinic Pro 6º dentista) requieren browser flow + E2E setup → diferidos a primer batch beta.
+
+### Phase G — Close (~15min)
+
+- architecture.md: subsección §"Subscription plans tier model — Phase C+D+G (spec 022 MVP LEAN — 2026-04-22)" + Last updated bump
+- CLAUDE.md: Active feature "entre ciclos, spec 022 MVP Lean done"
+- Session log: esta sección (Parte 9)
+- Commit único + merge (push delegado a Danissa)
+
+### Estado post-Parte 9
+
+**App FUNCIONAL para cobros con estos 4 planes operativos**:
+- Dentistas pueden ver planes actualizados en MembershipPlansPage
+- Checkout MP con billing_cycle mensual/anual funcional
+- Cupón BETA-3M-2026 activa sub sin cobro MP (bypass correctamente)
+- Renewal counter tracking automático
+- F-014 preservado (no regression)
+
+**Limitaciones conocidas + aceptadas (riesgo comunicable)**:
+- Plan Free sin enforcement server-side UX (RPC check_plan_limit existe pero no invocado desde UI)
+- MP webhook sin firma validation (F-001)
+- MP sin idempotency (F-002)
+- MP retorna 200 en errores (F-003)
+- MP no dunning automático (F-005)
+- Smoke test E2E visual con pago real sandbox no ejecutado
+
+**Next operacional**: launch beta con 5-10 dentistas conocidos usando cupón BETA-3M-2026. Monitorear webhooks + ingresos manualmente. Iterar post-primera validación.
+
+### Commits totales sesión 2026-04-22 (estimado)
+
+- 9+ commits: spec 020 close + merge, spec 021 package + merge, spec 022 Phase A+B, AutomationPage cleanup, **spec 022 Phases C+D+G close** (este commit).
+- ~10-12h de trabajo técnico continuo.
+- 4 specs productivos cerrados (020, 021, 022 MVP Lean, + cosmético).
+
+Sesión más épica del proyecto. App queda LISTA para primeros cobros reales con BETA-3M-2026.

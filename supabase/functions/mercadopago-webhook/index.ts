@@ -140,7 +140,17 @@ async function handlePayment(paymentId: string, accessToken: string, supabase: a
   if (payment.external_reference?.startsWith('dentalspot_sub_')) {
     if (payment.status === 'approved') {
       const now = new Date();
-      const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      // Spec 022: leer sub existente para respetar billing_cycle + tracking cupón
+      const { data: existingSub } = await supabase
+        .from('therapist_subscriptions')
+        .select('id, billing_cycle, applied_coupon_code, current_renewal_count')
+        .eq('external_reference', payment.external_reference)
+        .maybeSingle();
+
+      const billingCycle = existingSub?.billing_cycle === 'annual' ? 'annual' : 'monthly';
+      const periodDays = billingCycle === 'annual' ? 365 : 30;
+      const periodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000);
 
       const { error, data } = await supabase
         .from('therapist_subscriptions')
@@ -173,7 +183,7 @@ async function handlePayment(paymentId: string, accessToken: string, supabase: a
             plan_name: payment.metadata?.plan_name || 'individual',
             price: payment.transaction_amount,
             currency: 'CLP',
-            billing_cycle: 'monthly',
+            billing_cycle: billingCycle,  // spec 022: preservar cycle si sub no existía
             status: 'active',
             payment_status: 'approved',
             payment_method: payment.payment_type_id,
@@ -187,7 +197,29 @@ async function handlePayment(paymentId: string, accessToken: string, supabase: a
         if (insertError) console.error('Error creating subscription from webhook:', JSON.stringify(insertError));
         else console.log('✓ Subscription created from webhook for:', therapistId);
       } else {
-        console.log('✓ Subscription activated:', data);
+        console.log('✓ Subscription activated:', data, 'cycle:', billingCycle);
+      }
+
+      // Spec 022: incrementar current_renewal_count si hay cupón con max_renewals
+      if (existingSub?.id && existingSub.applied_coupon_code) {
+        const { data: coupon } = await supabase
+          .from('discount_coupons')
+          .select('max_renewals')
+          .eq('code', existingSub.applied_coupon_code)
+          .maybeSingle();
+
+        if (coupon?.max_renewals !== null && coupon?.max_renewals !== undefined) {
+          const currentCount = existingSub.current_renewal_count ?? 0;
+          if (currentCount < coupon.max_renewals) {
+            await supabase
+              .from('therapist_subscriptions')
+              .update({ current_renewal_count: currentCount + 1 })
+              .eq('id', existingSub.id);
+            console.log(`✓ Coupon ${existingSub.applied_coupon_code} renewal count: ${currentCount} → ${currentCount + 1} (max ${coupon.max_renewals})`);
+          } else {
+            console.log(`⚠ Coupon ${existingSub.applied_coupon_code} exhausted (${currentCount}/${coupon.max_renewals}) — next billing will use full price`);
+          }
+        }
       }
     }
   }
