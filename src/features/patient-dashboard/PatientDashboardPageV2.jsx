@@ -6,12 +6,10 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
-import { startOfWeek, endOfWeek } from 'date-fns';
 import RescheduleModal from '@/features/patient-agenda/components/RescheduleModal';
 
 import {
   NextSessionHero,
-  TodayPlan,
   MicroProgress,
   RecentDocuments,
   MyQuestionsBlock,
@@ -45,7 +43,6 @@ const PatientDashboardPageV2 = () => {
     }
   }, [profile]);
   const [appointments, setAppointments] = useState([]);
-  const [todayActivities, setTodayActivities] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [careTeam, setCareTeam] = useState([]);
   const [lastSessionDate, setLastSessionDate] = useState(null);
@@ -60,8 +57,6 @@ const PatientDashboardPageV2 = () => {
   // Progress
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [sessionsTotal, setSessionsTotal] = useState(0);
-  const [activitiesCompletedThisWeek, setActivitiesCompletedThisWeek] = useState(0);
-  const [activitiesTotalThisWeek, setActivitiesTotalThisWeek] = useState(0);
 
   // =====================================================
   // DATA LOADING
@@ -93,7 +88,6 @@ const PatientDashboardPageV2 = () => {
       await Promise.all([
         loadCareTeam(patientData.id),
         loadAppointments(patientData.id),
-        loadTodayActivities(patientData.id),
         loadDocuments(patientData.id),
         loadProgressData(patientData.id),
         loadLastSession(patientData.id),
@@ -155,28 +149,9 @@ const PatientDashboardPageV2 = () => {
     setAppointments(data || []);
   };
 
-  // ---------- Today Activities ----------
-  const loadTodayActivities = async (pId) => {
-    try {
-      const { data, error } = await supabase
-        .from('session_activities')
-        .select('id, status, created_at, activity_id, exercise_id, plan_sessions!inner(patient_assigned_plans!inner(patient_id))')
-        .eq('plan_sessions.patient_assigned_plans.patient_id', pId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true })
-        .limit(10);
-
-      if (error) throw error;
-      setTodayActivities(data || []);
-    } catch (err) {
-      logger.warn('session_activities query failed (table may not exist):', err.message);
-      setTodayActivities([]);
-    }
-  };
-
   // ---------- Documents ----------
   const loadDocuments = async (pId) => {
-    // Fetch from both clinical_reports AND clinical_history (informe_tea entries)
+    // Fetch from both clinical_reports AND clinical_history (informe entries)
     const [reportsRes, informesRes] = await Promise.all([
       supabase
         .from('clinical_reports')
@@ -189,19 +164,19 @@ const PatientDashboardPageV2 = () => {
         .select('id, summary, session_notes, entry_date, created_at, details, entry_type')
         .eq('patient_id', pId)
         .eq('visibility', 'all')
-        .in('entry_type', ['informe_tea', 'informe', 'informe_clinico'])
+        .in('entry_type', ['informe', 'informe_clinico'])
         .order('created_at', { ascending: false })
         .limit(3),
     ]);
 
     const reports = (reportsRes.data || []).map(r => ({
       ...r,
-      title: r.title || 'Documento',
+      title: r.report_type || 'Documento',
     }));
 
     const informes = (informesRes.data || []).map(r => ({
       id: `ch-${r.id}`,
-      title: r.summary || 'Informe TEA',
+      title: r.summary || 'Informe clínico',
       created_at: r.entry_date || r.created_at,
       entry_type: r.entry_type,
       details: r.details,
@@ -229,28 +204,6 @@ const PatientDashboardPageV2 = () => {
       const completed = allApts.filter((a) => a.status === 'completed').length;
       setSessionsCompleted(completed);
       setSessionsTotal(allApts.length);
-    }
-
-    // Actividades de esta semana
-    try {
-      const now = new Date();
-      const weekStart = startOfWeek(now, { weekStartsOn: 1 }).toISOString();
-      const weekEnd = endOfWeek(now, { weekStartsOn: 1 }).toISOString();
-
-      const { data: weekActivities, error } = await supabase
-        .from('session_activities')
-        .select('id, status, updated_at, plan_sessions!inner(patient_assigned_plans!inner(patient_id))')
-        .eq('plan_sessions.patient_assigned_plans.patient_id', pId)
-        .gte('updated_at', weekStart)
-        .lte('updated_at', weekEnd);
-
-      if (!error && weekActivities) {
-        const completedThisWeek = weekActivities.filter((a) => a.status === 'completed').length;
-        setActivitiesCompletedThisWeek(completedThisWeek);
-        setActivitiesTotalThisWeek(weekActivities.length);
-      }
-    } catch (err) {
-      logger.warn('Week activities query failed:', err.message);
     }
   };
 // ---------- Question counts ----------
@@ -349,33 +302,6 @@ const PatientDashboardPageV2 = () => {
     const nextApt = appointments[0];
     if (nextApt) setRescheduleAppointment(nextApt);
   }, [appointments]);
-
-  const handleMarkComplete = useCallback(async (activityId) => {
-    try {
-      const { error } = await supabase
-        .from('session_activities')
-        .update({ status: 'completed', updated_at: new Date().toISOString() })
-        .eq('id', activityId);
-
-      if (error) throw error;
-
-      // Optimistic update
-      setTodayActivities((prev) => prev.filter((a) => a.id !== activityId));
-      setActivitiesCompletedThisWeek((prev) => prev + 1);
-
-      toast({
-        title: '¡Bien hecho!',
-        description: 'Actividad marcada como completada.',
-      });
-    } catch (error) {
-      logger.error('Error completing activity:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No se pudo completar la actividad.',
-      });
-    }
-  }, [toast]);
 
   const handleOpenChat = useCallback(() => {
     navigate('/dashboard/chatbot');
@@ -517,18 +443,10 @@ const PatientDashboardPageV2 = () => {
             onReschedule={handleReschedule}
           />
 
-          {/* Bloque 2: Tu plan para hoy */}
-          <TodayPlan
-            activities={todayActivities}
-            onMarkComplete={handleMarkComplete}
-          />
-
-          {/* Bloque 3: Cómo vas */}
+          {/* Bloque 2: Cómo vas */}
           <MicroProgress
             sessionsCompleted={sessionsCompleted}
             sessionsTotal={sessionsTotal}
-            activitiesCompletedThisWeek={activitiesCompletedThisWeek}
-            activitiesTotalThisWeek={activitiesTotalThisWeek}
           />
         </div>
 
