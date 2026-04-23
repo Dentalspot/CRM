@@ -1,5 +1,7 @@
 # DentalSpot — Architecture
-> SaaS odontológico multi-tenant. React 18 SPA + Supabase (PostgreSQL + RLS + Edge Functions). 1.029 archivos JS/JSX, 76 migraciones, 173 tablas, 38 edge functions. En producción desde Q1-2026.
+> SaaS odontológico multi-tenant. React 18 SPA + Supabase (PostgreSQL 17.6 + RLS + Edge Functions). 1.021 archivos JS/JSX, 84 migraciones, 194 tablas, 30 edge functions. En producción desde Q1-2026.
+>
+> **Últimos conteos**: 2026-04-22 PM (post spec 022 Phase E + schema.sql regen; Supabase upgradeó server 15.8→17.6).
 ## Stack
 | Capa | Tecnología | Versión | Notas |
 |---|---|---|---|
@@ -86,8 +88,10 @@ Fases identificadas:
 4. **Phase 3 RLS** (`rls_phase3_compliance`) — clinical_audit_log, legal_signatures, arco_requests, processing_lawful_basis, exceptional_access_grants + `fix_care_team_recursion`
 5. **Post-baseline patches** — `organization_model_schema`, `revoke_anon_privs`, `patient_admin_columns`, `payment_fixes`, `consent_status_rpc`, `resolve_danissa_*`, `resolve_cristobal_*` (drift resuelto manualmente)
 6. **Phase 3 sync fix (spec 003, 2026-04-20)** — `20260419000001_repair_patient_care_team.sql`: backfill reparador idempotente + triggers `trg_sync_patient_care_team_insert/update` sobre `patients`. Cierra la brecha de `clinical_audit_log` silencioso (ventana 2026-04-18 06:57 → 2026-04-20 02:04 UTC). Ver `data-compliance.md` §"Historial de compliance".
-Última migración registrada: `20260419000001_*`.
-### Tables (~173 en `supabase/tables_list.txt`)
+7. **Pricing tier model (spec 022, 2026-04-22)** — `20260422000001_add_plans_tier_model.sql`: 4 planes activos (free $0 / individual $14.990 / clinic_pro $24.990 / clinic_premium $39.990), columnas en `subscription_plans` para límites cuantitativos (`max_dentists`, `max_boxes`, `patient_limit`, `appointment_limit`), RPC `check_plan_limit(therapist_id, resource_type)` server-side authoritative con fail-safe OPEN, ALTER de `discount_coupons.max_renewals` para cupones multi-ciclo, seed de cupón `BETA-3M-2026` (100% off, max 30 usos, 180 días, applicable_plans=individual+clinic_pro, max_renewals=3). Enforcement UX en cliente via `src/hooks/useActivePlanLimits.js` + `UpgradeModal` integrado en PatientModal/NewAppointmentForm/InviteTherapistModal. Box enforcement deferred (RPC retorna true hard-coded, tabla de sillones no existe aún — follow-up spec `create-clinical-boxes-table-and-enforcement`).
+
+Última migración registrada: `20260422000001_add_plans_tier_model.sql` (spec 022).
+### Tables (194 en `supabase/schema.sql` regenerado 2026-04-22)
 | Dominio | Tablas representativas |
 |---|---|
 | Identidad | `profiles`, `organizations`, `care_team`, `memberships` |
@@ -98,16 +102,21 @@ Fases identificadas:
 | Compliance — Pasaporte Clínico | `clinical_access_log` (grant/share/revoke/download, módulo `clinical-passport`) — tabla distinta de `clinical_audit_log`, ver data-compliance.md §"Dos tablas distintas" |
 | Comercio | `subscriptions`, `payments` (MercadoPago), `wallet`, `marketplace_*` |
 | Módulos verticales | `symptom_flow_*`, `sensorial_profile_*`, `tea_*`, `ados2_*`, `adir_*`, `pie_*`, `progress_*`, `recommendations_*` |
-### Edge functions (38 en `supabase/functions/`)
+### Edge functions (30 en `supabase/functions/`, post spec 021 cleanup)
 | Grupo | Funciones representativas |
 |---|---|
-| Pagos | `mercadopago-create-preference`, `mercadopago-webhook` |
-| Email | `send-welcome-sequence`, `form-auto-responder`, `marketing-campaign`, `process-scheduled-emails` |
-| AI clínico | `chat-with-ai`, `rag-query`, `analyze-*`, `generate-*`, `search-evidence`, `recommend-purchases`, `suggest-treatment`, `evaluate-analysis` |
-| Ads | `setup-ads`, `meta-ads-manager`, `generate-ad-copy`, `new-meta-capi` |
-| Ops | `backup-database`, `export-leads-csv`, `process-notiz` |
-### Policies (`supabase/policies.sql`, 3.016 líneas)
+| Pagos | `create-mp-checkout` (membresías, spec 019/020), `create-mercadopago-preference` (marketplace, hidden), `mercadopago-webhook` |
+| Email | `send-marketing-campaign`, `resend-webhook` (spec 021 eliminó welcome-sequence + process-scheduled-emails + form-auto-responder legacy FonoKit) |
+| AI clínico | `chat-with-ai`, `chat-evidence`, `analyze-adir-report`, `analyze-ados2-report`, `analyze-progress`, `evaluate-analysis`, `fonolevel-ai-score`, `generate-embeddings`, `generate-material`, `generate-paci`, `generate-template`, `prepare-training-data`, `search-evidence`, `recommend-purchases`, `suggest-treatment` |
+| Marketplace | `marketplace-ai-description`, `marketplace-ai-image`, `marketplace-product-chat` |
+| Ads | `generate-ad-copy`, `meta-ads-manager`, `new-meta-capi` |
+| Ops | `backup-database`, `process-notiz`, `og-preview`, `clinic-invitations` |
+### Policies (`supabase/policies.sql` 3.016 líneas stale; DB live ~458 policies)
 Cubre las 3 fases RLS. Convención observada: `{table}_{select|insert|update|delete}_{role}`. Incluye baseline `.bak` para rollback de referencia.
+
+**Estado 2026-04-22**: `policies.sql` es snapshot histórico stale. Autoridad = `supabase/schema.sql` regenerado (458 `CREATE POLICY` interleaved con defs de tablas). Delta +27 policies post spec 022 viene de migraciones `20260420000004_apply_policies_billing_evaluations` + `20260420000005_apply_policies_goals_development_areas` + cambios incrementales spec 022.
+
+**Tech debt low-priority**: `supabase/policies.sql` + `supabase/tables_list.txt` (173 entries) están stale y no se han regenerado. Source of truth son `supabase/migrations/` + `schema.sql`. Regenerar estos dos archivos es un micro-bloque pendiente; mientras tanto, no confiar en sus conteos.
 ## Frontend ↔ Supabase bridges
 | Propósito | Archivo(s) |
 |---|---|
