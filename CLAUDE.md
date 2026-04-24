@@ -70,7 +70,7 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.
 
-**Plan activo**: [specs/024-assistant-rich-calendar/plan.md](specs/024-assistant-rich-calendar/plan.md)
+**Plan activo**: [specs/025-clinic-admin-rich-calendar/plan.md](specs/025-clinic-admin-rich-calendar/plan.md)
 
 **Active feature**: `024-assistant-rich-calendar` **IMPLEMENTED** (2026-04-24). Calendario rich tipo Google Calendar para el asistente — reemplaza la vista lista día-por-día por grid semanal con drag-to-create citas, bloqueo de horas con drag, edit y resize. Scopeado por `organization_id` (asistente ve agenda de todos los dentistas de su clínica via selector).
 
