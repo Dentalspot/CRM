@@ -113,7 +113,7 @@ const AssistantAppointmentModal = ({
         .from('appointments')
         .select(`
           id, therapist_id, patient_id, service_id, date, start_time, end_time, status, notes,
-          patients:patients!appointments_patient_id_fkey(
+          patient:patients!appointments_patient_id_fkey(
             id, profile_id, profile:profiles!patients_profile_id_fkey(full_name, email, phone)
           )
         `)
@@ -137,13 +137,13 @@ const AssistantAppointmentModal = ({
           setOriginalStatus(data.status || 'scheduled');
           setNotes(data.notes || '');
           setSelectedServiceId(data.service_id || '');
-          if (data.patients) {
+          if (data.patient) {
             setSelectedPatient({
-              id: data.patients.id,
-              profile_id: data.patients.profile_id,
-              full_name: data.patients.profile?.full_name || 'Sin nombre',
-              email: data.patients.profile?.email,
-              phone: data.patients.profile?.phone,
+              id: data.patient.id,
+              profile_id: data.patient.profile_id,
+              full_name: data.patient.profile?.full_name || 'Sin nombre',
+              email: data.patient.profile?.email,
+              phone: data.patient.profile?.phone,
             });
           }
         })

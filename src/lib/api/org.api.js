@@ -91,7 +91,7 @@ export async function getOrgAppointments(organizationId, therapistId, startDate,
     .select(`
       id, organization_id, clinic_id, therapist_id, patient_id, service_id,
       date, start_time, end_time, status, notes, created_at, updated_at,
-      patients:patients!appointments_patient_id_fkey(
+      patient:patients!appointments_patient_id_fkey(
         id, profile:profiles!patients_profile_id_fkey(full_name, phone, email)
       ),
       therapist:profiles!appointments_therapist_id_fkey(id, full_name)
@@ -259,7 +259,7 @@ export async function createOrgAppointment(payload) {
     .select(`
       id, organization_id, clinic_id, therapist_id, patient_id, service_id,
       date, start_time, end_time, status, notes, created_at, updated_at,
-      patients:patients!appointments_patient_id_fkey(
+      patient:patients!appointments_patient_id_fkey(
         id, profile:profiles!patients_profile_id_fkey(full_name, phone, email)
       ),
       therapist:profiles!appointments_therapist_id_fkey(id, full_name)
@@ -289,7 +289,7 @@ export async function updateOrgAppointment(id, changes) {
     .select(`
       id, organization_id, clinic_id, therapist_id, patient_id, service_id,
       date, start_time, end_time, status, notes, created_at, updated_at,
-      patients:patients!appointments_patient_id_fkey(
+      patient:patients!appointments_patient_id_fkey(
         id, profile:profiles!patients_profile_id_fkey(full_name, phone, email)
       ),
       therapist:profiles!appointments_therapist_id_fkey(id, full_name)
