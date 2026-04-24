@@ -85,7 +85,9 @@ const PlanDetailPage = lazy(() => import('@/features/marketplace/pages/PlanDetai
 
 // Assistant Pages
 const AssistantDashboard = lazy(() => import('@/features/assistant/pages/AssistantDashboard.jsx'));
-const AssistantAgendaPage = lazy(() => import('@/features/assistant/pages/AssistantAgendaPage.jsx'));
+// Spec 024: AssistantAgendaPage (vista lista) reemplazado por AssistantCalendarPage (rich calendar).
+// El archivo legacy permanece en filesystem por rollback fácil hasta Polish task T035.
+const AssistantCalendarPage = lazy(() => import('@/features/assistant/pages/AssistantCalendarPage.jsx'));
 const AssistantPatientsPage = lazy(() => import('@/features/assistant/pages/AssistantPatientsPage.jsx'));
 
 // Clinic Pages
@@ -228,7 +230,7 @@ const DashboardRouter = () => {
           {/* ======================= ASSISTANT ROUTES ======================= */}
           <Route path="assistant">
             <Route index element={<AuthGuard><AssistantDashboard /></AuthGuard>} />
-            <Route path="agenda" element={<AuthGuard><AssistantAgendaPage /></AuthGuard>} />
+            <Route path="agenda" element={<AuthGuard><AssistantCalendarPage /></AuthGuard>} />
             <Route path="patients" element={<AuthGuard><AssistantPatientsPage /></AuthGuard>} />
           </Route>
 
