@@ -70,6 +70,8 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.
 
+**Plan activo**: [specs/024-assistant-rich-calendar/plan.md](specs/024-assistant-rich-calendar/plan.md)
+
 **Active feature**: `023-invite-assistant-flow` **DONE + DEPLOYED + SMOKE-TESTED** (2026-04-24). Smoke test end-to-end ejecutado en prod con éxito: US1 (invite nuevo) + US3 (permisos RLS) + US4 (revoke) PASSED. Test assistant "Kobe Bean Bryant" (dentalspot.cl+asistente@gmail.com, user_id 891399b9-ade2-43b7-9b14-3267d922fc3f) dejado en `organization_members.is_active=false` como test user permanente para regresiones del flow Inactivos/Reactivar.
 
 **Durante smoke se descubrieron y fixearon 3 bugs DB críticos**:
