@@ -56,21 +56,24 @@ export async function getOrgDentists(organizationId) {
 }
 
 /**
- * Lista clínicas de una organización (normalmente 1 — para color coding + timezone).
+ * Lista clínicas de una organización (normalmente 1 — para color coding + schedule).
+ * Nota: la columna `timezone` NO existe en `clinics` (verificado 2026-04-24).
+ * Se usa fallback 'America/Santiago' hardcoded (Chile beta only).
  * @param {string} organizationId
- * @returns {Promise<Array<{id, name, address, timezone, business_hours}>>}
+ * @returns {Promise<Array<{id, name, address, business_hours, schedule_text}>>}
  */
 export async function getOrgClinics(organizationId) {
   const { data, error } = await supabase
     .from('clinics')
-    .select('id, name, address, timezone, business_hours')
+    .select('id, name, address, business_hours, schedule_text')
     .eq('organization_id', organizationId);
 
   if (error) {
     logger.warn('getOrgClinics failed:', error.message);
     throw error;
   }
-  return data || [];
+  // Agregar timezone sintético para coherencia con WeeklyAgendaView
+  return (data || []).map((c) => ({ ...c, timezone: 'America/Santiago' }));
 }
 
 /**
@@ -110,15 +113,18 @@ export async function getOrgAppointments(organizationId, therapistId, startDate,
 /**
  * Lista bloqueos horarios del dentista en un rango.
  * RLS (blocked_times_assistant_select — migration 20260424000001) enforces scope.
+ *
+ * Schema real de blocked_times (verificado 2026-04-24):
+ *   - start_time timestamptz, end_time timestamptz (NO hay columna date separada)
+ * Se sigue el mismo pattern que therapist.api.js::getTherapistBlockedTimes.
  */
 export async function getOrgBlockedTimes(organizationId, therapistId, startDate, endDate) {
   const { data, error } = await supabase
     .from('blocked_times')
-    .select('id, therapist_id, clinic_id, date, start_time, end_time, reason')
+    .select('*')
     .eq('therapist_id', therapistId)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date')
+    .gte('start_time', startDate)
+    .lte('end_time', endDate)
     .order('start_time');
 
   if (error) {
@@ -130,30 +136,24 @@ export async function getOrgBlockedTimes(organizationId, therapistId, startDate,
 
 /**
  * Disponibilidad (horario base) del dentista para N días desde startDate.
- * Usa la RPC existente `get_therapist_availability` si está disponible.
- * Fallback: query directa a `therapist_availability`.
+ * Usa la RPC `get_therapist_availability` (única fuente — no hay tabla directa).
+ *
+ * Signature confirmada (20260401000000_baseline_schema.sql §get_therapist_availability):
+ *   (p_therapist_identifier text, p_clinic_id uuid, p_start_date date, p_days integer)
+ *   RETURNS TABLE(availability_date date, time_slots jsonb)
+ *
+ * clinicId puede ser null — la RPC lo maneja como "todas las clínicas del therapist".
  */
-export async function getOrgAvailability(organizationId, therapistId, startDate, days) {
-  // Intentar RPC primero (ya usado por el dentista en therapist.api.js)
-  try {
-    const { data, error } = await supabase.rpc('get_therapist_availability', {
-      p_therapist_id: therapistId,
-      p_start_date: startDate,
-      p_days: days,
-    });
-    if (!error && data) return data;
-  } catch (rpcErr) {
-    logger.warn('RPC get_therapist_availability failed, falling back:', rpcErr?.message);
-  }
-
-  // Fallback: query directa a therapist_availability
-  const { data, error } = await supabase
-    .from('therapist_availability')
-    .select('*')
-    .eq('therapist_id', therapistId);
+export async function getOrgAvailability(organizationId, therapistId, startDate, days, clinicId = null) {
+  const { data, error } = await supabase.rpc('get_therapist_availability', {
+    p_therapist_identifier: therapistId,
+    p_clinic_id: clinicId,
+    p_start_date: startDate,
+    p_days: days,
+  });
 
   if (error) {
-    logger.warn('getOrgAvailability fallback failed:', error.message);
+    logger.warn('getOrgAvailability RPC failed:', error.message);
     throw error;
   }
   return data || [];
@@ -169,6 +169,24 @@ export async function searchOrgPatients(organizationId, term) {
   const cleanTerm = String(term).trim().replace(/[%_]/g, '');
   if (!cleanTerm) return [];
 
+  // Dos queries — evita complicaciones de PostgREST con filter OR sobre embed aliased.
+  // Query 1: buscar profiles que matcheen el término (via RLS "Org assistants can view patient profiles"
+  // el asistente puede ver profiles de pacientes de su org).
+  const { data: profileMatches, error: profErr } = await supabase
+    .from('profiles')
+    .select('id')
+    .or(`full_name.ilike.%${cleanTerm}%,email.ilike.%${cleanTerm}%`)
+    .limit(50);
+
+  if (profErr) {
+    logger.warn('searchOrgPatients (profiles step) failed:', profErr.message);
+    throw profErr;
+  }
+
+  const profileIds = (profileMatches || []).map((p) => p.id);
+  if (profileIds.length === 0) return [];
+
+  // Query 2: patients scoped a la org, con esos profile_ids
   const { data, error } = await supabase
     .from('patients')
     .select(`
@@ -177,12 +195,12 @@ export async function searchOrgPatients(organizationId, term) {
       profile:profiles!patients_profile_id_fkey(full_name, email, phone)
     `)
     .eq('organization_id', organizationId)
-    .eq('is_active', true)
-    .or(`profile.full_name.ilike.%${cleanTerm}%,profile.email.ilike.%${cleanTerm}%`)
+    .eq('is_blacklisted', false)
+    .in('profile_id', profileIds)
     .limit(20);
 
   if (error) {
-    logger.warn('searchOrgPatients failed:', error.message);
+    logger.warn('searchOrgPatients (patients step) failed:', error.message);
     throw error;
   }
 
@@ -197,20 +215,21 @@ export async function searchOrgPatients(organizationId, term) {
 
 /**
  * Lista servicios activos de un dentista (para elegir al crear cita).
+ * Nota: therapist_services usa `service_name` (NO `name`). Se alias para UI.
  */
 export async function getOrgServicesForTherapist(therapistId) {
   const { data, error } = await supabase
     .from('therapist_services')
-    .select('id, name, duration_minutes, price_clp, is_active')
+    .select('id, service_name, duration_minutes, price_clp, is_active')
     .eq('therapist_id', therapistId)
     .eq('is_active', true)
-    .order('name');
+    .order('service_name');
 
   if (error) {
     logger.warn('getOrgServicesForTherapist failed:', error.message);
     throw error;
   }
-  return data || [];
+  return (data || []).map((s) => ({ ...s, name: s.service_name }));
 }
 
 // ============================================================================
@@ -226,13 +245,12 @@ export async function getOrgServicesForTherapist(therapistId) {
  * @throws si insert falla o no devuelve data (UI Honesty §V)
  */
 export async function createOrgAppointment(payload) {
-  // Obtener user actual para created_by_user_id
-  const { data: { user } } = await supabase.auth.getUser();
-
+  // Nota: appointments NO tiene columna created_by_user_id en el schema actual.
+  // Trazabilidad del creador se logra via clinical_audit_log (logClinicalAccess
+  // en el caller). Si futuro spec agrega la columna, descomentar el assignment.
   const insertPayload = {
     ...payload,
     status: payload.status || 'scheduled',
-    created_by_user_id: user?.id || null,
   };
 
   const { data, error } = await supabase
@@ -291,11 +309,29 @@ export async function updateOrgAppointment(id, changes) {
 /**
  * Crea un bloqueo horario en nombre de un dentista.
  * RLS (blocked_times_assistant_insert — migration 20260424000001) valida.
+ *
+ * Helper: acepta { date, start_time, end_time } (strings separados) y combina
+ * en timestamptz ISO con offset local del browser. Critical:
+ *   - `new Date('2026-04-24T14:00:00')` interpreta LOCAL (timezone del browser)
+ *   - `.toISOString()` convierte a UTC con offset explícito
+ *   - Al leer de DB, JS `new Date(isoString)` vuelve a convertir correctamente a local
+ * Sin este trick, Postgres interpretaría '2026-04-24T14:00:00' como UTC y el
+ * bloque aparecería 3-4 horas antes en la UI del usuario chileno.
  */
 export async function createOrgBlockedTime(payload) {
+  let normalizedPayload = { ...payload };
+  if (payload.date && typeof payload.start_time === 'string' && payload.start_time.length <= 8) {
+    // Construir Date en timezone local del browser, luego serializar como ISO UTC
+    const localStart = new Date(`${payload.date}T${payload.start_time}`);
+    const localEnd = new Date(`${payload.date}T${payload.end_time}`);
+    normalizedPayload.start_time = localStart.toISOString();
+    normalizedPayload.end_time = localEnd.toISOString();
+    delete normalizedPayload.date; // no existe la columna
+  }
+
   const { data, error } = await supabase
     .from('blocked_times')
-    .insert(payload)
+    .insert(normalizedPayload)
     .select('*')
     .maybeSingle();
 

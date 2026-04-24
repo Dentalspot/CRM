@@ -50,12 +50,16 @@ import {
   getOrgServicesForTherapist,
 } from '@/lib/api/org.api';
 
+// Schema appointments.status IN ('scheduled','confirmed','completed','cancelled','no-show')
+// (migration 20260424000003 reagregó 'confirmed' después de haberse removido en 20260414000004).
+// Colores en grid los maneja WeeklyAgendaView:
+//   scheduled=blanco/gris · confirmed=azul · completed=verde · cancelled=rojo · no-show=café/amber
 const STATUS_OPTIONS = [
   { value: 'scheduled', label: 'Agendada' },
   { value: 'confirmed', label: 'Confirmada' },
   { value: 'completed', label: 'Completada' },
   { value: 'cancelled', label: 'Cancelada' },
-  { value: 'no-show', label: 'No asistió' },
+  { value: 'no-show', label: 'Ausente' },
 ];
 
 const AssistantAppointmentModal = ({
@@ -221,13 +225,15 @@ const AssistantAppointmentModal = ({
   }, []);
 
   // Validaciones
+  // Nota: el warning de "sin servicios" NO bloquea submit — service_id es nullable
+  // en DB y es un caso de uso real crear cita con "Sin servicio asignado" (ej:
+  // cita de control, urgencia, evaluación inicial sin categorizar).
   const hasNoServices = services.length === 0 && !loadingServices && therapistId;
   const canSubmit = useMemo(() => {
     if (!selectedPatient || !date || !startTime || !endTime || !therapistId) return false;
     if (endTime <= startTime) return false;
-    if (hasNoServices) return false;
     return !isSubmitting;
-  }, [selectedPatient, date, startTime, endTime, therapistId, hasNoServices, isSubmitting]);
+  }, [selectedPatient, date, startTime, endTime, therapistId, isSubmitting]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

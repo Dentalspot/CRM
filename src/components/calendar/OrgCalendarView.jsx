@@ -34,6 +34,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 
 import WeeklyAgendaView from '@/components/calendar/WeeklyAgendaView';
@@ -64,7 +74,6 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
   const [selectedDentistId, setSelectedDentistId] = useState(null);
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [statusFilter, setStatusFilter] = useState('all');
-  const [mode, setMode] = useState('create'); // 'create' | 'block'
 
   // State: data de agenda
   const [appointments, setAppointments] = useState([]);
@@ -79,6 +88,16 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
   const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
   const [prefilledSlot, setPrefilledSlot] = useState(null);
   const [editingAppointmentId, setEditingAppointmentId] = useState(null);
+
+  // State: block time dialog (crear)
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [pendingBlock, setPendingBlock] = useState(null); // { date, startTime, endTime }
+  const [blockReason, setBlockReason] = useState('');
+  const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
+
+  // State: unblock confirmation
+  const [blockToDelete, setBlockToDelete] = useState(null);
+  const [isDeletingBlock, setIsDeletingBlock] = useState(false);
 
   // Fetch dentistas al montar o cuando cambia la org
   useEffect(() => {
@@ -117,10 +136,11 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     const weekEnd = format(addDays(currentWeek, 6), 'yyyy-MM-dd');
 
     try {
+      const clinicIdForAvailability = clinics[0]?.id || null;
       const [apts, blocks, availability] = await Promise.all([
         getOrgAppointments(organizationId, selectedDentistId, weekStart, weekEnd),
         getOrgBlockedTimes(organizationId, selectedDentistId, weekStart, weekEnd),
-        getOrgAvailability(organizationId, selectedDentistId, weekStart, 7),
+        getOrgAvailability(organizationId, selectedDentistId, weekStart, 7, clinicIdForAvailability),
       ]);
       setAppointments(apts);
       setBlockedTimes(blocks);
@@ -135,7 +155,7 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     } finally {
       setLoadingAgenda(false);
     }
-  }, [organizationId, selectedDentistId, currentWeek, toast]);
+  }, [organizationId, selectedDentistId, currentWeek, clinics, toast]);
 
   useEffect(() => {
     fetchAgendaData();
@@ -170,6 +190,9 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
   const handleToday = () => setCurrentWeek(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   // Helper: chequea overlap client-side (FR-010, research §R-07)
+  // Schema real:
+  //   - appointments: date (date) + start_time (time) + end_time (time) separados
+  //   - blocked_times: start_time (timestamptz) + end_time (timestamptz) combinados
   const hasOverlap = useCallback((date, startTime, endTime, ignoreApptId = null) => {
     // Conflictos con citas activas del mismo dentista
     const aptConflict = appointments.some((a) => {
@@ -182,19 +205,21 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     });
     if (aptConflict) return 'appointment';
 
-    // Conflictos con bloqueos del mismo dentista
+    // Conflictos con bloqueos del mismo dentista (blocked_times usa timestamptz)
+    const slotStart = new Date(`${date}T${startTime}:00`);
+    const slotEnd = new Date(`${date}T${endTime}:00`);
     const blockConflict = blockedTimes.some((b) => {
-      if (b.date !== date) return false;
-      const bStart = b.start_time?.slice(0, 5);
-      const bEnd = b.end_time?.slice(0, 5);
-      return !(endTime <= bStart || startTime >= bEnd);
+      const bStart = new Date(b.start_time);
+      const bEnd = new Date(b.end_time);
+      return !(slotEnd <= bStart || slotStart >= bEnd);
     });
     if (blockConflict) return 'block';
     return null;
   }, [appointments, blockedTimes]);
 
-  // T019 + T025: slot click — crea cita (mode=create) o bloqueo (mode=block)
-  const handleSlotClick = useCallback(async (slotInfo) => {
+  // T019: slot click simple → abrir modal de nueva cita
+  // (drag se maneja en handleBlockDragCreate, patrón heredado de WeeklyAgendaView del dentista)
+  const handleSlotClick = useCallback((slotInfo) => {
     if (!selectedDentistId) {
       toast({ variant: 'destructive', title: 'Seleccioná un dentista primero' });
       return;
@@ -214,43 +239,16 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
       return;
     }
 
-    if (mode === 'create') {
-      // Abrir modal de nueva cita
-      setPrefilledSlot({
-        date,
-        startTime,
-        endTime,
-        therapistId: selectedDentistId,
-      });
-      setEditingAppointmentId(null);
-      setAppointmentModalOpen(true);
-    } else if (mode === 'block') {
-      // Crear bloqueo directo (sin modal — podemos evolucionar a modal con razón después)
-      const reason = window.prompt('Razón del bloqueo (opcional, máx 200 caracteres):', '');
-      if (reason === null) return; // cancelado
-
-      try {
-        const clinic = clinics[0];
-        const created = await createOrgBlockedTime({
-          therapist_id: selectedDentistId,
-          clinic_id: clinic?.id || null,
-          date,
-          start_time: `${startTime}:00`,
-          end_time: `${endTime}:00`,
-          reason: reason?.trim() || null,
-        });
-        setBlockedTimes((prev) => [...prev, created]);
-        toast({ title: '✅ Hora bloqueada' });
-      } catch (err) {
-        logger.error('Error creating blocked time:', err);
-        toast({
-          variant: 'destructive',
-          title: 'Error al bloquear',
-          description: err.message || 'No se pudo crear el bloqueo.',
-        });
-      }
-    }
-  }, [mode, selectedDentistId, clinics, hasOverlap, toast]);
+    // Abrir modal de nueva cita
+    setPrefilledSlot({
+      date,
+      startTime,
+      endTime,
+      therapistId: selectedDentistId,
+    });
+    setEditingAppointmentId(null);
+    setAppointmentModalOpen(true);
+  }, [selectedDentistId, hasOverlap, toast]);
 
   // T030: click en cita → abrir modal edit
   const handleAppointmentClick = useCallback((apt) => {
@@ -260,17 +258,21 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     setAppointmentModalOpen(true);
   }, []);
 
-  // T026: click en bloqueo → ofrecer desbloquear
-  const handleBlockedTimeClick = useCallback(async (block) => {
+  // T026: click en bloqueo → abrir AlertDialog de confirmación
+  const handleBlockedTimeClick = useCallback((block) => {
     if (!block?.id) return;
-    const reasonText = block.reason ? ` "${block.reason}"` : '';
-    const confirmed = window.confirm(`¿Eliminar este bloqueo${reasonText}?\n\n${block.date} ${block.start_time?.slice(0,5)}-${block.end_time?.slice(0,5)}`);
-    if (!confirmed) return;
+    setBlockToDelete(block);
+  }, []);
 
+  // Confirm del unblock dialog
+  const handleConfirmUnblock = useCallback(async () => {
+    if (!blockToDelete?.id) return;
+    setIsDeletingBlock(true);
     try {
-      await deleteOrgBlockedTime(block.id);
-      setBlockedTimes((prev) => prev.filter((b) => b.id !== block.id));
+      await deleteOrgBlockedTime(blockToDelete.id);
+      setBlockedTimes((prev) => prev.filter((b) => b.id !== blockToDelete.id));
       toast({ title: '✅ Hora desbloqueada' });
+      setBlockToDelete(null);
     } catch (err) {
       logger.error('Error deleting blocked time:', err);
       toast({
@@ -278,12 +280,17 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         title: 'Error al desbloquear',
         description: err.message,
       });
+    } finally {
+      setIsDeletingBlock(false);
     }
-  }, [toast]);
+  }, [blockToDelete, toast]);
 
-  // T025: drag-to-create de bloqueo (invocado por WeeklyAgendaView en su flujo de drag)
-  const handleBlockDragCreate = useCallback(async (blockInfo) => {
-    if (!selectedDentistId || mode !== 'block') return;
+  // T025: drag-to-create de bloqueo
+  // Patrón heredado de WeeklyAgendaView: drag siempre crea bloqueo
+  // (click simple abre modal de cita, ver handleSlotClick).
+  // Al detectar drag válido → abrir Dialog shadcn con input de razón.
+  const handleBlockDragCreate = useCallback((blockInfo) => {
+    if (!selectedDentistId) return;
     const { date, startTime, endTime } = blockInfo;
 
     const conflict = hasOverlap(date, startTime, endTime);
@@ -296,18 +303,31 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
       return;
     }
 
+    // Abrir Dialog para confirmar + capturar razón
+    setPendingBlock({ date, startTime, endTime });
+    setBlockReason('');
+    setBlockDialogOpen(true);
+  }, [selectedDentistId, hasOverlap, toast]);
+
+  // Confirm del block dialog — crea el blocked_time
+  const handleConfirmBlock = useCallback(async () => {
+    if (!pendingBlock || !selectedDentistId) return;
+    setIsSubmittingBlock(true);
     try {
       const clinic = clinics[0];
       const created = await createOrgBlockedTime({
         therapist_id: selectedDentistId,
         clinic_id: clinic?.id || null,
-        date,
-        start_time: `${startTime}:00`,
-        end_time: `${endTime}:00`,
-        reason: null,
+        date: pendingBlock.date,
+        start_time: `${pendingBlock.startTime}:00`,
+        end_time: `${pendingBlock.endTime}:00`,
+        reason: blockReason?.trim() || null,
       });
       setBlockedTimes((prev) => [...prev, created]);
       toast({ title: '✅ Hora bloqueada' });
+      setBlockDialogOpen(false);
+      setPendingBlock(null);
+      setBlockReason('');
     } catch (err) {
       logger.error('Error creating blocked time:', err);
       toast({
@@ -315,81 +335,50 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         title: 'Error al bloquear',
         description: err.message,
       });
+    } finally {
+      setIsSubmittingBlock(false);
     }
-  }, [mode, selectedDentistId, clinics, hasOverlap, toast]);
+  }, [pendingBlock, selectedDentistId, clinics, blockReason, toast]);
 
-  // T033-T034: resize / mover cita
-  const handleAppointmentMove = useCallback(async (moveInfo) => {
-    if (!moveInfo?.appointmentId) return;
-    const { appointmentId, newStart, newEnd, newDate } = moveInfo;
-
-    // Validación: duración mínima 15 min
-    const startStr = newStart?.slice(0, 5) || newStart;
-    const endStr = newEnd?.slice(0, 5) || newEnd;
-    const apt = appointments.find((a) => a.id === appointmentId);
+  // Drag-to-move de cita. WeeklyAgendaView dispara como args posicionales:
+  //   onAppointmentMove(apptId, dateStr, timeStr, endTimeStr)
+  // Ver WeeklyAgendaView.jsx línea 345. NO resize — solo movimiento completo de la cita.
+  const handleAppointmentMove = useCallback(async (apptId, dateStr, timeStr, endTimeStr) => {
+    if (!apptId) return;
+    const apt = appointments.find((a) => a.id === apptId);
     if (!apt) return;
 
-    const effectiveDate = newDate || apt.date;
-
     // Overlap check (ignorando la cita misma)
-    const conflict = hasOverlap(effectiveDate, startStr, endStr, appointmentId);
+    const conflict = hasOverlap(dateStr, timeStr, endTimeStr, apptId);
     if (conflict) {
       toast({
         variant: 'destructive',
         title: 'Conflicto',
         description: 'El cambio colisiona con otra cita o bloqueo.',
       });
-      // Recargamos para revertir visualmente
-      fetchAgendaData();
-      return;
-    }
-
-    // Duración mínima 15 min
-    const startMinutes = Number(startStr.split(':')[0]) * 60 + Number(startStr.split(':')[1]);
-    const endMinutes = Number(endStr.split(':')[0]) * 60 + Number(endStr.split(':')[1]);
-    if (endMinutes - startMinutes < 15) {
-      toast({
-        variant: 'destructive',
-        title: 'Duración mínima 15 minutos',
-      });
-      fetchAgendaData();
+      fetchAgendaData(); // revertir visual
       return;
     }
 
     try {
-      const updated = await updateOrgAppointment(appointmentId, {
-        date: effectiveDate,
-        start_time: `${startStr}:00`,
-        end_time: `${endStr}:00`,
+      const updated = await updateOrgAppointment(apptId, {
+        date: dateStr,
+        start_time: `${timeStr}:00`,
+        end_time: `${endTimeStr}:00`,
       });
-      setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? { ...a, ...updated } : a)));
+      setAppointments((prev) => prev.map((a) => (a.id === apptId ? { ...a, ...updated } : a)));
 
-      // Audit log
-      if (user?.id && apt.patient_id) {
-        logClinicalAccess({
-          organization_id: organizationId,
-          user_id: user.id,
-          patient_id: apt.patient_id,
-          action: 'update',
-          resource_type: 'appointment',
-          resource_id: appointmentId,
-          grant_id: null,
-          reason: null,
-          ip_address: null,
-        }).catch((err) => logger.warn('audit log update failed:', err));
-      }
-
-      toast({ title: '✅ Cita actualizada' });
+      toast({ title: '✅ Cita movida' });
     } catch (err) {
       logger.error('Error moving appointment:', err);
       toast({
         variant: 'destructive',
-        title: 'Error al actualizar cita',
+        title: 'Error al mover cita',
         description: err.message,
       });
       fetchAgendaData();
     }
-  }, [appointments, hasOverlap, user, organizationId, fetchAgendaData, toast]);
+  }, [appointments, hasOverlap, fetchAgendaData, toast]);
 
   // Callbacks para modales
   const handleAppointmentCreated = useCallback((created) => {
@@ -436,26 +425,16 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
           </p>
         </div>
 
-        {/* Toggle modo */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant={mode === 'create' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setMode('create')}
-            className={mode === 'create' ? 'bg-primary' : ''}
-          >
-            <CalendarIcon className="h-4 w-4 mr-1.5" />
-            Crear cita
-          </Button>
-          <Button
-            variant={mode === 'block' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setMode('block')}
-            className={mode === 'block' ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' : 'border-red-200 text-red-700 hover:bg-red-50'}
-          >
-            <Ban className="h-4 w-4 mr-1.5" />
-            Bloquear hora
-          </Button>
+        {/* Tooltip de UX — cómo usar drag vs click */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-slate-50 border">
+            <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+            <span><strong>Click</strong> en slot libre = crear cita</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-red-50 border border-red-100">
+            <Ban className="h-3.5 w-3.5 text-red-600" />
+            <span><strong>Drag</strong> sobre slots = bloquear hora</span>
+          </div>
         </div>
       </div>
 
@@ -504,7 +483,7 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
                   <SelectItem value="confirmed">Confirmadas</SelectItem>
                   <SelectItem value="completed">Completadas</SelectItem>
                   <SelectItem value="cancelled">Canceladas</SelectItem>
-                  <SelectItem value="no-show">No asistió</SelectItem>
+                  <SelectItem value="no-show">Ausentes</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -559,6 +538,140 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         onCreated={handleAppointmentCreated}
         onUpdated={handleAppointmentUpdated}
       />
+
+      {/* Dialog para bloquear hora con razón */}
+      <Dialog
+        open={blockDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setBlockDialogOpen(false);
+            setPendingBlock(null);
+            setBlockReason('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-red-600" />
+              Bloquear hora
+            </DialogTitle>
+            <DialogDescription>
+              {pendingBlock && (
+                <>
+                  Bloqueará <strong>{pendingBlock.startTime} — {pendingBlock.endTime}</strong>
+                  {' del '}
+                  {pendingBlock.date && format(new Date(`${pendingBlock.date}T00:00:00`), "EEEE d 'de' MMMM", { locale: es })}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="block-reason" className="text-xs">
+              Razón (opcional)
+            </Label>
+            <Input
+              id="block-reason"
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value.slice(0, 200))}
+              placeholder="Ej: Almuerzo, Reunión, Vacaciones..."
+              maxLength={200}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isSubmittingBlock) {
+                  e.preventDefault();
+                  handleConfirmBlock();
+                }
+              }}
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {blockReason.length}/200
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBlockDialogOpen(false);
+                setPendingBlock(null);
+                setBlockReason('');
+              }}
+              disabled={isSubmittingBlock}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmBlock}
+              disabled={isSubmittingBlock}
+              className="bg-red-500 hover:bg-red-600 text-white border-red-500"
+            >
+              {isSubmittingBlock ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Bloqueando...</>
+              ) : (
+                <><Ban className="h-4 w-4 mr-2" />Bloquear hora</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm unblock */}
+      <Dialog
+        open={Boolean(blockToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setBlockToDelete(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Desbloquear esta hora?</DialogTitle>
+            <DialogDescription>
+              {blockToDelete && (
+                <>
+                  {blockToDelete.reason ? (
+                    <>Bloqueo: <strong>{blockToDelete.reason}</strong><br /></>
+                  ) : null}
+                  {new Date(blockToDelete.start_time).toLocaleString('es-CL', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                  {' — '}
+                  {new Date(blockToDelete.end_time).toLocaleString('es-CL', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setBlockToDelete(null)}
+              disabled={isDeletingBlock}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmUnblock}
+              disabled={isDeletingBlock}
+            >
+              {isDeletingBlock ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Desbloqueando...</>
+              ) : (
+                'Desbloquear'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
