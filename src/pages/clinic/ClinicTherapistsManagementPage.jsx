@@ -40,20 +40,22 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { 
-  Users, 
-  Search, 
-  MoreHorizontal, 
-  UserMinus, 
-  Mail, 
-  Shield, 
-  CheckCircle2, 
+  Users,
+  Search,
+  MoreHorizontal,
+  UserMinus,
+  UserPlus,
+  Mail,
+  Shield,
+  CheckCircle2,
   XCircle,
   Clock,
   RefreshCw,
   Plus,
   Ban,
   Send,
-  Loader2
+  Loader2,
+  Archive
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -73,12 +75,14 @@ const ClinicTherapistsManagementPage = () => {
   // Data
   const [therapists, setTherapists] = useState([]);
   const [assistants, setAssistants] = useState([]);
+  const [inactiveTherapists, setInactiveTherapists] = useState([]);
+  const [inactiveAssistants, setInactiveAssistants] = useState([]);
   const [invitations, setInvitations] = useState([]); // all clinic_invitations rows (filtered by role en render)
 
   // Filtering
   const [searchTerm, setSearchTerm] = useState('');
   const [activeRole, setActiveRole] = useState('therapist'); // top-level tab: 'therapist' | 'assistant'
-  const [activeTab, setActiveTab] = useState('active'); // sub-tab per role: 'active' | 'invitations'
+  const [activeTab, setActiveTab] = useState('active'); // sub-tab per role: 'active' | 'inactive' | 'invitations'
 
   // Modals state
   const [isInviteTherapistModalOpen, setIsInviteTherapistModalOpen] = useState(false);
@@ -134,26 +138,73 @@ const ClinicTherapistsManagementPage = () => {
       if (ctError) throw ctError;
       setTherapists(ctData || []);
 
+      // 2b. Fetch Inactive Therapists (para sub-tab Inactivos)
+      const { data: ctInactiveData, error: ctInactiveError } = await supabase
+        .from('clinic_therapists')
+        .select(`
+          id,
+          therapist_id,
+          is_active,
+          joined_at,
+          profiles:therapist_id (
+            id,
+            full_name,
+            email,
+            phone,
+            therapist_branding (avatar_url)
+          )
+        `)
+        .eq('clinic_id', myClinic.id)
+        .eq('is_active', false);
+
+      if (ctInactiveError) {
+        logger.warn('Error fetching inactive therapists (non-fatal):', ctInactiveError);
+        setInactiveTherapists([]);
+      } else {
+        setInactiveTherapists(ctInactiveData || []);
+      }
+
       // 3. Fetch Active Assistants (spec 023 — via organization_members)
       if (myClinic.organization_id) {
-        const { data: omData, error: omError } = await supabase
-          .from('organization_members')
-          .select(`
-            id,
-            user_id,
-            role,
-            is_active,
-            joined_at,
-            profiles:user_id (
+        const [{ data: omData, error: omError }, { data: omInactiveData, error: omInactiveError }] = await Promise.all([
+          supabase
+            .from('organization_members')
+            .select(`
               id,
-              full_name,
-              email,
-              phone
-            )
-          `)
-          .eq('organization_id', myClinic.organization_id)
-          .eq('role', 'assistant')
-          .eq('is_active', true);
+              user_id,
+              role,
+              is_active,
+              joined_at,
+              profiles:user_id (
+                id,
+                full_name,
+                email,
+                phone
+              )
+            `)
+            .eq('organization_id', myClinic.organization_id)
+            .eq('role', 'assistant')
+            .eq('is_active', true),
+          supabase
+            .from('organization_members')
+            .select(`
+              id,
+              user_id,
+              role,
+              is_active,
+              joined_at,
+              deactivated_at,
+              profiles:user_id (
+                id,
+                full_name,
+                email,
+                phone
+              )
+            `)
+            .eq('organization_id', myClinic.organization_id)
+            .eq('role', 'assistant')
+            .eq('is_active', false),
+        ]);
 
         if (omError) {
           logger.warn('Error fetching assistants (non-fatal):', omError);
@@ -161,8 +212,16 @@ const ClinicTherapistsManagementPage = () => {
         } else {
           setAssistants(omData || []);
         }
+
+        if (omInactiveError) {
+          logger.warn('Error fetching inactive assistants (non-fatal):', omInactiveError);
+          setInactiveAssistants([]);
+        } else {
+          setInactiveAssistants(omInactiveData || []);
+        }
       } else {
         setAssistants([]);
+        setInactiveAssistants([]);
         logger.warn('Clinic sin organization_id — asistentes no se pueden listar. Migración 20260423000002 pendiente?');
       }
 
@@ -225,6 +284,35 @@ const ClinicTherapistsManagementPage = () => {
     setIsRemoveDialogOpen(true);
   };
 
+  // Reactivar (inverso de desvincular) — útil si se revoca por error o reinstaura
+  const handleReactivate = async (row, kind) => {
+    setActionLoading(row.id);
+    try {
+      if (kind === 'assistant') {
+        const { error } = await supabase
+          .from('organization_members')
+          .update({ is_active: true, deactivated_at: null })
+          .eq('id', row.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('clinic_therapists')
+          .update({ is_active: true })
+          .eq('id', row.id);
+        if (error) throw error;
+      }
+      toast({
+        title: kind === 'assistant' ? 'Asistente reactivado' : 'Dentista reactivado',
+        description: 'El acceso a la clínica fue restaurado.',
+      });
+      fetchClinicData();
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error al reactivar', description: err.message });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const confirmRemove = async () => {
     if (!therapistToRemove) return;
     try {
@@ -268,6 +356,8 @@ const ClinicTherapistsManagementPage = () => {
 
   const filteredTherapists = filterByTerm(therapists);
   const filteredAssistants = filterByTerm(assistants);
+  const filteredInactiveTherapists = filterByTerm(inactiveTherapists);
+  const filteredInactiveAssistants = filterByTerm(inactiveAssistants);
 
   // Split invitaciones por role (spec 023)
   const pendingTherapistInvitations = invitations.filter(i =>
@@ -365,12 +455,63 @@ const ClinicTherapistsManagementPage = () => {
     );
   };
 
-  // Helper render: sub-tabs (Activos / Invitaciones) — reutilizado por cada top-level tab
+  // Helper render: una row inactiva — similar a renderActiveRow pero con badge "Inactivo" y acción "Reactivar"
+  const renderInactiveRow = (row, kind) => {
+    const profile = row.profiles;
+    const avatarUrl = profile?.therapist_branding?.avatar_url;
+    const deactivatedAt = row.deactivated_at;
+    return (
+      <TableRow key={row.id} className="opacity-70">
+        <TableCell className="font-medium">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border grayscale">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <Users className="h-4 w-4 text-slate-400" />
+              )}
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-slate-700">{profile?.full_name || 'Sin Nombre'}</div>
+              <div className="text-xs text-muted-foreground md:hidden">{profile?.email}</div>
+            </div>
+          </div>
+        </TableCell>
+        <TableCell className="hidden md:table-cell text-slate-600">{profile?.email}</TableCell>
+        <TableCell className="text-muted-foreground text-sm">
+          {deactivatedAt
+            ? format(new Date(deactivatedAt), "d MMM yyyy", { locale: es })
+            : <span className="italic text-gray-400">—</span>}
+        </TableCell>
+        <TableCell>
+          <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0">Inactivo</Badge>
+        </TableCell>
+        <TableCell className="text-right">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleReactivate(row, kind)}
+            disabled={actionLoading === row.id}
+            className="text-green-700 hover:text-green-800 hover:bg-green-50 border-green-200"
+          >
+            {actionLoading === row.id
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <UserPlus className="h-3 w-3 mr-1" />}
+            Reactivar
+          </Button>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  // Helper render: sub-tabs (Activos / Inactivos / Invitaciones) — reutilizado por cada top-level tab
   const renderRoleSection = ({
     kind,
     activeItems,
+    inactiveItems,
     pendingItems,
     emptyActiveText,
+    emptyInactiveText,
     emptyPendingText,
     onInviteClick,
     emptyRoleLabel,
@@ -384,6 +525,12 @@ const ClinicTherapistsManagementPage = () => {
                 Activos
                 <Badge variant="secondary" className="ml-2 bg-slate-100 text-slate-700">{activeItems.length}</Badge>
               </TabsTrigger>
+              <TabsTrigger value="inactive">
+                Inactivos
+                {inactiveItems.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 bg-slate-200 text-slate-700">{inactiveItems.length}</Badge>
+                )}
+              </TabsTrigger>
               <TabsTrigger value="invitations">
                 Invitaciones
                 {pendingItems.length > 0 && (
@@ -392,7 +539,7 @@ const ClinicTherapistsManagementPage = () => {
               </TabsTrigger>
             </TabsList>
 
-            {activeTab === 'active' && (
+            {(activeTab === 'active' || activeTab === 'inactive') && (
               <div className="relative w-full md:w-72">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
@@ -427,6 +574,33 @@ const ClinicTherapistsManagementPage = () => {
                     </TableRow>
                   ) : (
                     activeItems.map((row) => renderActiveRow(row, kind))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="inactive" className="mt-0">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Profesional</TableHead>
+                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                    <TableHead>Fecha Desvinculación</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inactiveItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                        {emptyInactiveText}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    inactiveItems.map((row) => renderInactiveRow(row, kind))
                   )}
                 </TableBody>
               </Table>
@@ -538,8 +712,10 @@ const ClinicTherapistsManagementPage = () => {
           {renderRoleSection({
             kind: 'therapist',
             activeItems: filteredTherapists,
+            inactiveItems: filteredInactiveTherapists,
             pendingItems: pendingTherapistInvitations,
             emptyActiveText: 'No se encontraron dentistas activos.',
+            emptyInactiveText: 'No hay dentistas desvinculados.',
             emptyPendingText: 'No hay invitaciones de dentistas pendientes.',
             onInviteClick: () => setIsInviteTherapistModalOpen(true),
             emptyRoleLabel: 'de dentista',
@@ -550,8 +726,10 @@ const ClinicTherapistsManagementPage = () => {
           {renderRoleSection({
             kind: 'assistant',
             activeItems: filteredAssistants,
+            inactiveItems: filteredInactiveAssistants,
             pendingItems: pendingAssistantInvitations,
             emptyActiveText: 'No hay asistentes activos. Invitá al primero desde el botón arriba.',
+            emptyInactiveText: 'No hay asistentes desvinculados.',
             emptyPendingText: 'No hay invitaciones de asistente pendientes.',
             onInviteClick: () => setIsInviteAssistantModalOpen(true),
             emptyRoleLabel: 'de asistente',

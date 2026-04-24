@@ -70,5 +70,28 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.
 
-**Active feature**: `023-invite-assistant-flow` **DONE + DEPLOYED** (2026-04-23) + Phase B clinic dashboard expansion MERGED. Backend live (migration `20260423000002` aplicada + edge function `clinic-invitations` deployed). Frontend mergeado a `main` commit `e4cb7a4` → Vercel auto-deploy a `dentalspot.cl`. Scope entregado: (a) invite asistente flow end-to-end desde clínica con modal dedicado, email con fallback link si Resend falla, acceptance branched por role en edge function; (b) Gestión de Personal renombrada con tabs top-level Dentistas/Asistentes, revoke unificado; (c) sidebar clínica reorganizado con Tablero principal + Mi clínica + Agendas + Pacientes + Gestión de Personal; (d) ClinicAgendasPage vista semanal con filtro por dentista; (e) ClinicPatientsPage listado org-scoped con banner Ley 20.584 art. 12. Follow-ups pendientes: (1) smoke test post-deploy completo invite→accept→revoke end-to-end, (2) integrar NewAppointmentForm real en Agendas/Pacientes stubs (hoy toast "próximamente"), (3) vista detalle admin-level paciente (modal citas sin clinical), (4) email confirmation ON flow para invitaciones (MVP asume OFF), (5) RUT duplicate UX — constraint rechaza con "Database error saving new user" genérico (backlog: validación client-side + mensaje claro), (6) meta-spec `fix-mercadopago-critical-bugs` P0 pre-scale, (7) spec `create-clinical-boxes-table-and-enforcement` para agenda por box, (8) Phase F smoke E2E spec 022. Ver `docs/launch-beta/README.md` + session logs para detalle.
+**Active feature**: `023-invite-assistant-flow` **DONE + DEPLOYED + SMOKE-TESTED** (2026-04-24). Smoke test end-to-end ejecutado en prod con éxito: US1 (invite nuevo) + US3 (permisos RLS) + US4 (revoke) PASSED. Test assistant "Kobe Bean Bryant" (dentalspot.cl+asistente@gmail.com, user_id 891399b9-ade2-43b7-9b14-3267d922fc3f) dejado en `organization_members.is_active=false` como test user permanente para regresiones del flow Inactivos/Reactivar.
+
+**Durante smoke se descubrieron y fixearon 3 bugs DB críticos**:
+- Migration `20260423000003_add_responsible_role_to_clinics.sql` — nuevo campo `clinics.responsible_role` (Ley 20.584 art. 5)
+- Migration `20260423000004_allow_multi_account_per_rut.sql` — DROP UNIQUE constraint en `profiles.rut` para soportar multi-cuenta por persona (dentista dueño de su clínica = 2 cuentas legítimas con mismo RUT)
+- Migration `20260423000005_clinic_admins_read_org_member_profiles.sql` — RLS policy nueva permite al clinic_admin leer profiles de members activos E inactivos de su org (necesario para listado Asistentes + Inactivos)
+
+**Además del smoke se implementaron 2 mejoras de producto inline**:
+- Rediseño "Mi Clínica" → tab unificado con 2 cards (Datos de clínica + Responsable legal), eliminado "Sobre Mí" para users clinic, validación RUT chileno client-side, paleta teal unificada (removido pink hardcoded `#ff74c3`)
+- Tab "Inactivos" + acción "Reactivar" en Gestión de Personal (ClinicTherapistsManagementPage)
+
+**Bugs UX remanentes registrados como followups (no bloqueantes, audit trail en SpawnTask)**:
+1. Sidebar cambia a items de 'patient' cuando assistant cae en 404 (fix en Sidebar.jsx role detection)
+2. RoleGuard inconsistente — algunas rutas clinic→404, otras redirect a `/auth/login` (no debería romper sesión)
+3. Asistente revocado queda en limbo con "Selecciona una organización" post-login (mejor mensaje + redirect)
+4. Missing clinic row for clinic-role accounts que no completan wizard Mi Clínica
+
+**Próximos specs sugeridos**:
+- `assistant-rich-calendar` — calendario rich tipo dentista para asistente (drag bloquear horas) — user solicitó durante smoke, 3-4h
+- Followups UX #1-#4 — 1-2h cada uno
+- `create-clinical-boxes-table-and-enforcement` para agenda por box
+- `fix-mercadopago-critical-bugs` P0 pre-scale
+
+Backend vive en prod: migration `20260423000002` + edge function `clinic-invitations`. Frontend mergeado en `main` commit `e4cb7a4`. Los cambios de esta sesión (migrations 000003/000004/000005 + rediseño Mi Clínica + tab Inactivos) están en working directory pendientes de commit + deploy.
 <!-- SPECKIT END -->
