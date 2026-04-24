@@ -72,7 +72,11 @@ Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos qu
 
 **Plan activo**: [specs/025-clinic-admin-rich-calendar/plan.md](specs/025-clinic-admin-rich-calendar/plan.md)
 
-**Active feature**: `024-assistant-rich-calendar` **IMPLEMENTED** (2026-04-24). Calendario rich tipo Google Calendar para el asistente — reemplaza la vista lista día-por-día por grid semanal con drag-to-create citas, bloqueo de horas con drag, edit y resize. Scopeado por `organization_id` (asistente ve agenda de todos los dentistas de su clínica via selector).
+**Active feature**: `025-clinic-admin-rich-calendar` **IMPLEMENTED** (2026-04-24). Extiende spec 024 — replica el calendario rich para role `clinic_admin` en `/dashboard/clinic/agendas`. Reuso total de `OrgCalendarView` + `org.api.js` + `AssistantAppointmentModal` (componentes genéricos de spec 024). Código neto nuevo: ~30 líneas (page wrapper) + 1 route update. Código eliminado: `ClinicAgendasPage.jsx` legacy (~375 líneas vista lista). Net ~260 líneas menos.
+
+Migration `20260424000004_blocked_times_reminders_admin_rls.sql` agrega 6 policies RLS faltantes para clinic_admin: `blocked_times_admin_*` (select/insert/delete) + `"Org admins * reminders"` (insert/update/delete en scheduled_reminders). Sin estas policies, US3 (bloquear hora) y US2 (crear cita vía trigger cascade) fallaban por RLS.
+
+**Spec 024 (assistant-rich-calendar)**: DONE + DEPLOYED + SMOKE-TESTED. Calendario rich del asistente funcionando en prod desde 2026-04-24.
 
 **Arquitectura clave — reusable para spec 025 (clinic_admin calendar)**:
 - Componente genérico `OrgCalendarView` en `src/components/calendar/` acepta prop `scope='assistant'|'clinic_admin'`
