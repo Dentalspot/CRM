@@ -149,6 +149,59 @@ El paciente paga al dentista por sus tratamientos **dentro de DentalSpot** (en v
 
 ---
 
+## 🟢 Calendario rich para clinic_admin
+
+**Estado**: Diferido, trivial post spec 024 · **Intención**: Siguiente spec (025)
+
+### Qué es
+Traer el mismo calendario rich del asistente (spec 024) a la vista de clinic_admin en `/dashboard/clinic/agendas`. El clinic_admin tendría paridad visual/funcional con el asistente — ver agenda de cada dentista, crear/editar/cancelar citas, bloquear horas con drag, resize.
+
+### Por qué diferido
+- Spec 024 acabó de implementarse (2026-04-24). Mergear primero, validar en beta, después replicar.
+- Micro-bloques (Constitution §IV) — no mezclar features.
+- `ClinicAgendasPage` actual funciona (vista lista con filtro por dentista). No urgente.
+
+### Costo estimado
+**~1-2h** porque la arquitectura de spec 024 quedó preparada:
+- Componente `OrgCalendarView` acepta prop `scope='clinic_admin'` ya
+- Servicio `org.api.js` ya enforce RLS para ambos roles
+- Policies `appt_admin_*` ya existen en DB
+- Solo falta: crear `ClinicAdminCalendarPage` wrapper + actualizar route
+
+### Dónde vive el código
+- `src/components/calendar/OrgCalendarView.jsx` — genérico, ya soporta clinic_admin
+- `src/lib/api/org.api.js` — RLS transparente al role
+- `src/pages/clinic/ClinicAgendasPage.jsx` — la vista lista actual a deprecar cuando se active spec 025
+
+### Plan de activación
+1. Smoke test spec 024 con user real (asistente beta).
+2. Si 024 anda en prod, abrir spec 025 — scope trivial, 1-2h.
+3. Reemplazar `ClinicAgendasPage` por `ClinicAdminCalendarPage = () => <OrgCalendarView scope="clinic_admin" organizationId={...} />`.
+4. Tests manuales, deploy.
+
+---
+
+## 🟢 Rich Calendar multi-dentista view (P3 spec 024)
+
+**Estado**: Diferido, feature futura · **Intención**: Cuando clínicas grandes lo pidan
+
+### Qué es
+Vista "Todos los dentistas" en el calendario rich — grid dividido en columnas (1 por dentista) con colores distintos para poder agendar mirando la agenda de todo el equipo simultáneamente.
+
+### Por qué diferido
+- P3 de spec 024 explícitamente out of scope MVP (research §R-01).
+- `WeeklyAgendaView` actual colorea por clínica, no soporta multi-resource.
+- Requiere refactor no-trivial del componente para soportar columnas por resource.
+- Clínicas beta actuales (1-2 dentistas) no lo necesitan.
+
+### Costo estimado
+~6-10h — refactor de `WeeklyAgendaView` para multi-resource + UI de columns + drag between columns.
+
+### Dónde vive el código
+Actualmente no vive. Se abriría como spec nuevo cuando haya señal de clínicas con 4+ dentistas pidiendo la feature.
+
+---
+
 ## 📋 Checklist de coherencia (antes de mergear features a este backlog)
 
 Cuando diferís una feature:

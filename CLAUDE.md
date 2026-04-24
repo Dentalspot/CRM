@@ -72,7 +72,19 @@ Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos qu
 
 **Plan activo**: [specs/024-assistant-rich-calendar/plan.md](specs/024-assistant-rich-calendar/plan.md)
 
-**Active feature**: `023-invite-assistant-flow` **DONE + DEPLOYED + SMOKE-TESTED** (2026-04-24). Smoke test end-to-end ejecutado en prod con éxito: US1 (invite nuevo) + US3 (permisos RLS) + US4 (revoke) PASSED. Test assistant "Kobe Bean Bryant" (dentalspot.cl+asistente@gmail.com, user_id 891399b9-ade2-43b7-9b14-3267d922fc3f) dejado en `organization_members.is_active=false` como test user permanente para regresiones del flow Inactivos/Reactivar.
+**Active feature**: `024-assistant-rich-calendar` **IMPLEMENTED** (2026-04-24). Calendario rich tipo Google Calendar para el asistente — reemplaza la vista lista día-por-día por grid semanal con drag-to-create citas, bloqueo de horas con drag, edit y resize. Scopeado por `organization_id` (asistente ve agenda de todos los dentistas de su clínica via selector).
+
+**Arquitectura clave — reusable para spec 025 (clinic_admin calendar)**:
+- Componente genérico `OrgCalendarView` en `src/components/calendar/` acepta prop `scope='assistant'|'clinic_admin'`
+- Servicio nuevo `src/lib/api/org.api.js` con 10 funciones paralelas a `therapist.api.js` pero scopeadas por org
+- `AssistantCalendarPage` es wrapper fino que delega en `OrgCalendarView`
+- `WeeklyAgendaView` (del dentista) se reusa SIN modificar
+
+**Migration aplicada**: `20260424000001_blocked_times_assistant_rls.sql` — 3 policies en `blocked_times` (SELECT/INSERT/DELETE para asistente) + 2 policies en `profiles` (asistente ve miembros + pacientes de su org). Policies `appt_assistant_*` ya existían del spec 023.
+
+**Compliance**: audit log vía `logClinicalAccess` se invoca en create/update/cancel de cita + view de paciente al abrir edit modal. Bloqueos horarios NO audit (no tocan paciente). Ley 20.584 art. 12 + Ley 21.719 respetadas (FR-026-029).
+
+**Spec 023 (invite-assistant-flow)**: DONE + DEPLOYED + SMOKE-TESTED. Kobe Bean Bryant test user sigue `is_active=false` en `organization_members` para regresiones.
 
 **Durante smoke se descubrieron y fixearon 3 bugs DB críticos**:
 - Migration `20260423000003_add_responsible_role_to_clinics.sql` — nuevo campo `clinics.responsible_role` (Ley 20.584 art. 5)
