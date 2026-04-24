@@ -72,7 +72,10 @@ export default function TherapistProfileDashboardPage() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   // Default active tab logic
-  const defaultTab = searchParams.get('tab') || 'personal-info';
+  // Clinic users no longer see "Sobre Mí" (its data lives in "Datos de la Clínica" → Responsable).
+  // Default to 'clinic-info' para users clinic; 'personal-info' para el resto.
+  const defaultTabFallback = isClinic ? 'clinic-info' : 'personal-info';
+  const defaultTab = searchParams.get('tab') || defaultTabFallback;
   const [activeTab, setActiveTab] = useState(defaultTab);
 
   // Check and credit invite reward on profile page load
@@ -95,6 +98,15 @@ export default function TherapistProfileDashboardPage() {
       setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // Guard: si un clinic user llega con ?tab=personal-info (stale URL de antes
+  // del rediseño), redirigirlo a 'clinic-info' que es su tab default.
+  useEffect(() => {
+    if (isClinic && activeTab === 'personal-info') {
+      setActiveTab('clinic-info');
+      setSearchParams({ tab: 'clinic-info' });
+    }
+  }, [isClinic, activeTab, setSearchParams]);
 
   const handleTabChange = (value) => {
     setActiveTab(value);
@@ -202,7 +214,10 @@ export default function TherapistProfileDashboardPage() {
     { key: 'membership', label: 'Mi Plan', icon: <CreditCard className="h-4 w-4" /> },
   ];
 
-  const tabs = isClinic ? [...baseTabs, ...clinicTabs] : isTherapist ? [...baseTabs, ...professionalTabs] : baseTabs;
+  // Clinic users: sin "Sobre Mí" — los datos del responsable viven en ClinicInfoSection (tab "Datos de la Clínica").
+  // Therapists: mantienen baseTabs + professionalTabs como antes.
+  // Patients: solo baseTabs.
+  const tabs = isClinic ? clinicTabs : isTherapist ? [...baseTabs, ...professionalTabs] : baseTabs;
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
