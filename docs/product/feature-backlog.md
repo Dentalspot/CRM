@@ -181,6 +181,80 @@ Traer el mismo calendario rich del asistente (spec 024) a la vista de clinic_adm
 
 ---
 
+## 🟢 Asistente: Pagos + Deudas de Pacientes
+
+**Estado**: Diferido, detectado post spec 024 · **Intención**: Spec futuro, alta prioridad para recepción
+
+### Qué es
+Dos capacidades relacionadas para el asistente:
+
+**A. Registrar pagos (manual, no MercadoPago)**
+- Al finalizar cita → botón "Registrar pago" en modal edit
+- Dialog existente `RegisterPaymentDialog` (ya vive en `src/features/assistant/components/`)
+- Permite registrar: monto, método (efectivo/transferencia/débito/crédito), fecha, referencia
+- Graba en `patient_payments` asociado al appointment_id
+
+**B. Ver deudas de tratamientos**
+- Vista dedicada o widget en dashboard del asistente:
+  - Lista de pacientes con balance negativo (servicios prestados - pagos recibidos)
+  - Filtros por dentista, por antigüedad de deuda
+  - Botón "Registrar pago" inline
+- Potencialmente también: recordatorios automáticos al paciente (WhatsApp/email)
+
+### Por qué diferido (no en spec 024)
+Detectado durante smoke de spec 024 (2026-04-24). El `RegisterPaymentDialog` existía en el `AssistantAgendaPage` legacy (vista lista) pero se perdió al migrar al rich calendar. Decisión explícita en research.md §R-10: "NO preservar register-payment en este spec — lo movemos a backlog porque no era parte del request del usuario original (spec 024 fue solo UI visual calendar)."
+
+### Costo estimado
+**Parte A (registrar pagos)**: 1-2h. El componente existe en `src/features/assistant/components/RegisterPaymentDialog.jsx`. Solo hay que:
+- Agregar botón "Registrar pago" en `AssistantAppointmentModal` edit mode
+- Cuando cita.status='completed', hacer el botón más visible/primary
+- RLS: verificar que `patient_payments_*_assistant` policies existen (probable que sí desde spec 023)
+
+**Parte B (deudas)**: 4-6h. Requiere:
+- Query consolidada: `SELECT patient_id, SUM(service_price) - SUM(payment_amount) AS balance FROM appointments LEFT JOIN patient_payments ... GROUP BY patient_id HAVING balance > 0`
+- Nueva page o widget en `/dashboard/assistant/debts`
+- UI para filtros + acción registrar pago inline
+
+### Dónde vive el código actualmente
+- `src/features/assistant/components/RegisterPaymentDialog.jsx` — dialog existente (sin usar post spec 024)
+- Tabla `patient_payments` existe
+- Policies RLS probablemente existen para asistente (verificar en spec 025)
+
+### Plan de activación
+Abrir spec nuevo cuando:
+1. Beta dentists reporten que necesitan trackear pagos (alta probabilidad)
+2. Post smoke de spec 024 estable en prod
+3. Coordinar con spec `clinic-service-catalog` (los precios consolidados facilitan cálculo de deuda)
+
+---
+
+## 🟢 Clinic Service Catalog (catálogo de servicios clínica-level)
+
+**Estado**: Diferido, detectado en smoke 024 · **Intención**: Spec futuro, alta prioridad post-beta
+
+### Qué es
+Modelo híbrido de servicios:
+- Clínica define catálogo base (`clinic_services`) con nombre/duración/precio estándar
+- Dentista puede override con sus propios servicios (`therapist_services`) cuando aplica
+- Al crear cita, dropdown muestra clinic_services por default + sección "Personales del dentista" si existen
+
+### Por qué diferido
+Detectado durante smoke test spec 024 (2026-04-24): al invitar un dentista nuevo a la clínica, éste no tiene servicios configurados → asistente no puede crear citas con servicio asignado. Hoy se crea cita con `service_id=null` como workaround temporal.
+
+### Por qué importa
+- Estandarización de precios (una clínica no debería tener el mismo servicio a 5 precios distintos)
+- Onboarding más rápido de dentistas nuevos (usan catálogo existente)
+- Facilita billing, reports financieros, auditoría
+- Patrón estándar en clínicas dentales reales
+
+### Costo estimado
+4-6h. Incluye: migration para `clinic_services` table, RLS policies, UI en Mi Clínica para catálogo, adaptación del modal de cita, migration de data existente de therapist_services → clinic_services (opt-in).
+
+### Dónde vive el código
+Actualmente no vive. Se abre como spec nuevo.
+
+---
+
 ## 🟢 Rich Calendar multi-dentista view (P3 spec 024)
 
 **Estado**: Diferido, feature futura · **Intención**: Cuando clínicas grandes lo pidan
