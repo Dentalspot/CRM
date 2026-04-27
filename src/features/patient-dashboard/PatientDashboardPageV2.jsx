@@ -18,6 +18,7 @@ import {
 } from './components';
 import MyCareTeam from './components/MyCareTeam';
 import PendingReferrals from './components/PendingReferrals';
+import PatientBudgetsBlock from '@/features/budgets/components/PatientBudgetsBlock';
 import { acceptReferral, rejectReferral } from '@/features/referrals/api/referralsApi';
 
 import FloatingAssistant from '@/features/chatbot/components/FloatingAssistant';
@@ -448,6 +449,9 @@ const PatientDashboardPageV2 = () => {
             sessionsCompleted={sessionsCompleted}
             sessionsTotal={sessionsTotal}
           />
+
+          {/* Bloque 3: Mis presupuestos y pagos */}
+          {patientId && <PatientBudgetsBlock patientId={patientId} />}
         </div>
 
         {/* ===== SIDEBAR (30%) ===== */}

@@ -18,6 +18,8 @@ const ImagesSection = () => {
   const [logoUrl, setLogoUrl] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
+  const [avatarFileName, setAvatarFileName] = useState(null);
+  const [logoFileName, setLogoFileName] = useState(null);
 
   const [landingUrl, setLandingUrl] = useState(null);
   const [landingPublished, setLandingPublished] = useState(false);
@@ -90,7 +92,7 @@ const ImagesSection = () => {
   // FILE HANDLERS
   // ============================================================
 
-  const handleFileChange = (event, setPreview) => {
+  const handleFileChange = (event, setPreview, setFileName) => {
     const file = event.target.files[0];
     if (file) {
       const fileTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -113,6 +115,7 @@ const ImagesSection = () => {
       const reader = new FileReader();
       reader.onloadend = () => setPreview(reader.result);
       reader.readAsDataURL(file);
+      if (setFileName) setFileName(file.name);
     }
   };
 
@@ -148,13 +151,19 @@ const ImagesSection = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } =
-        supabase.storage.from(bucket).getPublicUrl(filePath);
+      // Bucket es privado → usar signed URL (1 año de validez)
+      const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, ONE_YEAR_SECONDS);
+
+      if (signedError) throw signedError;
+      const signedUrl = signedData.signedUrl;
 
       const updateData =
         type === 'avatar'
-          ? { avatar_url: publicUrl }
-          : { logo_url: publicUrl };
+          ? { avatar_url: signedUrl }
+          : { logo_url: signedUrl };
 
       const { error: dbError } = await supabase
         .from('therapist_branding')
@@ -166,11 +175,13 @@ const ImagesSection = () => {
       if (dbError) throw dbError;
 
       if (type === 'avatar') {
-        setAvatarUrl(publicUrl);
-        setAvatarPreview(publicUrl);
+        setAvatarUrl(signedUrl);
+        setAvatarPreview(signedUrl);
+        setAvatarFileName(file.name);
       } else {
-        setLogoUrl(publicUrl);
-        setLogoPreview(publicUrl);
+        setLogoUrl(signedUrl);
+        setLogoPreview(signedUrl);
+        setLogoFileName(file.name);
       }
 
       toast({
@@ -273,13 +284,19 @@ const ImagesSection = () => {
             accept="image/png, image/jpeg, image/webp"
             className="hidden"
             ref={avatarFileRef}
-            onChange={(e) => handleFileChange(e, setAvatarPreview)}
+            onChange={(e) => handleFileChange(e, setAvatarPreview, setAvatarFileName)}
           />
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 justify-center">
             <Button variant="outline" onClick={() => avatarFileRef.current?.click()} disabled={saving}>
               <UploadCloud className="mr-2 h-4 w-4" /> Cambiar
             </Button>
+
+            {avatarFileName && (
+              <span className="text-xs text-muted-foreground truncate max-w-[160px]" title={avatarFileName}>
+                {avatarFileName}
+              </span>
+            )}
 
             {avatarPreview && avatarPreview !== avatarUrl && (
               <Button onClick={() => handleUpload('avatar')} disabled={saving}>
@@ -311,13 +328,19 @@ const ImagesSection = () => {
             accept="image/png, image/jpeg, image/webp"
             className="hidden"
             ref={logoFileRef}
-            onChange={(e) => handleFileChange(e, setLogoPreview)}
+            onChange={(e) => handleFileChange(e, setLogoPreview, setLogoFileName)}
           />
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 justify-center">
             <Button variant="outline" onClick={() => logoFileRef.current?.click()} disabled={saving}>
               <UploadCloud className="mr-2 h-4 w-4" /> Cambiar
             </Button>
+
+            {logoFileName && (
+              <span className="text-xs text-muted-foreground truncate max-w-[160px]" title={logoFileName}>
+                {logoFileName}
+              </span>
+            )}
 
             {logoPreview && logoPreview !== logoUrl && (
               <Button onClick={() => handleUpload('logo')} disabled={saving}>

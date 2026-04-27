@@ -18,6 +18,7 @@ import PatientDataTab from '@/features/patient-file/components/PatientDataTab';
 import ClinicalHistoryTab from '@/features/patient-file/components/ClinicalHistoryTab';
 import PlanningTab from '@/features/patient-file/components/PlanningTab';
 import PaymentStatusTab from '@/features/patient-file/components/PaymentStatusTab';
+import BudgetsTab from '@/features/budgets/components/BudgetsTab';
 
 // Import PIE Components
 import logger from '@/lib/utils/logger';
@@ -306,6 +307,9 @@ const PatientFilePage = () => {
                       <TabsTrigger value="planificar" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all gap-1 whitespace-nowrap" disabled={!canAccessPlanning}>
                         Planificar {!canAccessPlanning && <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 ml-1" />}
                       </TabsTrigger>
+                      <TabsTrigger value="presupuestos" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
+                        Presupuestos
+                      </TabsTrigger>
                       <TabsTrigger value="pagos" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all gap-1 whitespace-nowrap" disabled={!canAccessPayments}>
                         Pagos {!canAccessPayments && <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 ml-1" />}
                       </TabsTrigger>
@@ -325,6 +329,10 @@ const PatientFilePage = () => {
 
                   <TabsContent value="planificar" className="mt-0">
                     <PlanningTab patientId={id} goals={goals} plans={plans} templates={treatmentTemplates} onRefresh={handleRefresh} />
+                  </TabsContent>
+
+                  <TabsContent value="presupuestos" className="mt-0">
+                    <BudgetsTab patientId={id} />
                   </TabsContent>
 
                   <TabsContent value="pagos" className="mt-0">

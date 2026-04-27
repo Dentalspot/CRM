@@ -409,7 +409,15 @@ export default function TherapistProfileDashboardPage() {
 
           {/* Datos de la Clínica (clinic role only) */}
           <TabsContent value="clinic-info" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
-            {activeTab === 'clinic-info' && <Chunk><ClinicInfoSection /></Chunk>}
+            {activeTab === 'clinic-info' && (
+              <div className="space-y-6">
+                <Chunk><ClinicInfoSection /></Chunk>
+                {/* ImagesSection — foto del responsable + logo de marca.
+                    Heredado del flow therapist (mismo componente). Saves a
+                    therapist_branding con therapist_id=clinic_admin.user_id. */}
+                <Chunk><ImagesSection /></Chunk>
+              </div>
+            )}
           </TabsContent>
 
           {/* Nuestro Equipo (clinic role only) */}
