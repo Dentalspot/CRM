@@ -8,7 +8,7 @@ const COLOR_MAP = {
   blue: 'text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400',
   green: 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400',
   amber: 'text-amber-600 bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400',
-  pink: 'text-pink-600 bg-pink-100 dark:bg-pink-900/20 dark:text-pink-400',
+  pink: 'text-primary bg-primary dark:bg-primary/20 dark:text-primary',
   purple: 'text-purple-600 bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400',
 };
 

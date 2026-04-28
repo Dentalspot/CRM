@@ -284,10 +284,10 @@ const MembershipPlansPage = () => {
   const upgradePlans = [PLAN_NAMES.INDIVIDUAL, PLAN_NAMES.CLINIC_PRO, PLAN_NAMES.CLINIC_PREMIUM];
 
   return (
-    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
       <Helmet><title>Mi Membresía | DentalSpot</title></Helmet>
 
-      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+      <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
         <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Mi Membresía</CardTitle>
         <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">Gestiona tu plan y facturación</CardDescription>
       </CardHeader>
@@ -427,7 +427,7 @@ const MembershipPlansPage = () => {
         </TabsContent>
       </Tabs>
 
-      <Card className="bg-gradient-to-r from-primary/5 to-pink-500/5 border-primary/20">
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/5 border-primary/20">
         <CardContent className="py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">

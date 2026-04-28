@@ -210,7 +210,7 @@ export default function AuthPage() {
         <Helmet>
           <title>Iniciar Sesión | DentalSpot</title>
         </Helmet>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-pink-100 to-teal-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-primary to-teal-100 p-4">
           <div className="w-full max-w-md">
             <button
               type="button"
@@ -280,7 +280,7 @@ export default function AuthPage() {
         <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
             <a href="/" className="text-2xl font-bold">
-              <span className="text-pink-500">DENTAL</span><span className="text-teal-500">SPOT</span>
+              <span className="text-primary">DENTAL</span><span className="text-teal-500">SPOT</span>
             </a>
             <div className="flex items-center gap-3 text-sm">
               <span className="text-gray-500 hidden sm:block">¿Ya tienes una cuenta?</span>

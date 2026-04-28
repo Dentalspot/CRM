@@ -151,7 +151,7 @@ export const LoadingSkeleton = () => (
           </div>
         </div>
         <div className="flex justify-center">
-          <div className="h-56 w-56 rounded-[30%_70%_70%_30%/30%_30%_70%_70%] bg-gradient-to-br from-pink-200 to-teal-200 animate-pulse" />
+          <div className="h-56 w-56 rounded-[30%_70%_70%_30%/30%_30%_70%_70%] bg-gradient-to-br from-primary to-teal-200 animate-pulse" />
         </div>
       </div>
     </div>

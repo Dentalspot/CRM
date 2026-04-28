@@ -21,7 +21,7 @@ const DashboardCard = ({
     green: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400",
     purple: "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400",
     orange: "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400",
-    pink: "bg-pink-50 text-pink-600 dark:bg-pink-900/20 dark:text-pink-400",
+    pink: "bg-primary text-primary dark:bg-primary/20 dark:text-primary",
   };
 
   const Content = (

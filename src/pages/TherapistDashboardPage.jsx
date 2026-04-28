@@ -341,7 +341,7 @@ const TherapistDashboardPage = () => {
         <title>Dashboard | DentalSpot</title>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-primary">
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 max-w-7xl space-y-6">
           <OnboardingChecklist />
 
@@ -349,12 +349,12 @@ const TherapistDashboardPage = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 p-5 sm:p-8 shadow-2xl"
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-purple-600 to-primary p-5 sm:p-8 shadow-2xl"
           >
             <div className="absolute inset-0 opacity-20">
               <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-blob" />
               <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-200 rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-2000" />
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-4000" />
+              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-primary rounded-full mix-blend-overlay filter blur-xl animate-blob animation-delay-4000" />
             </div>
 
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6">
@@ -532,7 +532,7 @@ const TherapistDashboardPage = () => {
 
             {/* Pink — Attended */}
             <motion.div whileHover={{ scale: 1.02, y: -5 }}>
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-400 to-rose-500 text-white overflow-hidden h-full">
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-primary to-primary text-white overflow-hidden h-full">
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between mb-2 sm:mb-3">
                     <UserCheck className="h-6 w-6 sm:h-8 sm:w-8 opacity-80" />

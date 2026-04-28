@@ -29,12 +29,12 @@ export default function RolePicker({ isLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-pink-100 to-teal-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-primary to-teal-100 p-4">
       <div className="w-full max-w-3xl">
         {/* Logo */}
         <div className="text-center mb-8">
           <a href="/" className="inline-block text-3xl font-bold mb-3">
-            <span className="text-pink-500">DENTAL</span>
+            <span className="text-primary">DENTAL</span>
             <span className="text-teal-500">SPOT</span>
           </a>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">

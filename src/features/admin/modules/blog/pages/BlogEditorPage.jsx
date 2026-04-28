@@ -389,7 +389,7 @@ const BlogEditorPage = () => {
            {/* Shareable Quote */}
            <div className="p-4 border rounded-lg bg-card space-y-3">
              <div className="flex items-center gap-2">
-               <Quote className="h-4 w-4 text-pink-500" />
+               <Quote className="h-4 w-4 text-primary" />
                <h3 className="font-medium">Frase Compartible</h3>
              </div>
              <textarea
@@ -401,7 +401,7 @@ const BlogEditorPage = () => {
              />
              <p className="text-[10px] text-muted-foreground text-right">{(formData.shareable_quote || '').length}/280</p>
              {formData.shareable_quote && (
-               <div className="border rounded-lg p-4 bg-gradient-to-br from-pink-50 to-purple-50">
+               <div className="border rounded-lg p-4 bg-gradient-to-br from-primary to-purple-50">
                  <p className="text-sm italic text-gray-700 leading-relaxed">"{formData.shareable_quote}"</p>
                  <p className="text-[10px] text-muted-foreground mt-2">— vía dentalspot.cl</p>
                </div>

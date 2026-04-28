@@ -31,8 +31,11 @@ const languageOptions = [
 ];
 
 const PersonalInfoForm = () => {
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const role = profile?.role || user?.role;
+  const isPatient = role === 'patient';
+  const isClinic = role === 'clinic';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false); // Manual save loading state
@@ -258,61 +261,71 @@ const PersonalInfoForm = () => {
   return (
     <>
       <SectionWrapper
-        title="Información Pública del Perfil"
-        description="Estos datos serán visibles para otros usuarios."
+        title={isPatient ? 'Mi información personal' : 'Información Pública del Perfil'}
+        description={isPatient
+          ? 'Tus datos personales. Solo tú y los profesionales que te atienden los ven.'
+          : 'Estos datos serán visibles para otros usuarios.'}
         action={<SaveStatusIndicator />}
       >
         <form onSubmit={handleSubmit} className="space-y-8">
 
           <div className="space-y-4">
-            <h4 className="font-semibold text-gray-700">Identidad Profesional</h4>
+            <h4 className="font-semibold text-gray-700">
+              {isPatient ? 'Identidad' : 'Identidad Profesional'}
+            </h4>
 
             <div>
               <Label>Nombre Completo</Label>
               <Input name="full_name" value={formData.full_name} onChange={handleChange} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Título Profesional</Label>
-                <Input name="professional_title" value={formData.professional_title} onChange={handleChange} placeholder="Ej: Cirujano Dentista" />
-              </div>
-              <div>
-                <Label>Titular (Headline)</Label>
-                <Input name="headline" value={formData.headline} onChange={handleChange} placeholder="Ej: Especialista en Ortodoncia y Estética Dental" />
-              </div>
-            </div>
+            {!isPatient && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Título Profesional</Label>
+                    <Input name="professional_title" value={formData.professional_title} onChange={handleChange} placeholder="Ej: Cirujano Dentista" />
+                  </div>
+                  <div>
+                    <Label>Titular (Headline)</Label>
+                    <Input name="headline" value={formData.headline} onChange={handleChange} placeholder="Ej: Especialista en Ortodoncia y Estética Dental" />
+                  </div>
+                </div>
 
-            <div>
-              <Label>Sobre Mí</Label>
-              <Textarea name="about_me" value={formData.about_me} onChange={handleChange} rows={4} placeholder="Ej: Odontólogo con 10 años de experiencia en rehabilitación oral e implantología..." />
-            </div>
+                <div>
+                  <Label>Sobre Mí</Label>
+                  <Textarea name="about_me" value={formData.about_me} onChange={handleChange} rows={4} placeholder="Ej: Odontólogo con 10 años de experiencia en rehabilitación oral e implantología..." />
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <h4 className="font-semibold text-gray-700">Registros y Credenciales</h4>
+          {!isPatient && (
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-700">Registros y Credenciales</h4>
 
-            <div>
-              <Label>Registro Superintendencia de Salud</Label>
-              <Input name="registration_supersalud" value={formData.registration_supersalud} onChange={handleChange} placeholder="Ej: 12345" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>Universidad</Label>
-                <Input name="university" value={formData.university} onChange={handleChange} placeholder="Universidad de egreso" />
+                <Label>Registro Superintendencia de Salud</Label>
+                <Input name="registration_supersalud" value={formData.registration_supersalud} onChange={handleChange} placeholder="Ej: 12345" />
               </div>
-              <div>
-                <Label>Año de Egreso</Label>
-                <Input name="graduation_year" type="number" value={formData.graduation_year} onChange={handleChange} placeholder="Ej: 2015" />
-              </div>
-            </div>
 
-            <div>
-              <Label>Años de experiencia</Label>
-              <Input name="years_experience" type="number" value={formData.years_experience} onChange={handleChange} placeholder="Ej: 8" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Universidad</Label>
+                  <Input name="university" value={formData.university} onChange={handleChange} placeholder="Universidad de egreso" />
+                </div>
+                <div>
+                  <Label>Año de Egreso</Label>
+                  <Input name="graduation_year" type="number" value={formData.graduation_year} onChange={handleChange} placeholder="Ej: 2015" />
+                </div>
+              </div>
+
+              <div>
+                <Label>Años de experiencia</Label>
+                <Input name="years_experience" type="number" value={formData.years_experience} onChange={handleChange} placeholder="Ej: 8" />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-4">
             <h4 className="font-semibold text-gray-700">Información Personal y Contacto</h4>
@@ -349,26 +362,31 @@ const PersonalInfoForm = () => {
               </div>
             </div>
 
-            <div>
-              <Label>Email público</Label>
-              <Input name="public_email" type="email" value={formData.public_email} onChange={handleChange} placeholder="contacto@ejemplo.com" />
-            </div>
+            {!isPatient && (
+              <div>
+                <Label>Email público</Label>
+                <Input name="public_email" type="email" value={formData.public_email} onChange={handleChange} placeholder="contacto@ejemplo.com" />
+              </div>
+            )}
           </div>
 
-          <div className="space-y-4">
-            <h4 className="font-semibold text-gray-700">Habilidades</h4>
+          {!isPatient && (
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-700">Habilidades</h4>
 
-            <div>
-              <Label>Idiomas</Label>
-              <MultiSelectCombobox
-                options={languageOptions}
-                selected={formData.languages}
-                onChange={handleMultiSelectChange}
-                placeholder="Selecciona idiomas..."
-              />
+              <div>
+                <Label>Idiomas</Label>
+                <MultiSelectCombobox
+                  options={languageOptions}
+                  selected={formData.languages}
+                  onChange={handleMultiSelectChange}
+                  placeholder="Selecciona idiomas..."
+                />
+              </div>
             </div>
-          </div>
+          )}
 
+          {!isPatient && (
           <div className="space-y-4">
             <h4 className="font-semibold text-gray-700">Redes Sociales</h4>
 
@@ -391,12 +409,15 @@ const PersonalInfoForm = () => {
               </div>
             </div>
           </div>
+          )}
 
           <div className="flex justify-between items-center pt-4 border-t sticky bottom-0 bg-background/95 backdrop-blur py-4 z-10">
-            <div className="flex items-center gap-2">
-              <Checkbox id="is_public" checked={formData.is_public} onCheckedChange={handleCheckboxChange} />
-              <Label htmlFor="is_public" className="cursor-pointer">Hacer mi perfil público</Label>
-            </div>
+            {!isPatient ? (
+              <div className="flex items-center gap-2">
+                <Checkbox id="is_public" checked={formData.is_public} onCheckedChange={handleCheckboxChange} />
+                <Label htmlFor="is_public" className="cursor-pointer">Hacer mi perfil público</Label>
+              </div>
+            ) : <div />}
 
             <div className="flex items-center gap-4">
               <SaveStatusIndicator />

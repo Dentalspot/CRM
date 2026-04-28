@@ -229,7 +229,7 @@ const AnalyticsPage = () => {
                 { event: 'Purchase', icon: ShoppingCart, color: 'bg-purple-100 text-purple-700', desc: 'Pago CLP' },
                 { event: 'CompleteRegistration', icon: CheckCircle, color: 'bg-teal-100 text-teal-700', desc: 'Signup completado' },
                 { event: 'Subscribe', icon: Zap, color: 'bg-amber-100 text-amber-700', desc: 'Plan activado' },
-                { event: 'Schedule', icon: Calendar, color: 'bg-pink-100 text-pink-700', desc: 'Cita agendada' },
+                { event: 'Schedule', icon: Calendar, color: 'bg-primary text-primary', desc: 'Cita agendada' },
                 { event: 'ViewContent', icon: Eye, color: 'bg-indigo-100 text-indigo-700', desc: 'Blog/Marketplace' },
                 { event: 'InitiateCheckout', icon: ShoppingCart, color: 'bg-orange-100 text-orange-700', desc: 'Inicio checkout' },
               ].map(evt => {

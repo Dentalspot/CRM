@@ -135,9 +135,9 @@ const AgendaSidebar = ({
       </Card>
 
       {/* 1) Clinic Selector with colors */}
-      <Card className="shadow-sm border-2 border-pink-100 bg-gradient-to-br from-pink-50 to-white">
+      <Card className="shadow-sm border-2 border-primary bg-gradient-to-br from-primary to-white">
         <CardHeader className="p-3 pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2 text-pink-700">
+          <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
             <MapPin className="h-4 w-4" />
             Ubicación
           </CardTitle>
@@ -147,7 +147,7 @@ const AgendaSidebar = ({
             value={selectedClinicId?.toString() || 'all'}
             onValueChange={onClinicChange}
           >
-            <SelectTrigger className="bg-white border-pink-200 focus:ring-pink-300">
+            <SelectTrigger className="bg-white border-primary focus:ring-primary">
               <SelectValue placeholder="Seleccionar clínica" />
             </SelectTrigger>
             <SelectContent>

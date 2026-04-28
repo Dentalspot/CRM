@@ -68,7 +68,7 @@ const CATEGORY_COLORS = {
   lenguaje_expresivo: 'bg-green-100 text-green-700',
   deglucion: 'bg-orange-100 text-orange-700',
   voz: 'bg-purple-100 text-purple-700',
-  fluidez: 'bg-pink-100 text-pink-700',
+  fluidez: 'bg-primary text-primary',
   lectoescritura: 'bg-yellow-100 text-yellow-700',
   motricidad_orofacial: 'bg-teal-100 text-teal-700',
   estimulacion: 'bg-indigo-100 text-indigo-700',

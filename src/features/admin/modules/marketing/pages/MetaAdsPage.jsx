@@ -487,7 +487,7 @@ const AudiencesTab = ({ audiences, fetchAudiences, error, setError }) => {
                   CUSTOM: 'bg-purple-100 text-purple-700',
                   WEBSITE: 'bg-blue-100 text-blue-700',
                   LOOKALIKE: 'bg-teal-100 text-teal-700',
-                  ENGAGEMENT: 'bg-pink-100 text-pink-700',
+                  ENGAGEMENT: 'bg-primary text-primary',
                   SUBSCRIBER_LIST: 'bg-orange-100 text-orange-700',
                 };
 

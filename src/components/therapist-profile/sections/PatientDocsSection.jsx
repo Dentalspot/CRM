@@ -25,7 +25,7 @@ const CATEGORIES = {
   informe: { label: 'Informe', color: 'bg-green-100 text-green-700' },
   evolucion: { label: 'Evolución', color: 'bg-yellow-100 text-yellow-700' },
   consentimiento: { label: 'Consentimiento', color: 'bg-orange-100 text-orange-700' },
-  certificado: { label: 'Certificado', color: 'bg-pink-100 text-pink-700' },
+  certificado: { label: 'Certificado', color: 'bg-primary text-primary' },
   otro: { label: 'Otro', color: 'bg-gray-100 text-gray-700' },
 };
 

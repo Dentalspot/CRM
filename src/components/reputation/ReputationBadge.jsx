@@ -45,10 +45,10 @@ const BADGE_STYLES = {
     ring: 'ring-gray-300',
   },
   pink: {
-    bg: 'bg-pink-50 border-pink-200',
-    text: 'text-pink-700',
-    fill: 'bg-pink-500',
-    ring: 'ring-pink-300',
+    bg: 'bg-primary border-primary',
+    text: 'text-primary',
+    fill: 'bg-primary',
+    ring: 'ring-primary',
   }
 };
 

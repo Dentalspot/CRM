@@ -63,7 +63,7 @@ const UpgradeModal = ({
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader className="text-center">
           {/* Icono */}
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-pink-500/20 rounded-full flex items-center justify-center mb-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/20 rounded-full flex items-center justify-center mb-4">
             <Sparkles className="h-8 w-8 text-primary" />
           </div>
 
@@ -132,7 +132,7 @@ const UpgradeModal = ({
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button
             onClick={handleUpgrade}
-            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:opacity-90"
+            className="w-full bg-gradient-to-r from-primary to-primary hover:opacity-90"
           >
             Actualizar a {requiredPlanInfo.name}
             <ArrowRight className="ml-2 h-4 w-4" />

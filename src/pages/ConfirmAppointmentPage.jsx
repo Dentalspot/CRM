@@ -186,7 +186,7 @@ const ConfirmAppointmentPage = () => {
         >
           <Card className="shadow-2xl border-0 overflow-hidden relative">
             {/* Header Gradient Stripe */}
-            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-primary" />
 
             <CardHeader className="pt-8 pb-6 text-center space-y-2">
               <div className="flex items-center justify-center mb-4">

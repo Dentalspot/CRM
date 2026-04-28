@@ -123,8 +123,8 @@ const MarketingDashboardPage = () => {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-pink-100 rounded-lg">
-              <Mail className="h-6 w-6 text-pink-600" />
+            <div className="p-2 bg-primary rounded-lg">
+              <Mail className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Marketing</h1>

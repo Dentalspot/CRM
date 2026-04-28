@@ -55,7 +55,7 @@ const CurrentPlanHeader = ({ subscription, stats, onManage, dynamicPlan }) => {
                   </Badge>
                 )}
                 {planConfig.popular && (
-                  <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white border-0">
+                  <Badge className="bg-gradient-to-r from-primary to-primary text-white border-0">
                     <Star className="h-3 w-3 mr-1" /> Popular
                   </Badge>
                 )}
@@ -88,7 +88,7 @@ const CurrentPlanHeader = ({ subscription, stats, onManage, dynamicPlan }) => {
             )}
             <div className="flex gap-2">
               {planName === PLAN_NAMES.FREE ? (
-                <Button className="bg-gradient-to-r from-pink-500 to-rose-500 hover:opacity-90 text-white shadow-lg" onClick={onManage}>
+                <Button className="bg-gradient-to-r from-primary to-primary hover:opacity-90 text-white shadow-lg" onClick={onManage}>
                   <ArrowUpCircle className="h-4 w-4 mr-2" /> Mejorar Plan
                 </Button>
               ) : (

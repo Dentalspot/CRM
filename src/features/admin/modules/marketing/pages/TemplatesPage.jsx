@@ -23,7 +23,7 @@ const FUNNEL_CONFIG = {
   tea: { label: 'TEA General', color: 'bg-green-100 text-green-700' },
   sensorial: { label: 'Perfil Sensorial', color: 'bg-orange-100 text-orange-700' },
   communicare: { label: 'Communicare', color: 'bg-teal-100 text-teal-700' },
-  estudiantes: { label: 'Estudiantes', color: 'bg-pink-100 text-pink-700' },
+  estudiantes: { label: 'Estudiantes', color: 'bg-primary text-primary' },
   onboarding: { label: 'Onboarding', color: 'bg-emerald-100 text-emerald-700' },
   reactivacion: { label: 'Reactivación', color: 'bg-amber-100 text-amber-700' },
   other: { label: 'Otros', color: 'bg-slate-100 text-slate-700' },

@@ -206,7 +206,7 @@ const PublicConfirmAppointmentPage = () => {
                 </div>
 
                 <div className="p-4 flex items-start gap-4">
-                  <div className="bg-pink-50 p-2.5 rounded-lg text-pink-600">
+                  <div className="bg-primary p-2.5 rounded-lg text-primary">
                     <Clock className="h-5 w-5" />
                   </div>
                   <div>

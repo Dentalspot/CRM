@@ -19,8 +19,8 @@ import { cn } from '@/lib/utils';
  */
 const SectionWrapper = ({ children, title, description, className }) => {
   return (
-    <Card className={cn("overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500", className)}>
-      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+    <Card className={cn("overflow-hidden rounded-lg shadow-lg border-t-4 border-primary", className)}>
+      <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 p-6 border-b border-gray-100">
         <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">{title}</CardTitle>
         {description && (
           <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">

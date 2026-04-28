@@ -87,7 +87,7 @@ const MergeablePatientTable = ({ patients, loading, error, selectedIds, onSelect
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className={`${isSelected ? 'bg-amber-500' : 'bg-gradient-to-br from-pink-400 to-pink-600'} text-white`}>
+                      <AvatarFallback className={`${isSelected ? 'bg-amber-500' : 'bg-gradient-to-br from-primary to-primary'} text-white`}>
                         {patient.full_name?.charAt(0) || '?'}
                       </AvatarFallback>
                     </Avatar>
@@ -117,7 +117,7 @@ const MergeablePatientTable = ({ patients, loading, error, selectedIds, onSelect
                   )}
                 </td>
                 <td className="py-3 px-4 text-center">
-                  <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+                  <Badge variant="secondary" className="bg-primary text-primary">
                     {patient.appointmentCount || 0}
                   </Badge>
                 </td>

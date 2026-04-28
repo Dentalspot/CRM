@@ -42,10 +42,10 @@ const MotivationalPhrase = ({ type = 'therapist' }) => {
   if (loading || !phrase) return null;
 
   return (
-    <Card className="bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
+    <Card className="bg-gradient-to-r from-primary to-purple-50 border-primary">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-pink-500 mt-1 flex-shrink-0" />
+          <Sparkles className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm italic text-gray-700">
               "{phrase.content}"

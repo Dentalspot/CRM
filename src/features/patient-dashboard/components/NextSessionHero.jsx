@@ -129,8 +129,8 @@ const NextSessionHero = ({ appointment, therapist, onConfirm, onReschedule }) =>
                 variant="outline"
                 className={`${
                   isSessionToday
-                    ? 'border-pink-300 text-pink-100 bg-pink-500/20'
-                    : 'border-pink-300 text-pink-700 bg-pink-50'
+                    ? 'border-primary text-primary bg-primary/20'
+                    : 'border-primary text-primary bg-primary'
                 }`}
               >
                 <CheckCircle className="h-3 w-3 mr-1" />
@@ -249,7 +249,7 @@ const NextSessionHero = ({ appointment, therapist, onConfirm, onReschedule }) =>
               ) : isConfirmed ? (
                 <Button
                   disabled
-                  className="bg-pink-500 text-white font-semibold cursor-default opacity-100"
+                  className="bg-primary text-white font-semibold cursor-default opacity-100"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Cita confirmada

@@ -789,7 +789,7 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
             ¿Olvidaste tu contraseña?{' '}
             <Button
               variant="link"
-              className="p-0 h-auto font-semibold text-pink-500 hover:text-pink-600"
+              className="p-0 h-auto font-semibold text-primary hover:text-primary"
               onClick={() => setShowForgotPassword(true)}
               disabled={isLoading}
             >

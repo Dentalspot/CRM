@@ -57,19 +57,19 @@ const OdontogramListPage = () => {
   const filtered = filter === 'all' ? evaluations : evaluations.filter((e) => e.status === filter);
 
   return (
-    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
-      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
+      <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
-              <ClipboardCheck className="h-6 w-6 text-pink-600" />
+              <ClipboardCheck className="h-6 w-6 text-primary" />
               Evaluaciones Odontológicas
             </CardTitle>
             <CardDescription className="mt-2 text-md text-gray-600">
               Odontogramas iniciales y de tratamiento de tus pacientes
             </CardDescription>
           </div>
-          <Button onClick={() => navigate('/dashboard/therapist/odontograma/nueva')} className="bg-pink-500 hover:bg-pink-600">
+          <Button onClick={() => navigate('/dashboard/therapist/odontograma/nueva')} className="bg-primary hover:bg-primary">
             <Plus className="h-4 w-4 mr-2" /> Nueva Evaluación
           </Button>
         </div>
@@ -88,7 +88,7 @@ const OdontogramListPage = () => {
               variant={filter === f.key ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter(f.key)}
-              className={filter === f.key ? 'bg-pink-500 hover:bg-pink-600' : ''}
+              className={filter === f.key ? 'bg-primary hover:bg-primary' : ''}
             >
               {f.label}
             </Button>
@@ -97,7 +97,7 @@ const OdontogramListPage = () => {
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
@@ -196,7 +196,7 @@ const OdontogramListPage = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="flex-1 bg-pink-500 hover:bg-pink-600" onClick={() => navigate(`/dashboard/therapist/odontograma/${ev.id}`)}>
+                    <Button size="sm" className="flex-1 bg-primary hover:bg-primary" onClick={() => navigate(`/dashboard/therapist/odontograma/${ev.id}`)}>
                       <Eye className="h-3.5 w-3.5 mr-1" /> Ver
                     </Button>
                     <Button size="sm" variant="outline" className="text-red-500" onClick={() => handleDelete(ev.id)} disabled={deleting === ev.id}>

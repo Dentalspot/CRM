@@ -20,7 +20,7 @@ const SOURCES = [
   { value: 'supersalud', label: 'Supersalud', color: 'bg-red-100 text-red-700' },
   { value: 'ticket_compra', label: 'Ticket Compra', color: 'bg-emerald-100 text-emerald-700' },
   { value: 'woocommerce', label: 'WooCommerce', color: 'bg-purple-100 text-purple-700' },
-  { value: 'instagram', label: 'Instagram', color: 'bg-pink-100 text-pink-700' },
+  { value: 'instagram', label: 'Instagram', color: 'bg-primary text-primary' },
   { value: 'facebook', label: 'Facebook', color: 'bg-indigo-100 text-indigo-700' },
   { value: 'manual', label: 'Manual', color: 'bg-gray-100 text-gray-600' },
   { value: 'csv_import', label: 'CSV Import', color: 'bg-cyan-100 text-cyan-700' },
@@ -205,7 +205,7 @@ const LeadsPanel = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <Users className="h-5 w-5 text-pink-600" /> Gestión de Leads
+            <Users className="h-5 w-5 text-primary" /> Gestión de Leads
           </h2>
           <p className="text-sm text-muted-foreground">Leads externos por fuente y segmento</p>
         </div>
@@ -251,7 +251,7 @@ const LeadsPanel = () => {
 
       {/* Add form */}
       {showAddForm && (
-        <Card className="border-pink-200">
+        <Card className="border-primary">
           <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
             <Input placeholder="Nombre" value={newLead.full_name} onChange={e => setNewLead(p => ({ ...p, full_name: e.target.value }))} />
             <Input placeholder="Email" value={newLead.email} onChange={e => setNewLead(p => ({ ...p, email: e.target.value }))} />

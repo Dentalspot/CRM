@@ -350,7 +350,7 @@ const MissionControlPage = () => {
               <StatusDot status={systems.resend} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-pink-600" />
+                  <Mail className="h-4 w-4 text-primary" />
                   <p className="text-sm font-medium">Resend</p>
                 </div>
                 <p className="text-[10px] text-gray-500">Email delivery</p>
@@ -371,7 +371,7 @@ const MissionControlPage = () => {
           { label: 'Esta Semana', value: metrics.leadsThisWeek, icon: TrendingUp, color: 'text-purple-600 bg-purple-50' },
           { label: 'Este Mes', value: metrics.leadsThisMonth, icon: BarChart3, color: 'text-indigo-600 bg-indigo-50' },
           { label: 'Dentistas', value: metrics.therapists, icon: Users, color: 'text-teal-600 bg-teal-50' },
-          { label: 'Pacientes', value: metrics.patients, icon: UserPlus, color: 'text-pink-600 bg-pink-50' },
+          { label: 'Pacientes', value: metrics.patients, icon: UserPlus, color: 'text-primary bg-primary' },
           { label: 'Enviadas', value: metrics.campaignsSent, icon: Send, color: 'text-green-600 bg-green-50' },
           { label: 'Borradores', value: metrics.campaignsDraft, icon: Clock, color: 'text-amber-600 bg-amber-50' },
         ].map((m) => {
@@ -447,7 +447,7 @@ const MissionControlPage = () => {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Send className="h-4 w-4 text-pink-600" /> Campanas Recientes
+                <Send className="h-4 w-4 text-primary" /> Campanas Recientes
               </CardTitle>
               <Link to="/admin/marketing/campaigns">
                 <Button variant="ghost" size="sm" className="text-xs h-7">Ver todas <ArrowRight className="h-3 w-3 ml-1" /></Button>
@@ -521,7 +521,7 @@ const MissionControlPage = () => {
             <div className="grid grid-cols-2 gap-2">
               <Link to="/admin/marketing/campaigns">
                 <Button variant="outline" className="w-full justify-start gap-2 h-auto py-3" size="sm">
-                  <Send className="h-4 w-4 text-pink-500" />
+                  <Send className="h-4 w-4 text-primary" />
                   <div className="text-left">
                     <p className="text-xs font-medium">Nueva Campana</p>
                     <p className="text-[10px] text-gray-400">Crear y enviar email</p>
@@ -572,7 +572,7 @@ const MissionControlPage = () => {
                 { label: 'Meta Events Manager', desc: `Dataset ${DATASET_ID.slice(0, 10)}...`, href: `https://business.facebook.com/events_manager2/list/dataset/${DATASET_ID}/overview`, icon: Facebook, color: 'text-blue-600' },
                 { label: 'Graph API Explorer', desc: 'Probar queries a la Graph API', href: `https://developers.facebook.com/tools/explorer/?method=GET&path=${DATASET_ID}%2Fevents`, icon: MousePointerClick, color: 'text-blue-600' },
                 { label: 'Meta Test Events', desc: 'Verificar eventos de prueba', href: `https://business.facebook.com/events_manager2/list/dataset/${DATASET_ID}/test_events`, icon: Activity, color: 'text-blue-600' },
-                { label: 'Resend Dashboard', desc: 'Emails, dominios y API keys', href: 'https://resend.com/overview', icon: Mail, color: 'text-pink-600' },
+                { label: 'Resend Dashboard', desc: 'Emails, dominios y API keys', href: 'https://resend.com/overview', icon: Mail, color: 'text-primary' },
                 { label: 'Supabase Dashboard', desc: 'Base de datos y edge functions', href: 'https://supabase.com/dashboard', icon: Database, color: 'text-green-600' },
               ].map((link) => {
                 const Icon = link.icon;

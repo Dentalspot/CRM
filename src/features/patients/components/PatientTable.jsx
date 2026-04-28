@@ -134,7 +134,7 @@ const PatientTable = ({
 
               <Avatar className="h-10 w-10 shrink-0">
                 <AvatarImage src={patient.avatar_url} />
-                <AvatarFallback className="text-sm bg-pink-100 text-pink-700">{patient.full_name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-sm bg-primary text-primary">{patient.full_name?.charAt(0)}</AvatarFallback>
               </Avatar>
 
               <div className="flex-1 min-w-0">
@@ -157,7 +157,7 @@ const PatientTable = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-pink-600 hover:bg-pink-50"
+                    className="h-8 w-8 p-0 text-primary hover:bg-primary"
                     onClick={() => onBookAppointment(patient.id)}
                   >
                     <CalendarPlus className="h-4 w-4" />

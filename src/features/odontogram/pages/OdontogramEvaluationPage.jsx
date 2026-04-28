@@ -335,7 +335,7 @@ const OdontogramEvaluationPage = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -360,9 +360,9 @@ const OdontogramEvaluationPage = () => {
           const isCompleted = step > i + 1;
           return (
             <React.Fragment key={s.key}>
-              {i > 0 && <div className={`h-0.5 w-8 sm:w-16 ${isCompleted ? 'bg-pink-500' : 'bg-gray-200'}`} />}
+              {i > 0 && <div className={`h-0.5 w-8 sm:w-16 ${isCompleted ? 'bg-primary' : 'bg-gray-200'}`} />}
               <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-colors ${
-                isActive ? 'bg-pink-500 text-white' : isCompleted ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-400'
+                isActive ? 'bg-primary text-white' : isCompleted ? 'bg-primary text-primary' : 'bg-gray-100 text-gray-400'
               }`}>
                 <StepIcon className="h-4 w-4" />
                 <span className="hidden sm:inline">{s.label}</span>
@@ -374,8 +374,8 @@ const OdontogramEvaluationPage = () => {
 
       {/* Step 1: Configuration */}
       {step === 1 && (
-        <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
-          <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+        <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
+          <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
             <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Configuración</CardTitle>
             <CardDescription className="mt-2 text-md text-gray-600">Selecciona el paciente y tipo de evaluación</CardDescription>
           </CardHeader>
@@ -420,7 +420,7 @@ const OdontogramEvaluationPage = () => {
                     onClick={() => setSetup({ ...setup, evaluation_type: type.value })}
                     className={`p-4 rounded-xl border-2 text-left transition-colors ${
                       setup.evaluation_type === type.value
-                        ? 'border-pink-500 bg-pink-50'
+                        ? 'border-primary bg-primary'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -444,7 +444,7 @@ const OdontogramEvaluationPage = () => {
             <Button
               onClick={handleStartEvaluation}
               disabled={saving || !setup.patient_id}
-              className="w-full h-11 bg-pink-500 hover:bg-pink-600"
+              className="w-full h-11 bg-primary hover:bg-primary"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
               Iniciar Evaluación
@@ -458,7 +458,7 @@ const OdontogramEvaluationPage = () => {
         <div className="space-y-4">
           {/* Patient info bar */}
           {patientInfo && (
-            <div className="flex items-center gap-4 p-4 bg-pink-50 rounded-xl border border-pink-200">
+            <div className="flex items-center gap-4 p-4 bg-primary rounded-xl border border-primary">
               <div>
                 <p className="font-semibold text-gray-900">{patientInfo.name}</p>
                 {patientInfo.rut && <p className="text-sm text-gray-500">RUT: {patientInfo.rut}</p>}
@@ -470,8 +470,8 @@ const OdontogramEvaluationPage = () => {
             </div>
           )}
 
-          <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
-            <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+          <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
+            <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
               <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Odontograma</CardTitle>
               <CardDescription className="mt-2 text-md text-gray-600">
                 Selecciona una condición y haz clic en las superficies dentales
@@ -495,7 +495,7 @@ const OdontogramEvaluationPage = () => {
               <Save className="h-4 w-4 mr-2" />
               {saving ? 'Guardando...' : 'Guardar Borrador'}
             </Button>
-            <Button onClick={handleGoToResults} disabled={saving} className="flex-1 bg-pink-500 hover:bg-pink-600">
+            <Button onClick={handleGoToResults} disabled={saving} className="flex-1 bg-primary hover:bg-primary">
               Resultados <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
@@ -506,8 +506,8 @@ const OdontogramEvaluationPage = () => {
       {step === 3 && (
         <div className="space-y-4">
           {/* Summary */}
-          <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
-            <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+          <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
+            <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Presupuesto</CardTitle>
@@ -517,7 +517,7 @@ const OdontogramEvaluationPage = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-500">Total</p>
-                  <p className="text-3xl font-bold text-pink-600">${budgetTotal.toLocaleString('es-CL')}</p>
+                  <p className="text-3xl font-bold text-primary">${budgetTotal.toLocaleString('es-CL')}</p>
                 </div>
               </div>
             </CardHeader>
@@ -599,7 +599,7 @@ const OdontogramEvaluationPage = () => {
             <Button variant="outline" onClick={() => setStep(2)} className="sm:flex-1">
               <ChevronLeft className="h-4 w-4 mr-2" /> Volver al Odontograma
             </Button>
-            <Button onClick={handleComplete} disabled={saving} className="sm:flex-1 bg-pink-500 hover:bg-pink-600">
+            <Button onClick={handleComplete} disabled={saving} className="sm:flex-1 bg-primary hover:bg-primary">
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
               Completar Evaluación
             </Button>

@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 const ICON_COLORS = {
-  pink: 'text-pink-600 bg-pink-50 dark:bg-pink-900/20',
+  pink: 'text-primary bg-primary dark:bg-primary/20',
   blue: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20',
   green: 'text-green-600 bg-green-50 dark:bg-green-900/20',
   amber: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20',

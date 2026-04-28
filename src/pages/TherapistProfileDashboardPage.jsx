@@ -13,6 +13,7 @@ import {
   CreditCard,
   Award,
   Shield,
+  ShieldCheck,
   Landmark,
   Building2,
   Users,
@@ -215,10 +216,20 @@ export default function TherapistProfileDashboardPage() {
     { key: 'membership', label: 'Mi Plan', icon: <CreditCard className="h-4 w-4" /> },
   ];
 
-  // Clinic users: sin "Sobre Mí" — los datos del responsable viven en ClinicInfoSection (tab "Datos de la Clínica").
-  // Therapists: mantienen baseTabs + professionalTabs como antes.
-  // Patients: solo baseTabs.
-  const tabs = isClinic ? clinicTabs : isTherapist ? [...baseTabs, ...professionalTabs] : baseTabs;
+  // Tabs comunes a TODOS los roles: cuenta/seguridad y privacidad/datos
+  const accountTabs = [
+    { key: 'security', label: 'Cuenta y Seguridad', icon: <Shield className="h-4 w-4" /> },
+    { key: 'privacy', label: 'Privacidad y Datos', icon: <ShieldCheck className="h-4 w-4" /> },
+  ];
+
+  // Clinic users: clinicTabs + accountTabs
+  // Therapists: baseTabs + professionalTabs + accountTabs
+  // Patients: baseTabs + accountTabs
+  const tabs = isClinic
+    ? [...clinicTabs, ...accountTabs]
+    : isTherapist
+      ? [...baseTabs, ...professionalTabs, ...accountTabs]
+      : [...baseTabs, ...accountTabs];
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -296,7 +307,7 @@ export default function TherapistProfileDashboardPage() {
                 className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all
                   data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary
                   hover:bg-slate-100 dark:hover:bg-slate-800
-                  ${t.highlight ? 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-50 data-[state=active]:to-pink-50 data-[state=active]:text-purple-700' : ''}`}
+                  ${t.highlight ? 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-50 data-[state=active]:to-primary data-[state=active]:text-purple-700' : ''}`}
               >
                 <span className={`p-1 sm:p-1.5 rounded-md ${activeTab === t.key ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
                   {t.icon}
@@ -304,7 +315,7 @@ export default function TherapistProfileDashboardPage() {
                 <span className="hidden sm:inline">{t.label}</span>
                 <span className="sm:hidden">{t.label.split(' ')[0]}</span>
                 {t.highlight && (
-                  <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-primary bg-clip-text text-transparent">
                     Único
                   </span>
                 )}
@@ -316,7 +327,7 @@ export default function TherapistProfileDashboardPage() {
         {/* Content */}
         <div className="min-h-[500px]">
 
-          {/* Información Personal + Personalización Visual + Datos de Pago + Seguridad */}
+          {/* Información Personal */}
           <TabsContent value="personal-info" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
             {activeTab === 'personal-info' && (
               <div className="space-y-6">
@@ -328,7 +339,23 @@ export default function TherapistProfileDashboardPage() {
                     <Chunk><BankTransferInfoForm /></Chunk>
                   </>
                 )}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Cuenta y Seguridad (todos los roles) */}
+          <TabsContent value="security" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
+            {activeTab === 'security' && (
+              <div className="space-y-6">
                 <Chunk><AccountSecuritySettings /></Chunk>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Privacidad y Datos (todos los roles) */}
+          <TabsContent value="privacy" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
+            {activeTab === 'privacy' && (
+              <div className="space-y-6">
                 <Chunk><PrivacySection /></Chunk>
               </div>
             )}
@@ -349,10 +376,10 @@ export default function TherapistProfileDashboardPage() {
             {activeTab === 'dentallevel' && (
               <div className="space-y-8">
                 {/* Hero Banner DentalLevel */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-violet-600 to-pink-600 p-8 shadow-xl">
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-800 via-slate-700 to-primary p-8 shadow-xl">
                   <div className="absolute inset-0 opacity-10">
                     <div className="absolute top-0 -left-4 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl" />
-                    <div className="absolute -bottom-8 right-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-overlay filter blur-xl" />
+                    <div className="absolute -bottom-8 right-20 w-72 h-72 bg-primary rounded-full mix-blend-overlay filter blur-xl" />
                   </div>
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-3">

@@ -61,9 +61,9 @@ const ModelConfigTab = () => {
     'temp.notiz': { label: 'Temperatura - Notiz', color: 'bg-amber-100 text-amber-700' },
     'temp.chatbot': { label: 'Temperatura - Chatbot', color: 'bg-amber-100 text-amber-700' },
     'temp.templates': { label: 'Temperatura - Templates', color: 'bg-amber-100 text-amber-700' },
-    'tokens.notiz': { label: 'Tokens - Notiz', color: 'bg-rose-100 text-rose-700' },
-    'tokens.chatbot': { label: 'Tokens - Chatbot', color: 'bg-rose-100 text-rose-700' },
-    'tokens.templates': { label: 'Tokens - Templates', color: 'bg-rose-100 text-rose-700' },
+    'tokens.notiz': { label: 'Tokens - Notiz', color: 'bg-primary text-primary' },
+    'tokens.chatbot': { label: 'Tokens - Chatbot', color: 'bg-primary text-primary' },
+    'tokens.templates': { label: 'Tokens - Templates', color: 'bg-primary text-primary' },
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-gray-400" /></div>;
@@ -336,7 +336,7 @@ const DatasetsTab = () => {
     blue: 'bg-blue-100 text-blue-600',
     amber: 'bg-amber-100 text-amber-600',
     orange: 'bg-orange-100 text-orange-600',
-    pink: 'bg-pink-100 text-pink-600',
+    pink: 'bg-primary text-primary',
   };
 
   const totalRecords = sources.reduce((sum, s) => sum + s.records, 0);

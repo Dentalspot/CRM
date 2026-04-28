@@ -222,13 +222,13 @@ const PatientFilePage = () => {
         />
 
         {patient?.allergies && patient.allergies.trim() && patient.allergies.trim().toLowerCase() !== 'no presenta alergias' && (
-          <div className="flex items-start gap-3 p-4 bg-fuchsia-50 border-2 border-fuchsia-300 rounded-xl animate-in fade-in duration-500">
-            <div className="p-2 bg-fuchsia-100 rounded-full shrink-0">
-              <ShieldAlert className="h-5 w-5 text-fuchsia-600" />
+          <div className="flex items-start gap-3 p-4 bg-primary border-2 border-primary rounded-xl animate-in fade-in duration-500">
+            <div className="p-2 bg-primary rounded-full shrink-0">
+              <ShieldAlert className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-bold text-fuchsia-800 text-sm">Alergia Declarada</p>
-              <p className="text-fuchsia-700 text-sm mt-0.5">{patient.allergies}</p>
+              <p className="font-bold text-primary text-sm">Alergia Declarada</p>
+              <p className="text-primary text-sm mt-0.5">{patient.allergies}</p>
             </div>
           </div>
         )}
@@ -369,7 +369,7 @@ const PatientFilePage = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => navigate(`/dashboard/therapist/odontograma/nueva?patient=${id}`)}
-                        className="text-pink-600 border-pink-200 hover:bg-pink-50"
+                        className="text-primary border-primary hover:bg-primary"
                       >
                         <ClipboardCheck className="h-4 w-4 mr-2" />
                         Nueva Evaluación

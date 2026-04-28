@@ -101,7 +101,7 @@ const DiagnosisSection = ({
                       {pd.diagnosis_system}
                     </Badge>
                     {pd.is_primary && (
-                      <Badge className="bg-pink-500 text-white text-[10px]">Principal</Badge>
+                      <Badge className="bg-primary text-white text-[10px]">Principal</Badge>
                     )}
                   </div>
                   <p className="font-medium mt-1 text-gray-900">{pd.diagnosis_name}</p>

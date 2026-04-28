@@ -7,6 +7,9 @@ import { Link } from 'react-router-dom';
 import { USER_ROLES } from '@/constants/roles';
 
 import DeleteAccountModal from './DeleteAccountModal';
+import MyDataCard from './MyDataCard';
+import DataAccessLogCard from './DataAccessLogCard';
+import NotificationPreferencesCard from './NotificationPreferencesCard';
 
 /**
  * Sección "Privacidad y datos" del perfil.
@@ -86,6 +89,15 @@ const PrivacySection = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Descargar mis datos (todos los roles) */}
+        <MyDataCard />
+
+        {/* Quien accedio a mis datos (solo paciente) */}
+        {isPatient && <DataAccessLogCard />}
+
+        {/* Preferencias de comunicacion */}
+        <NotificationPreferencesCard />
 
         {/* Eliminar cuenta */}
         <Card className="border-red-200">

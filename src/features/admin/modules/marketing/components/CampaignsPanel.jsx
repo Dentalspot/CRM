@@ -17,7 +17,7 @@ const CampaignsPanel = ({ campaigns = [], loading = false }) => (
   <Card>
     <CardHeader className="pb-3 flex flex-row items-center justify-between">
       <CardTitle className="text-base flex items-center gap-2">
-        <Send className="h-4 w-4 text-pink-500" />
+        <Send className="h-4 w-4 text-primary" />
         Campanas Recientes
       </CardTitle>
       <Button variant="outline" size="sm" asChild>

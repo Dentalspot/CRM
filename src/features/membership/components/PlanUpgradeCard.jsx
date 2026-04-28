@@ -40,11 +40,11 @@ const PlanUpgradeCard = ({ planId, currentPlan, isYearly, onSelect, isProcessing
     <Card className={cn(
       "relative flex flex-col h-full transition-all duration-300",
       isCurrent ? "ring-2 ring-green-500 bg-green-50/30" : "hover:shadow-lg hover:border-gray-300",
-      config.popular && !isCurrent && "ring-2 ring-pink-500/50"
+      config.popular && !isCurrent && "ring-2 ring-primary/50"
     )}>
       {config.popular && !isCurrent && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-          <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-4 py-1 shadow-md">
+          <Badge className="bg-gradient-to-r from-primary to-primary text-white px-4 py-1 shadow-md">
             <Sparkles className="h-3 w-3 mr-1" /> Recomendado
           </Badge>
         </div>
@@ -107,7 +107,7 @@ const PlanUpgradeCard = ({ planId, currentPlan, isYearly, onSelect, isProcessing
           className={cn(
             "w-full",
             isCurrent && "bg-green-600 hover:bg-green-600 cursor-default",
-            config.popular && !isCurrent && "bg-gradient-to-r from-pink-500 to-rose-500 hover:opacity-90"
+            config.popular && !isCurrent && "bg-gradient-to-r from-primary to-primary hover:opacity-90"
           )}
           variant={isCurrent ? "default" : config.popular ? "default" : "outline"}
         >

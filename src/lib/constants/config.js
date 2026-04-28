@@ -113,7 +113,7 @@ export const USER_ROLE_BADGE_STYLES = {
     label: 'Paciente',
   },
   [USER_ROLES.CLINIC]: {
-    color: 'bg-pink-100 text-pink-800 border-pink-200',
+    color: 'bg-primary text-primary border-primary',
     label: 'Clínica',
   },
 };
@@ -151,7 +151,7 @@ export const CLINIC_MODALITY_BADGE_STYLES = {
     label: 'Presencial',
   },
   [CLINIC_MODALITY.ONLINE]: {
-    color: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200',
+    color: 'bg-primary text-primary border-primary',
     label: 'Online',
   },
   [CLINIC_MODALITY.AMBAS]: {
@@ -221,7 +221,7 @@ export const NOTIFICATION_STATUS_BADGE_STYLES = {
 
 export const CLINICAL_ENTRY_TYPE_BADGE_STYLES = {
   [CLINICAL_ENTRY_TYPES.SESION]: {
-    color: 'bg-pink-100 text-pink-800 border-pink-200',
+    color: 'bg-primary text-primary border-primary',
     label: 'Sesión',
   },
   [CLINICAL_ENTRY_TYPES.EVALUACION]: {

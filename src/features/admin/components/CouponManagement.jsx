@@ -298,10 +298,10 @@ export default function CouponManagement() {
             <CardContent className="p-4 flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Expirados</p>
-                <h3 className="text-2xl font-bold text-rose-600 mt-1">{stats.expired}</h3>
+                <h3 className="text-2xl font-bold text-primary mt-1">{stats.expired}</h3>
               </div>
-              <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-100">
-                <XCircle className="h-5 w-5 text-rose-600" />
+              <div className="bg-primary p-2.5 rounded-xl border border-primary">
+                <XCircle className="h-5 w-5 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -432,7 +432,7 @@ export default function CouponManagement() {
                         <div className="flex items-center gap-1 text-sm bg-slate-50 w-fit px-2 py-1 rounded-md border border-slate-100">
                           <span className={cn(
                             "font-bold",
-                            coupon.max_uses && (coupon.current_uses || 0) >= coupon.max_uses ? "text-rose-600" : "text-slate-700"
+                            coupon.max_uses && (coupon.current_uses || 0) >= coupon.max_uses ? "text-primary" : "text-slate-700"
                           )}>
                             {coupon.current_uses || 0}
                           </span>
@@ -446,7 +446,7 @@ export default function CouponManagement() {
                         {coupon.expiration_date ? (
                           <div className="flex items-center gap-1.5 text-sm">
                             <CalendarIcon className="h-3.5 w-3.5 text-slate-400" />
-                            <span className={new Date(coupon.expiration_date) < new Date() ? "text-rose-500 font-medium" : "text-slate-600"}>
+                            <span className={new Date(coupon.expiration_date) < new Date() ? "text-primary font-medium" : "text-slate-600"}>
                               {format(new Date(coupon.expiration_date), 'dd MMM yyyy', { locale: es })}
                             </span>
                           </div>
@@ -479,7 +479,7 @@ export default function CouponManagement() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary rounded-lg transition-colors"
                             onClick={() => handleDelete(coupon.id)}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -521,7 +521,7 @@ export default function CouponManagement() {
                     Generar
                   </Button>
                 </div>
-                {errors.code && <span className="text-xs text-rose-500 font-medium">{errors.code.message}</span>}
+                {errors.code && <span className="text-xs text-primary font-medium">{errors.code.message}</span>}
               </div>
 
               {/* Tipo y Valor */}
@@ -554,7 +554,7 @@ export default function CouponManagement() {
                     {...register("value", { required: "El valor es obligatorio", min: 1 })}
                     className="bg-white border-slate-200"
                   />
-                  {errors.value && <span className="text-xs text-rose-500 font-medium">{errors.value.message}</span>}
+                  {errors.value && <span className="text-xs text-primary font-medium">{errors.value.message}</span>}
                 </div>
               </div>
 

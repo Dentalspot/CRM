@@ -19,10 +19,10 @@ const CATEGORIES = [
   { value: 'informes', label: 'Informes', color: 'bg-blue-100 text-blue-700' },
   { value: 'evidence', label: 'Evidencia', color: 'bg-green-100 text-green-700' },
   { value: 'progress', label: 'Progreso', color: 'bg-cyan-100 text-cyan-700' },
-  { value: 'treatment', label: 'Tratamiento', color: 'bg-rose-100 text-rose-700' },
+  { value: 'treatment', label: 'Tratamiento', color: 'bg-primary text-primary' },
   { value: 'material', label: 'Material', color: 'bg-orange-100 text-orange-700' },
   { value: 'evaluation', label: 'Evaluacion', color: 'bg-indigo-100 text-indigo-700' },
-  { value: 'matching', label: 'Matching', color: 'bg-pink-100 text-pink-700' },
+  { value: 'matching', label: 'Matching', color: 'bg-primary text-primary' },
 ];
 
 const REAL_MODELS = [

@@ -24,8 +24,8 @@ const DentalLevelListPage = () => {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-rose-100 dark:bg-rose-900/30 rounded-lg">
-              <Star className="h-6 w-6 text-rose-600" />
+            <div className="p-2 bg-primary dark:bg-primary/30 rounded-lg">
+              <Star className="h-6 w-6 text-primary" />
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">DentalLevel</h1>

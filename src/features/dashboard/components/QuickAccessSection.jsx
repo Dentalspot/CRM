@@ -55,7 +55,7 @@ const getQuickLinks = (publicSlug) => [
     title: 'DentalLevel',
     icon: Award,
     href: '/dashboard/profile?tab=dentallevel',
-    color: 'bg-pink-100 text-pink-600 dark:bg-pink-900/40 dark:text-pink-400',
+    color: 'bg-primary text-primary dark:bg-primary/40 dark:text-primary',
     description: 'Mi reputación'
   },
   {

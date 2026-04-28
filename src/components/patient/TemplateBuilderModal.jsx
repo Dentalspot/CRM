@@ -67,7 +67,7 @@ const CATEGORIES = {
   structure: { label: 'Estructura', color: 'bg-blue-100 text-blue-700' },
   input: { label: 'Entrada de Datos', color: 'bg-green-100 text-green-700' },
   selection: { label: 'Selección', color: 'bg-purple-100 text-purple-700' },
-  clinical: { label: 'Clínico', color: 'bg-pink-100 text-pink-700' },
+  clinical: { label: 'Clínico', color: 'bg-primary text-primary' },
 };
 
 const DOC_CATEGORIES = [
@@ -223,7 +223,7 @@ const TemplateBuilder = ({ elements, onChange }) => {
                   "flex-1 transition-all duration-200 border-l-4",
                   element.type === 'header' ? "border-l-primary bg-primary/5" :
                     element.type === 'info' ? "border-l-blue-400 bg-blue-50/50" :
-                      fieldType?.category === 'clinical' ? "border-l-pink-400" :
+                      fieldType?.category === 'clinical' ? "border-l-primary" :
                         "border-l-muted-foreground/40 hover:border-l-primary/50"
                 )}>
                   <CardContent className="p-4 space-y-3">

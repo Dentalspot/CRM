@@ -21,7 +21,7 @@ import { fetchApprovedCourses } from '@/features/educator/api/courseApi';
 // ── Category config ──
 const CATEGORIES = [
   { id: 'all', label: 'Todos', icon: Package, color: 'from-teal-500 to-teal-600', bg: 'bg-teal-50' },
-  { id: 'evaluation', label: 'Plantillas', icon: ClipboardList, color: 'from-pink-500 to-rose-600', bg: 'bg-pink-50' },
+  { id: 'evaluation', label: 'Plantillas', icon: ClipboardList, color: 'from-primary to-primary', bg: 'bg-primary' },
   { id: 'plan', label: 'Planificación', icon: FileText, color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50' },
   { id: 'activity', label: 'Descargables', icon: Download, color: 'from-amber-500 to-orange-500', bg: 'bg-amber-50' },
   { id: 'resource', label: 'Productos', icon: ShoppingBag, color: 'from-purple-500 to-violet-600', bg: 'bg-purple-50' },
@@ -306,7 +306,7 @@ const MarketplacePage = () => {
           /* Home view: grouped by category */
           <div className="space-y-10">
             {[
-              { type: 'evaluation', label: 'Plantillas de Anamnesis y Evaluaciones', icon: ClipboardList, color: 'from-pink-500 to-rose-600', filter: (i) => i.item_type === 'evaluation' },
+              { type: 'evaluation', label: 'Plantillas de Anamnesis y Evaluaciones', icon: ClipboardList, color: 'from-primary to-primary', filter: (i) => i.item_type === 'evaluation' },
               { type: 'plan', label: 'Planificación', icon: FileText, color: 'from-blue-500 to-blue-600', filter: (i) => i.item_type === 'plan' || i.is_treatment_plan },
               { type: 'activity', label: 'Descargables', icon: Download, color: 'from-amber-500 to-orange-500', filter: (i) => i.item_type === 'activity' || (i.item_type === 'material' && i.therapist_material_id) },
               { type: 'resource', label: 'Productos', icon: ShoppingBag, color: 'from-purple-500 to-violet-600', filter: (i) => i.item_type === 'resource' || i.item_type === 'product' || (i.item_type === 'material' && !i.therapist_material_id) },

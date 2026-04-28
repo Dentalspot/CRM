@@ -517,7 +517,7 @@ const PlanDetailPage = () => {
 
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={handleFavorite}>
-                        <Heart className={`h-3.5 w-3.5 mr-1.5 ${isFavorited ? 'fill-rose-500 text-rose-500' : ''}`} />
+                        <Heart className={`h-3.5 w-3.5 mr-1.5 ${isFavorited ? 'fill-primary text-primary' : ''}`} />
                         {isFavorited ? 'Guardado' : 'Guardar'}
                       </Button>
                       <Button variant="outline" size="sm" className="flex-1 text-xs"

@@ -115,7 +115,7 @@ const SuccessState = ({ selectedDate, selectedTime, primaryColor }) => (
         animate="visible"
         className="absolute -top-2 right-1/4"
       >
-        <PartyPopper className="w-5 h-5 text-pink-400" />
+        <PartyPopper className="w-5 h-5 text-primary" />
       </motion.div>
 
       <motion.div

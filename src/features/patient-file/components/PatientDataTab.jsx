@@ -30,7 +30,7 @@ const CollapsibleSection = ({ number, title, defaultOpen = false, children, edit
           <CardHeader className="pb-4 border-b cursor-pointer hover:bg-gray-50/50 transition-colors">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg text-teal-600 font-bold flex items-center gap-2">
-                <span className="bg-pink-500 text-white text-sm px-2 py-0.5 rounded">{number}</span>
+                <span className="bg-primary text-white text-sm px-2 py-0.5 rounded">{number}</span>
                 {title}
               </CardTitle>
               <div className="flex items-center gap-2">

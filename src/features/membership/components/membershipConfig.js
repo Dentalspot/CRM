@@ -28,11 +28,11 @@ export const PLAN_UI_CONFIG = {
   [PLAN_NAMES.PROFESSIONAL]: {
     icon: Users,
     color: 'pink',
-    gradient: 'from-pink-500 to-rose-500',
-    bgLight: 'bg-pink-50',
-    borderColor: 'border-pink-200',
-    textColor: 'text-pink-600',
-    badgeClass: 'bg-pink-100 text-pink-700',
+    gradient: 'from-primary to-primary',
+    bgLight: 'bg-primary',
+    borderColor: 'border-primary',
+    textColor: 'text-primary',
+    badgeClass: 'bg-primary text-primary',
     popular: true,
   },
   [PLAN_NAMES.CENTER]: {

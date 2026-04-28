@@ -415,7 +415,7 @@ const ActivityInputWithLibrary = ({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Nombre <span className="text-pink-500">*</span></Label>
+              <Label>Nombre <span className="text-primary">*</span></Label>
               <Input
                 value={editForm.name}
                 onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}

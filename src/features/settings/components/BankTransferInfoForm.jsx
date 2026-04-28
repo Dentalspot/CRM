@@ -167,8 +167,8 @@ const BankTransferInfoForm = () => {
 
   if (!isEditing && initialData?.bank_name) {
     return (
-      <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
-        <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+      <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
+        <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight flex items-center gap-2">
@@ -218,8 +218,8 @@ const BankTransferInfoForm = () => {
   }
 
   return (
-    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
-      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
+      <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
         <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">
           {initialData ? 'Actualizar Datos Bancarios' : 'Configurar Datos de Pago'}
         </CardTitle>

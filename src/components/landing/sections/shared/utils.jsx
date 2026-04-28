@@ -16,10 +16,10 @@ import {
 // CONSTANTS
 // ============================================================================
 export const DENTALSPOT_COLORS = {
-  primary: '#ff74c3',
-  secondary: '#00bcb5',
-  dark: '#1a1a2e',
-  light: '#f8fafc',
+  primary: '#00bcb5',   // teal — color principal de marca
+  dark: '#1f2937',      // slate-800 — texto/UI con autoridad
+  charcoal: '#374151',  // slate-700 — acentos sutiles
+  light: '#f8fafc',     // slate-50 — fondos suaves
 };
 
 // ============================================================================
@@ -28,7 +28,7 @@ export const DENTALSPOT_COLORS = {
 export const BADGE_CONFIG = {
   'Experto DentalSpot': {
     color: '#8B5CF6',
-    gradient: 'from-violet-500 via-purple-500 to-fuchsia-500',
+    gradient: 'from-violet-500 via-purple-500 to-primary',
     bg: 'bg-gradient-to-r from-violet-500 to-purple-600',
     glow: 'shadow-violet-500/50',
     emoji: '👑',

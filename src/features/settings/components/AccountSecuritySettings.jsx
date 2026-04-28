@@ -215,7 +215,7 @@ const AccountSecuritySettings = () => {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="pr-10 h-11 bg-white border-gray-200 focus:border-pink-500 focus:ring-pink-500/20"
+        className="pr-10 h-11 bg-white border-gray-200 focus:border-primary focus:ring-primary/20"
       />
       <button
         type="button"
@@ -228,7 +228,7 @@ const AccountSecuritySettings = () => {
   );
 
   const CheckItem = ({ checked, label }) => (
-    <div className={`flex items-center gap-2 text-sm transition-colors ${checked ? 'text-pink-600' : 'text-gray-400'}`}>
+    <div className={`flex items-center gap-2 text-sm transition-colors ${checked ? 'text-primary' : 'text-gray-400'}`}>
       {checked ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
       <span>{label}</span>
     </div>
@@ -237,10 +237,10 @@ const AccountSecuritySettings = () => {
   const SectionButton = ({ icon: Icon, title, description, onClick, badge }) => (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 p-4 rounded-xl bg-white border border-gray-100 hover:border-pink-200 hover:bg-pink-50/30 transition-all duration-200 text-left group"
+      className="w-full flex items-center gap-4 p-4 rounded-xl bg-white border border-gray-100 hover:border-primary hover:bg-primary/30 transition-all duration-200 text-left group"
     >
-      <div className="p-2.5 rounded-lg bg-gray-50 group-hover:bg-pink-100/50 transition-colors">
-        <Icon className="h-5 w-5 text-gray-600 group-hover:text-pink-600 transition-colors" />
+      <div className="p-2.5 rounded-lg bg-gray-50 group-hover:bg-primary/50 transition-colors">
+        <Icon className="h-5 w-5 text-gray-600 group-hover:text-primary transition-colors" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -253,13 +253,13 @@ const AccountSecuritySettings = () => {
         </div>
         <p className="text-sm text-gray-500 truncate">{description}</p>
       </div>
-      <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-pink-400 transition-colors" />
+      <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-primary transition-colors" />
     </button>
   );
 
   return (
-    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-pink-500">
-      <CardHeader className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 border-b border-gray-100">
+    <Card className="overflow-hidden rounded-lg shadow-lg border-t-4 border-primary">
+      <CardHeader className="bg-gradient-to-r from-primary to-purple-50 p-6 border-b border-gray-100">
         <CardTitle className="text-2xl font-extrabold text-gray-800 tracking-tight">Seguridad</CardTitle>
         <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">
           Gestiona la seguridad de tu cuenta
@@ -342,8 +342,8 @@ const AccountSecuritySettings = () => {
             {activeSection === 'timezone' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-pink-100">
-                    <Globe className="h-5 w-5 text-pink-600" />
+                  <div className="p-2 rounded-lg bg-primary">
+                    <Globe className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Zona Horaria</h3>
@@ -385,7 +385,7 @@ const AccountSecuritySettings = () => {
                 <Button
                   onClick={submitTimezoneChange}
                   disabled={loadingTimezone}
-                  className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25"
+                  className="w-full h-11 bg-primary hover:bg-primary text-white shadow-lg shadow-primary"
                 >
                   {loadingTimezone ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar zona horaria'}
                 </Button>
@@ -396,8 +396,8 @@ const AccountSecuritySettings = () => {
             {activeSection === 'password' && (
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-pink-100">
-                    <Key className="h-5 w-5 text-pink-600" />
+                  <div className="p-2 rounded-lg bg-primary">
+                    <Key className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Cambiar contraseña</h3>
@@ -445,7 +445,7 @@ const AccountSecuritySettings = () => {
                               className={`h-1 flex-1 rounded-full transition-all duration-300 ${passwordStrength >= level
                                   ? passwordStrength <= 2 ? 'bg-red-400'
                                     : passwordStrength <= 3 ? 'bg-amber-400'
-                                      : passwordStrength <= 4 ? 'bg-pink-400'
+                                      : passwordStrength <= 4 ? 'bg-primary'
                                         : 'bg-emerald-500'
                                   : 'bg-gray-100'
                                 }`}
@@ -484,7 +484,7 @@ const AccountSecuritySettings = () => {
                   <Button
                     type="submit"
                     disabled={loading || !isPasswordValid}
-                    className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25 transition-all duration-200"
+                    className="w-full h-11 bg-primary hover:bg-primary text-white shadow-lg shadow-primary transition-all duration-200"
                   >
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Actualizar contraseña'}
                   </Button>
@@ -496,8 +496,8 @@ const AccountSecuritySettings = () => {
             {activeSection === 'email' && (
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-pink-100">
-                    <Mail className="h-5 w-5 text-pink-600" />
+                  <div className="p-2 rounded-lg bg-primary">
+                    <Mail className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Cambiar email</h3>
@@ -521,7 +521,7 @@ const AccountSecuritySettings = () => {
                       value={emailForm.newEmail}
                       onChange={(e) => setEmailForm({ ...emailForm, newEmail: e.target.value })}
                       placeholder="nuevo@email.com"
-                      className="h-11 bg-white border-gray-200 focus:border-pink-500 focus:ring-pink-500/20"
+                      className="h-11 bg-white border-gray-200 focus:border-primary focus:ring-primary/20"
                       required
                     />
                   </div>
@@ -540,8 +540,8 @@ const AccountSecuritySettings = () => {
                     />
                   </div>
 
-                  <div className="p-3 rounded-lg bg-pink-50 border border-pink-100">
-                    <p className="text-xs text-pink-700">
+                  <div className="p-3 rounded-lg bg-primary border border-primary">
+                    <p className="text-xs text-primary">
                       Recibirás un enlace de confirmación en tu nuevo email.
                     </p>
                   </div>
@@ -549,7 +549,7 @@ const AccountSecuritySettings = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full h-11 bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/25"
+                    className="w-full h-11 bg-primary hover:bg-primary text-white shadow-lg shadow-primary"
                   >
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cambiar email'}
                   </Button>
@@ -607,8 +607,8 @@ const AccountSecuritySettings = () => {
             {activeSection === 'sessions' && (
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-pink-100">
-                    <Monitor className="h-5 w-5 text-pink-600" />
+                  <div className="p-2 rounded-lg bg-primary">
+                    <Monitor className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Sesiones activas</h3>
@@ -616,10 +616,10 @@ const AccountSecuritySettings = () => {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-100">
+                <div className="p-4 rounded-xl bg-gradient-to-r from-primary to-purple-50 border border-primary">
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <Monitor className="h-8 w-8 text-pink-600" />
+                      <Monitor className="h-8 w-8 text-primary" />
                       <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
                     </div>
                     <div>

@@ -136,7 +136,7 @@ const EditAppointmentForm = ({ appointment, onSuccess, onSessionCompleted, setIs
   return (
     <div className="space-y-4">
       {/* Información del Paciente */}
-      <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 border border-pink-100">
+      <div className="bg-gradient-to-r from-primary to-purple-50 rounded-lg p-4 border border-primary">
         <div className="flex items-start justify-between">
           <div className="space-y-2 flex-1">
             <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ const EditAppointmentForm = ({ appointment, onSuccess, onSessionCompleted, setIs
               variant="outline"
               size="sm"
               onClick={handleGoToPatientFile}
-              className="flex items-center gap-2 bg-white hover:bg-pink-50 border-pink-200 text-[#ff74c3] hover:text-[#ff74c3]"
+              className="flex items-center gap-2 bg-white hover:bg-primary border-primary text-[#ff74c3] hover:text-[#ff74c3]"
             >
               <FileText className="h-4 w-4" />
               Ver Ficha

@@ -250,7 +250,7 @@ const CampaignsPage = () => {
           <Button variant="ghost" size="sm" asChild>
             <Link to="/admin/marketing"><ArrowLeft className="h-4 w-4 mr-2" /> Marketing</Link>
           </Button>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Send className="h-6 w-6 text-pink-600" /> Campanas</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><Send className="h-6 w-6 text-primary" /> Campanas</h1>
           <Badge variant="outline">{campaigns.length} campanas</Badge>
         </div>
         <div className="flex gap-2">
@@ -324,7 +324,7 @@ const CampaignsPage = () => {
                           </Button>
                         )}
                         {c.status === 'draft' && (
-                          <Button size="sm" className="h-7 text-xs bg-pink-600 hover:bg-pink-700" onClick={() => sendCampaign(c.id)} disabled={sending === c.id}>
+                          <Button size="sm" className="h-7 text-xs bg-primary hover:bg-primary" onClick={() => sendCampaign(c.id)} disabled={sending === c.id}>
                             {sending === c.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Send className="h-3 w-3 mr-1" /> Enviar</>}
                           </Button>
                         )}
@@ -353,7 +353,7 @@ const CampaignsPage = () => {
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-10">
               <h2 className="text-lg font-bold flex items-center gap-2">
-                <Mail className="h-5 w-5 text-pink-600" />
+                <Mail className="h-5 w-5 text-primary" />
                 {editCampaign === 'new' ? 'Nueva Campana' : 'Editar Campana'}
               </h2>
               <button onClick={() => setEditCampaign(null)}><X className="h-5 w-5 text-gray-400" /></button>
@@ -415,7 +415,7 @@ const CampaignsPage = () => {
                   <div className="border rounded p-4 min-h-[200px] bg-white prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHTML(form.body_html || '') }} />
                 ) : (
                   <textarea rows={8} value={form.body_html || ''} onChange={e => setForm(f => ({ ...f, body_html: e.target.value }))}
-                    className="w-full border rounded p-3 text-xs font-mono resize-y focus:ring-2 focus:ring-pink-300"
+                    className="w-full border rounded p-3 text-xs font-mono resize-y focus:ring-2 focus:ring-primary"
                     placeholder="<h2>Hola {{nombre}}</h2><p>...</p>" />
                 )}
                 <p className="text-[10px] text-gray-400 mt-1">Variables: {'{{nombre}}'}, {'{{ciudad}}'}, {'{{email}}'}, {'{{unsubscribe_url}}'}</p>
@@ -451,7 +451,7 @@ const CampaignsPage = () => {
                           const newTags = active ? form.tags_filter.filter(t => t !== tag) : [...(form.tags_filter || []), tag];
                           setForm(f => ({ ...f, tags_filter: newTags }));
                           fetchCount(form.segment, form.source_filter, newTags);
-                        }} className={`text-xs px-2 py-1 rounded-full border ${active ? 'bg-pink-100 border-pink-300 text-pink-700' : 'border-gray-200 hover:bg-gray-100'}`}>
+                        }} className={`text-xs px-2 py-1 rounded-full border ${active ? 'bg-primary border-primary text-primary' : 'border-gray-200 hover:bg-gray-100'}`}>
                           {tag}
                         </button>
                       );
@@ -568,7 +568,7 @@ const CampaignsPage = () => {
 
             <div className="flex justify-end gap-2 p-5 border-t bg-gray-50 sticky bottom-0">
               <Button variant="outline" onClick={() => setEditCampaign(null)}>Cancelar</Button>
-              <Button className="bg-pink-600 hover:bg-pink-700" onClick={saveForm} disabled={saving}>
+              <Button className="bg-primary hover:bg-primary" onClick={saveForm} disabled={saving}>
                 {saving ? 'Guardando...' : <><Save className="h-4 w-4 mr-1" /> Guardar</>}
               </Button>
             </div>

@@ -737,7 +737,7 @@ export default function Ados2EvaluationPage() {
 
                       return (
                         <div key={section} className="mb-4">
-                          <h4 className="text-xs font-bold text-pink-600 border-b border-pink-100 pb-1 mb-3 uppercase tracking-wide">{sectionLabels[section] || section}</h4>
+                          <h4 className="text-xs font-bold text-primary border-b border-primary pb-1 mb-3 uppercase tracking-wide">{sectionLabels[section] || section}</h4>
                           <div className="space-y-3">
                             {items.map(r => {
                               const desc = getScoreDescription(mod, r.item_code, r.raw_score);
@@ -777,7 +777,7 @@ export default function Ados2EvaluationPage() {
                                         </div>
                                       ) : (
                                         descText && (
-                                          <p className={`text-xs text-slate-600 mt-0.5 pl-2 border-l-2 ${customDescriptions[r.item_code] ? 'border-pink-300 bg-pink-50/50' : 'border-pink-100'}`}>
+                                          <p className={`text-xs text-slate-600 mt-0.5 pl-2 border-l-2 ${customDescriptions[r.item_code] ? 'border-primary bg-primary/50' : 'border-primary'}`}>
                                             {descText}
                                           </p>
                                         )
@@ -871,7 +871,7 @@ export default function Ados2EvaluationPage() {
                   toast({ title: 'Generando informe...', description: 'El análisis IA se guardará automáticamente.' });
                   // Reload evaluation after a delay to get the saved report_html
                   setTimeout(() => loadEvaluation(evaluationId || id), 15000);
-                }} className="bg-pink-600 hover:bg-pink-700">
+                }} className="bg-primary hover:bg-primary">
                   <Printer className="h-4 w-4 mr-2" /> Generar Informe
                 </Button>
               )}

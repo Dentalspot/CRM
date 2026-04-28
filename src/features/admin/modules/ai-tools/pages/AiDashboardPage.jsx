@@ -195,10 +195,10 @@ const AiDashboardPage = () => {
                 <Badge className="mt-1 bg-teal-100 text-teal-700 text-[9px]">RAG activo</Badge>
               </div>
               <div className="bg-white rounded-lg border p-3 text-center">
-                <Mic className="h-5 w-5 text-pink-500 mx-auto mb-1" />
-                <p className="text-2xl font-bold text-pink-700">{trainingData.notiz}</p>
+                <Mic className="h-5 w-5 text-primary mx-auto mb-1" />
+                <p className="text-2xl font-bold text-primary">{trainingData.notiz}</p>
                 <p className="text-[10px] text-gray-500">Sesiones Notiz</p>
-                <Badge className="mt-1 bg-pink-100 text-pink-700 text-[9px]">Transcripciones</Badge>
+                <Badge className="mt-1 bg-primary text-primary text-[9px]">Transcripciones</Badge>
               </div>
               <div className="bg-white rounded-lg border p-3 text-center">
                 <MessageSquare className="h-5 w-5 text-cyan-500 mx-auto mb-1" />

@@ -17,7 +17,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 // Palette for clinic column backgrounds (soft tints)
 const CLINIC_COLORS = [
-  { bg: 'bg-pink-50/40', border: 'border-pink-200', dot: 'bg-pink-400', label: 'text-pink-700' },
+  { bg: 'bg-primary/40', border: 'border-primary', dot: 'bg-primary', label: 'text-primary' },
   { bg: 'bg-indigo-50/40', border: 'border-indigo-200', dot: 'bg-indigo-400', label: 'text-indigo-700' },
   { bg: 'bg-teal-50/40', border: 'border-teal-200', dot: 'bg-teal-400', label: 'text-teal-700' },
   { bg: 'bg-amber-50/40', border: 'border-amber-200', dot: 'bg-amber-400', label: 'text-amber-700' },

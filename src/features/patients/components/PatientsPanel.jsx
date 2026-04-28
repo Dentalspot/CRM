@@ -287,7 +287,7 @@ const PatientsPanel = () => {
                   >
                     <RadioGroupItem value={patient.id} id={`patient-${patient.id}`} />
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className={`${primaryPatientId === patient.id ? 'bg-primary text-white' : 'bg-pink-500 text-white'}`}>
+                      <AvatarFallback className={`${primaryPatientId === patient.id ? 'bg-primary text-white' : 'bg-primary text-white'}`}>
                         {patient.full_name?.charAt(0) || '?'}
                       </AvatarFallback>
                     </Avatar>

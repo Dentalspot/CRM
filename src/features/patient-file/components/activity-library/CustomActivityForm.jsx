@@ -34,7 +34,7 @@ const CustomActivityForm = ({
         </div>
 
         <div className="space-y-2">
-          <Label>Nombre <span className="text-pink-500">*</span></Label>
+          <Label>Nombre <span className="text-primary">*</span></Label>
           <Input
             value={customForm.name}
             onChange={(e) => setCustomForm(prev => ({ ...prev, name: e.target.value }))}

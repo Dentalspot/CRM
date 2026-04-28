@@ -356,7 +356,7 @@ const PatientDashboardPage = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <CalendarCheck className="h-5 w-5 text-pink-500" />
+                  <CalendarCheck className="h-5 w-5 text-primary" />
                   Mis Próximas Sesiones
                 </CardTitle>
                 <Button variant="ghost" size="sm" asChild>
@@ -381,11 +381,11 @@ const PatientDashboardPage = () => {
                         key={apt.id}
                         className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >
-                        <div className="h-12 w-12 rounded-lg bg-pink-100 flex flex-col items-center justify-center">
-                          <span className="text-xs font-medium text-pink-600">
+                        <div className="h-12 w-12 rounded-lg bg-primary flex flex-col items-center justify-center">
+                          <span className="text-xs font-medium text-primary">
                             {format(parseISO(apt.date), 'MMM', { locale: es }).toUpperCase()}
                           </span>
-                          <span className="text-lg font-bold text-pink-700">
+                          <span className="text-lg font-bold text-primary">
                             {format(parseISO(apt.date), 'd')}
                           </span>
                         </div>
@@ -395,7 +395,7 @@ const PatientDashboardPage = () => {
                               {apt.service?.name || 'Sesión de terapia'}
                             </p>
                             {isToday(parseISO(apt.date)) && (
-                              <Badge className="bg-pink-500 text-white text-xs">Hoy</Badge>
+                              <Badge className="bg-primary text-white text-xs">Hoy</Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
@@ -630,18 +630,18 @@ const PatientDashboardPage = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Card className="border-pink-200 bg-gradient-to-br from-pink-50 to-rose-50">
+            <Card className="border-primary bg-gradient-to-br from-primary to-primary">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2 text-pink-700">
+                <CardTitle className="text-lg flex items-center gap-2 text-primary">
                   <ShoppingBag className="h-5 w-5" />
                   Tienda de Productos
                 </CardTitle>
-                <CardDescription className="text-pink-600">
+                <CardDescription className="text-primary">
                   Materiales terapéuticos, juegos y recursos para tu tratamiento.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full bg-pink-500 hover:bg-pink-600 text-white" asChild>
+                <Button className="w-full bg-primary hover:bg-primary text-white" asChild>
                   <Link to="/marketplace/productos">
                     <ShoppingBag className="w-4 h-4 mr-2" />
                     Ver Productos
