@@ -152,6 +152,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Mi Perfil', icon: Briefcase, path: '/dashboard/profile' },
               { name: 'Calendario', icon: Calendar, path: '/dashboard/calendar' },
               { name: 'Mis Pacientes', icon: Users, path: '/dashboard/patients' },
+              { name: 'Ingresos', icon: TrendingUp, path: '/dashboard/income-reports' },
               ...(FEATURE_FLAGS.MARKETPLACE
                 ? [{ name: 'Tienda', icon: Store, path: '/dashboard/marketplace' }]
                 : []),
@@ -211,6 +212,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Pacientes', icon: Users, path: '/dashboard/clinic/patients' },
               { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
               { name: 'Reportes', icon: BarChart, path: '/dashboard/clinic/reports' },
+              { name: 'Ingresos', icon: TrendingUp, path: '/dashboard/income-reports' },
               { name: 'Membresía', icon: DollarSign, path: '/dashboard/membership' },
               { name: 'Asistente Virtual', icon: MessageSquare, path: '/dashboard/chatbot' },
               { name: 'Reportar problema', icon: AlertCircle, path: '#support', isAction: true },
@@ -225,6 +227,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Panel', icon: Home, path: '/dashboard/assistant' },
               { name: 'Agenda', icon: Calendar, path: '/dashboard/assistant/agenda' },
               { name: 'Pacientes', icon: Users, path: '/dashboard/assistant/patients' },
+              { name: 'Ingresos', icon: TrendingUp, path: '/dashboard/income-reports' },
             ],
           },
         ];

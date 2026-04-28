@@ -75,6 +75,7 @@ const SensorialEvaluationPage = lazy(() => import('@/features/sensorial-profile/
 const PatientDashboardPage = lazy(() => import('@/features/patient-dashboard/PatientDashboardPageV2.jsx'));
 const MyProgressPage = lazy(() => import('@/features/patient/pages/MyProgressPage.jsx'));
 const PatientClinicalFilePage = lazy(() => import('@/features/patient-file/pages/PatientClinicalFilePage.jsx'));
+const IncomeReportsPage = lazy(() => import('@/features/income-reports/pages/IncomeReportsPage.jsx'));
 const PatientAccessHistoryPage = lazy(() => import('@/features/patient-dashboard/pages/PatientAccessHistoryPage.jsx'));
 const PatientQuestionsPage = lazy(() => import('@/features/patient-questions/pages/PatientQuestionsPage.jsx'));
 const PatientAgendaPage = lazy(() => import('@/features/patient-agenda/pages/PatientAgendaPage.jsx'));
@@ -207,6 +208,7 @@ const DashboardRouter = () => {
           </Route>
 
           <Route path="patients" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><PatientsPage /></RoleGuard>} />
+          <Route path="income-reports" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST, USER_ROLES.CLINIC, USER_ROLES.ASSISTANT]}><IncomeReportsPage /></RoleGuard>} />
           <Route path="patients/import" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST, USER_ROLES.CLINIC]}><ImportPatientsPage /></RoleGuard>} />
           <Route path="patients/:id/*" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><PatientFilePage /></RoleGuard>} />
           <Route path="calendar" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><CalendarPage /></RoleGuard>} />
