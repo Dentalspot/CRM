@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import LegalAcceptanceGate from '@/features/legal/components/LegalAcceptanceGate';
 import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { USER_ROLES } from '@/constants/roles';
@@ -97,6 +98,9 @@ const DashboardLayout = () => {
             <Outlet />
           </main>
         </div>
+
+        {/* Interceptor de re-aceptación legal (solo se muestra si hay docs pendientes) */}
+        <LegalAcceptanceGate />
       </div>
     </OrganizationProvider>
   );

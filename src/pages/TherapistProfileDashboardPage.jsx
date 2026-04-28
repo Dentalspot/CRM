@@ -50,6 +50,7 @@ const ClinicTeamSection = lazy(() => import('@/components/clinic/profile/ClinicT
 
 // New Settings Components
 const AccountSecuritySettings = lazy(() => import('@/features/settings/components/AccountSecuritySettings'));
+const PrivacySection = lazy(() => import('@/features/account/components/PrivacySection'));
 const BankTransferInfoForm = lazy(() => import('@/features/settings/components/BankTransferInfoForm'));
 
 // Reputation & Growth Components
@@ -328,6 +329,7 @@ export default function TherapistProfileDashboardPage() {
                   </>
                 )}
                 <Chunk><AccountSecuritySettings /></Chunk>
+                <Chunk><PrivacySection /></Chunk>
               </div>
             )}
           </TabsContent>

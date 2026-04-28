@@ -262,9 +262,20 @@ export const AuthProvider = ({ children }) => {
         fetchingProfileRef.current = true;
 
         fetchProfile(newSession.user.id)
-          .then((userProfile) => {
+          .then(async (userProfile) => {
             if (!mounted) return;
             if (userRef.current?.id !== newSession.user.id) return;
+
+            // Bloqueo cuenta eliminada (Ley 21.719 — derecho ARCO)
+            if (userProfile?.deleted_at) {
+              logger.auth('[AUTH] Cuenta eliminada detectada, forzando logout');
+              await supabase.auth.signOut();
+              if (typeof window !== 'undefined') {
+                window.location.replace('/auth/login?reason=account_deleted');
+              }
+              return;
+            }
+
             setProfile(userProfile);
             setUser((prev) => {
               if (!prev || prev.id !== newSession.user.id) return prev;

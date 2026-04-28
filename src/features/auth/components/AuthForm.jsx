@@ -261,6 +261,17 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
       return;
     }
 
+    // Registrar aceptación legal (T&C + Política de Privacidad)
+    // El checkbox del form ya fuerza el consentimiento; aquí persistimos el registro auditable.
+    try {
+      await supabase.rpc('accept_legal_documents', {
+        p_slugs: ['terminos-condiciones', 'politica-privacidad'],
+      });
+    } catch (legalErr) {
+      // Fire-and-forget: no bloqueamos el registro si falla, pero loggeamos
+      logger.warn('[AuthForm] failed to persist legal acceptance:', legalErr?.message);
+    }
+
     // Handle valid invitation update
     if (inviteCode && inviteStatus === 'valid') {
       try {
