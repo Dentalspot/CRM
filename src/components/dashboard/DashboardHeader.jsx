@@ -3,6 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import OrganizationSelector from '@/components/dashboard/OrganizationSelector';
+import NotificationBell from '@/features/notifications/components/NotificationBell';
 
 const DashboardHeader = ({ title, subtitle, children, onMenuToggle }) => {
   return (
@@ -24,6 +25,7 @@ const DashboardHeader = ({ title, subtitle, children, onMenuToggle }) => {
           </div>
         </div>
         <div className="flex items-center space-x-3">
+          <NotificationBell />
           <OrganizationSelector />
           {children}
         </div>

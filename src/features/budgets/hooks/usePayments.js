@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import logger from '@/lib/utils/logger';
+import { notifyPaymentRegistered, notifyBudgetCompleted } from './useBudgetNotifications';
 
 /**
  * Lista pagos vinculados a un presupuesto.
@@ -60,6 +61,41 @@ export const createPayment = async (payload) => {
     .single();
 
   if (error) throw error;
+
+  // Notificaciones in-app (fire-and-forget)
+  try {
+    const { data: budget } = await supabase
+      .from('treatment_budgets')
+      .select('id, budget_number, title, total, currency, patient_id, therapist_id, status')
+      .eq('id', payload.budget_id)
+      .single();
+
+    if (budget) {
+      const { data: pat } = await supabase
+        .from('patients')
+        .select('profile_id')
+        .eq('id', budget.patient_id)
+        .single();
+      const patientProfileId = pat?.profile_id;
+
+      // Notificación de pago registrado (siempre)
+      notifyPaymentRegistered({ budget, amount: payload.amount, patientProfileId });
+
+      // Si el pago llevó al status "pagado" → notificación adicional de presupuesto completo
+      // Verificamos status post-INSERT (el trigger DB ya lo actualizó)
+      const { data: refreshed } = await supabase
+        .from('treatment_budgets')
+        .select('status')
+        .eq('id', payload.budget_id)
+        .single();
+      if (refreshed?.status === 'pagado') {
+        notifyBudgetCompleted({ budget, patientProfileId });
+      }
+    }
+  } catch (err) {
+    // ignore — no bloquea
+  }
+
   return data;
 };
 

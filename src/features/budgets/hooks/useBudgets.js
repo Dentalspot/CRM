@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import logger from '@/lib/utils/logger';
+import { notifyBudgetSent, notifyBudgetAccepted } from './useBudgetNotifications';
 
 /**
  * Hook para listar presupuestos de un paciente y refrescar.
@@ -92,6 +93,20 @@ export const createBudget = async (payload) => {
     }
   }
 
+  // Notificaciones (fire-and-forget) cuando se crea directamente como "enviado"
+  if (budget.status === 'enviado') {
+    try {
+      const { data: pat } = await supabase
+        .from('patients')
+        .select('profile_id')
+        .eq('id', budget.patient_id)
+        .single();
+      notifyBudgetSent({ budget, patientProfileId: pat?.profile_id });
+    } catch (err) {
+      // ignore — no bloquea creación
+    }
+  }
+
   return budget;
 };
 
@@ -167,6 +182,35 @@ export const updateBudget = async (budgetId, payload) => {
 export const acceptBudget = async (budgetId) => {
   const { error } = await supabase.rpc('accept_budget', { p_budget_id: budgetId });
   if (error) throw error;
+
+  // Notificación al dentista (fire-and-forget)
+  try {
+    const { data: budget } = await supabase
+      .from('treatment_budgets')
+      .select('id, budget_number, title, therapist_id, patient_id')
+      .eq('id', budgetId)
+      .single();
+
+    if (budget) {
+      const { data: pat } = await supabase
+        .from('patients')
+        .select('profile_id')
+        .eq('id', budget.patient_id)
+        .single();
+      let patientName = 'Paciente';
+      if (pat?.profile_id) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', pat.profile_id)
+          .single();
+        if (prof?.full_name) patientName = prof.full_name;
+      }
+      notifyBudgetAccepted({ budget, patientName });
+    }
+  } catch (err) {
+    // ignore — no bloquea
+  }
 };
 
 /**
@@ -196,4 +240,25 @@ export const updateBudgetStatus = async (budgetId, newStatus) => {
     .eq('id', budgetId);
 
   if (error) throw error;
+
+  // Si el cambio es a "enviado", notificar al paciente
+  if (newStatus === 'enviado') {
+    try {
+      const { data: budget } = await supabase
+        .from('treatment_budgets')
+        .select('id, budget_number, title, total, currency, patient_id, therapist_id')
+        .eq('id', budgetId)
+        .single();
+      if (budget) {
+        const { data: pat } = await supabase
+          .from('patients')
+          .select('profile_id')
+          .eq('id', budget.patient_id)
+          .single();
+        notifyBudgetSent({ budget, patientProfileId: pat?.profile_id });
+      }
+    } catch (err) {
+      // ignore — no bloquea
+    }
+  }
 };
