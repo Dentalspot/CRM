@@ -25,14 +25,34 @@ export const PLAN_UI_CONFIG = {
     textColor: 'text-blue-600',
     badgeClass: 'bg-blue-100 text-blue-700',
   },
-  [PLAN_NAMES.PROFESSIONAL]: {
+  [PLAN_NAMES.CLINIC_PRO]: {
     icon: Users,
-    color: 'pink',
+    color: 'primary',
     gradient: 'from-primary to-primary',
-    bgLight: 'bg-primary',
+    bgLight: 'bg-primary/10',
     borderColor: 'border-primary',
     textColor: 'text-primary',
-    badgeClass: 'bg-primary text-primary',
+    badgeClass: 'bg-primary/10 text-primary',
+    popular: true,
+  },
+  [PLAN_NAMES.CLINIC_PREMIUM]: {
+    icon: ShieldCheck,
+    color: 'teal',
+    gradient: 'from-teal-500 to-emerald-500',
+    bgLight: 'bg-teal-50',
+    borderColor: 'border-teal-200',
+    textColor: 'text-teal-600',
+    badgeClass: 'bg-teal-100 text-teal-700',
+  },
+  // Legacy aliases (deprecados, conservados por backward compat)
+  [PLAN_NAMES.PROFESSIONAL]: {
+    icon: Users,
+    color: 'primary',
+    gradient: 'from-primary to-primary',
+    bgLight: 'bg-primary/10',
+    borderColor: 'border-primary',
+    textColor: 'text-primary',
+    badgeClass: 'bg-primary/10 text-primary',
     popular: true,
   },
   [PLAN_NAMES.CENTER]: {

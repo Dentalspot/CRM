@@ -82,7 +82,7 @@ const DirectoryPage = () => {
   const planCounts = {
     all: therapists.length,
     free: therapists.filter(t => t.planSlug === 'free' || t.planSlug === 'gratis').length,
-    individual: therapists.filter(t => t.planSlug === 'individual').length,
+    individual: therapists.filter(t => t.planSlug === 'pro').length,
     profesional: therapists.filter(t => t.planSlug === 'profesional').length,
     centro: therapists.filter(t => t.planSlug === 'centro').length,
   };
@@ -148,7 +148,7 @@ const DirectoryPage = () => {
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-blue-600">{planCounts.individual}</p>
-          <p className="text-xs text-gray-500">Individual</p>
+          <p className="text-xs text-gray-500">Pro</p>
         </CardContent></Card>
         <Card><CardContent className="p-4 text-center">
           <p className="text-2xl font-bold text-purple-600">{planCounts.profesional}</p>
@@ -187,7 +187,7 @@ const DirectoryPage = () => {
           {[
             { key: 'all', label: 'Todos' },
             { key: 'free', label: 'Gratis' },
-            { key: 'individual', label: 'Individual' },
+            { key: 'pro', label: 'Pro' },
             { key: 'profesional', label: 'Profesional' },
             { key: 'centro', label: 'Centro' },
           ].map(f => (

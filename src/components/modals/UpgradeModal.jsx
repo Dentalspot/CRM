@@ -40,7 +40,7 @@ const UpgradeModal = ({
   isOpen,
   onClose,
   featureName = 'esta funcionalidad',
-  requiredPlan = 'individual',
+  requiredPlan = 'pro',
   currentPlan = 'free',
 }) => {
   const navigate = useNavigate();

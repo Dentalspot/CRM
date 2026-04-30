@@ -55,17 +55,27 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     status: 'scheduled',
   });
 
-  // Fetch clinicas publicas del terapeuta
+  // Fetch clínicas del terapeuta — combina owned + linked (multi-clínica)
   useEffect(() => {
     if (isOpen && user?.id) {
       const fetchClinics = async () => {
         setLoadingClinics(true);
-        const { data } = await supabase
-          .from('clinics')
-          .select('*')
-          .eq('therapist_id', user.id)
-          .eq('is_public', true);
-        setClinics(data || []);
+        const [ownedRes, linkedRes] = await Promise.all([
+          supabase
+            .from('clinics')
+            .select('*')
+            .eq('therapist_id', user.id),
+          supabase
+            .from('clinic_therapists')
+            .select('clinic:clinics(*)')
+            .eq('therapist_id', user.id)
+            .eq('is_active', true),
+        ]);
+        const owned = ownedRes.data || [];
+        const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
+        const all = [...owned, ...linked];
+        const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
+        setClinics(unique);
         setLoadingClinics(false);
       };
       fetchClinics();

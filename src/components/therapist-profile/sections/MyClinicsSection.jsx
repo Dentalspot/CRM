@@ -155,7 +155,8 @@ const MyClinicsSection = () => {
     setIsSaving(true);
 
     for (const clinic of clinics) {
-      const { is_new, therapist_availabilities, ...clinicData } = clinic;
+      // is_owner es flag de UI (no es columna en `clinics`), se procesa aparte
+      const { is_new, therapist_availabilities, is_owner: _ownerFlag, ...clinicData } = clinic;
   
       if (!clinicData.name || !clinicData.address || !clinicData.city_id) {
         toast({ title: "❌ Campos incompletos", description: `Completa nombre, dirección y ciudad para el lugar "${clinicData.name || 'Nuevo Lugar'}".`, variant: "destructive" });
@@ -201,6 +202,64 @@ const MyClinicsSection = () => {
       }
 
       // --- LUGAR EXACTO DONDE LA CLÍNICA ES GUARDADA EXITOSAMENTE ---
+
+      // Fix D: Si el dentista marcó "Soy dueño/a", registrarlo como clinic_admin
+      // en organization_members (idempotente). También asegurar membership como dentist.
+      if (user?.id && savedClinicId && clinic.is_owner) {
+        try {
+          // 1) Obtener organization_id de la clínica (debería existir tras backfill)
+          const { data: clinicRow } = await supabase
+            .from('clinics')
+            .select('organization_id')
+            .eq('id', savedClinicId)
+            .maybeSingle();
+
+          let orgId = clinicRow?.organization_id;
+
+          // 2) Si la clínica NO tiene org (caso raro post-backfill), crearla
+          if (!orgId) {
+            const { data: newOrg, error: orgErr } = await supabase
+              .from('organizations')
+              .insert({ name: payloadToSave.name })
+              .select('id')
+              .single();
+            if (orgErr) throw orgErr;
+            orgId = newOrg.id;
+            // Linkear org a la clínica
+            await supabase
+              .from('clinics')
+              .update({ organization_id: orgId })
+              .eq('id', savedClinicId);
+          }
+
+          // 3) Insertar (o ignorar duplicado) row clinic_admin en organization_members
+          const { error: adminErr } = await supabase
+            .from('organization_members')
+            .upsert(
+              { organization_id: orgId, user_id: user.id, role: 'clinic_admin', is_active: true },
+              { onConflict: 'organization_id,user_id,role', ignoreDuplicates: true }
+            );
+          if (adminErr) {
+            logger.warn('[MyClinicsSection] org_members clinic_admin upsert error:', adminErr.message);
+          }
+
+          // 4) Asegurar también role='dentist' (sigue siendo profesional de su propia clínica)
+          await supabase
+            .from('organization_members')
+            .upsert(
+              { organization_id: orgId, user_id: user.id, role: 'dentist', is_active: true },
+              { onConflict: 'organization_id,user_id,role', ignoreDuplicates: true }
+            );
+        } catch (err) {
+          logger.warn('[MyClinicsSection] is_owner setup failed (non-blocking):', err?.message);
+          toast({
+            variant: 'destructive',
+            title: 'Aviso',
+            description: 'La clínica se guardó pero no pudimos otorgar acceso de admin automáticamente. Contacta soporte.',
+          });
+        }
+      }
+
       // Task 1 & 2: Verificar si es colegio y realizar upsert silencioso en pie_therapist_schools
       if (user?.id && savedClinicId && payloadToSave.type === 'colegio') {
         try {

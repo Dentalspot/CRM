@@ -109,15 +109,10 @@ const PatientDashboardPageV2 = () => {
 
   // ---------- Care Team ----------
   const loadCareTeam = async (pId) => {
-    const { data, error } = await supabase
+    // 2 queries separadas para evitar embed dependiente de nombre exacto del FK
+    const { data: ctRows, error } = await supabase
       .from('patient_care_team')
-      .select(`
-        id, role, specialty, is_active,
-        dentist:profiles!patient_care_team_dentist_id_fkey(
-          id, full_name, email, phone,
-          therapist_branding(avatar_url)
-        )
-      `)
+      .select('id, role, specialty, is_active, dentist_id')
       .eq('patient_id', pId)
       .eq('is_active', true)
       .order('role');
@@ -127,7 +122,24 @@ const PatientDashboardPageV2 = () => {
       return;
     }
 
-    setCareTeam(data || []);
+    const rows = ctRows || [];
+    if (rows.length === 0) {
+      setCareTeam([]);
+      return;
+    }
+
+    // Cargar profiles + branding de los dentistas
+    const dentistIds = [...new Set(rows.map(r => r.dentist_id).filter(Boolean))];
+    const { data: profileRows } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, phone, therapist_branding(avatar_url)')
+      .in('id', dentistIds);
+    const profilesById = (profileRows || []).reduce((acc, p) => { acc[p.id] = p; return acc; }, {});
+
+    setCareTeam(rows.map(r => ({
+      ...r,
+      dentist: profilesById[r.dentist_id] || null,
+    })));
   };
 
   // ---------- Appointments ----------

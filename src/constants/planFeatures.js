@@ -9,20 +9,19 @@
 // PLAN IDENTIFIERS (spec 022 — 2026-04-22 update)
 // ============================================
 export const PLAN_NAMES = {
-  FREE: 'free', // spec 022: AHORA se muestra en UI con límites 5 pacientes / 15 citas mes
-  INDIVIDUAL: 'individual',
-  CLINIC_PRO: 'clinic_pro',  // spec 022: nuevo slug (reemplaza PROFESSIONAL)
-  CLINIC_PREMIUM: 'clinic_premium',  // spec 022: nuevo slug (reemplaza CENTER)
-  // Legacy slugs preservados para backward compatibility con código que aún los referencia
-  PROFESSIONAL: 'profesional', // DEPRECADO post-spec 022 — desactivado en DB
-  CENTER: 'centro', // DEPRECADO post-spec 022
+  FREE: 'free',
+  INDIVIDUAL: 'pro',         // VALUE actualizado al nuevo slug DB (KEY conservada para no romper imports)
+  CLINIC_PRO: 'clinic',      // VALUE actualizado
+  CLINIC_PREMIUM: 'clinic-plus', // VALUE actualizado
+  // Legacy slugs (deprecados, mantenidos para hierarchy fallback)
+  PROFESSIONAL: 'profesional',
+  CENTER: 'centro',
 };
 
 /**
- * Planes visibles en la UI — spec 022 tier model (4 planes)
- * Free ahora sí se muestra (con límites) como entry-level del funnel.
+ * Planes visibles en la UI — alineados con DB (subscription_plans.slug).
  */
-export const VISIBLE_PLAN_NAMES = ['free', 'individual', 'clinic_pro', 'clinic_premium'];
+export const VISIBLE_PLAN_NAMES = ['free', 'pro', 'clinic', 'clinic-plus'];
 
 // ============================================
 // ADD-ONS
@@ -58,9 +57,9 @@ export const PLAN_PRICING = {
     popular: false,
   },
   [PLAN_NAMES.INDIVIDUAL]: {
-    id: 'individual',
-    name: 'Individual',
-    subtitle: 'Dentista solo',
+    id: 'pro',
+    name: 'Pro',
+    subtitle: 'Dentista profesional',
     priceCLP: 14990,
     priceUSD: 17,
     priceCLPYearly: 152898, // 14990 × 12 × 0.85
@@ -69,19 +68,19 @@ export const PLAN_PRICING = {
     popular: false,
   },
   [PLAN_NAMES.CLINIC_PRO]: {
-    id: 'clinic_pro',
-    name: 'Clínica Pro',
+    id: 'clinic',
+    name: 'Clinic',
     subtitle: 'Clínica con equipo',
     priceCLP: 24990,
     priceUSD: 28,
     priceCLPYearly: 254898, // 24990 × 12 × 0.85
     priceUSDYearly: 289,
-    color: 'pink',
+    color: 'primary',
     popular: true,
   },
   [PLAN_NAMES.CLINIC_PREMIUM]: {
-    id: 'clinic_premium',
-    name: 'Clínica Premium',
+    id: 'clinic-plus',
+    name: 'Clinic Plus',
     subtitle: 'Sin límites',
     priceCLP: 39990,
     priceUSD: 45,
@@ -223,12 +222,11 @@ export const PLAN_FEATURES = {
     saveMaterials: false,
     supportLevel: 'email',
   },
-  [PLAN_NAMES.PROFESSIONAL]: {
+  [PLAN_NAMES.CLINIC_PRO]: {
     scheduling: true,
     clinicalHistory: true,
     basicReports: true,
     emailReminders: true,
-    // whatsappReminders: diferido — ver docs/product/feature-backlog.md §WhatsApp
     whatsappReminders: false,
     metricsPanel: true,
     aiAssistant: true,
@@ -239,7 +237,50 @@ export const PLAN_FEATURES = {
     brandCustomization: true,
     customTemplates: true,
     multiClinic: true,
-    // marketplaceBuy/Sell: diferido — ver docs/product/feature-backlog.md §Marketplace
+    marketplaceBuy: false,
+    marketplaceSell: false,
+    saveMaterials: true,
+    supportLevel: 'priority',
+  },
+  [PLAN_NAMES.CLINIC_PREMIUM]: {
+    scheduling: true,
+    clinicalHistory: true,
+    basicReports: true,
+    emailReminders: true,
+    whatsappReminders: false,
+    metricsPanel: true,
+    aiAssistant: true,
+    aiReports: true,
+    aiPlanGenerator: true,
+    aiProgressAnalysis: true,
+    landingPage: true,
+    brandCustomization: true,
+    customTemplates: true,
+    multiClinic: true,
+    marketplaceBuy: false,
+    marketplaceSell: false,
+    saveMaterials: true,
+    supportLevel: 'vip',
+    roleManagement: true,
+    consolidatedReports: true,
+    dedicatedOnboarding: true,
+  },
+  // Legacy aliases (deprecados — apuntan al value via las KEYS legacy)
+  [PLAN_NAMES.PROFESSIONAL]: {
+    scheduling: true,
+    clinicalHistory: true,
+    basicReports: true,
+    emailReminders: true,
+    whatsappReminders: false,
+    metricsPanel: true,
+    aiAssistant: true,
+    aiReports: true,
+    aiPlanGenerator: true,
+    aiProgressAnalysis: true,
+    landingPage: true,
+    brandCustomization: true,
+    customTemplates: true,
+    multiClinic: true,
     marketplaceBuy: false,
     marketplaceSell: false,
     saveMaterials: true,

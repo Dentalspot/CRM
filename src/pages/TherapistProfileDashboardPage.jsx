@@ -58,6 +58,7 @@ const BankTransferInfoForm = lazy(() => import('@/features/settings/components/B
 const ReputationDashboard = lazy(() => import('@/components/reputation/ReputationDashboard'));
 const GrowthPanel = lazy(() => import('@/components/reputation/GrowthPanel'));
 const InvitationsPanel = lazy(() => import('@/features/invitations/components/InvitationsPanel'));
+const MyClinicInvitationsPanel = lazy(() => import('@/features/dashboard/components/MyClinicInvitationsPanel'));
 
 const PageLoader = () => (
   <div className="flex justify-center items-center min-h-[280px]">
@@ -470,14 +471,19 @@ export default function TherapistProfileDashboardPage() {
             )}
           </TabsContent>
 
-          {/* Mi Plan / Membresía */}
+          {/* Mi Plan / Membresía + Programa de Referidos */}
           <TabsContent value="membership" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
-            {activeTab === 'membership' && <Chunk><MembershipPlansPage /></Chunk>}
+            {activeTab === 'membership' && (
+              <div className="space-y-6">
+                <Chunk><MembershipPlansPage /></Chunk>
+                <Chunk><InvitationsPanel /></Chunk>
+              </div>
+            )}
           </TabsContent>
 
-          {/* Invitaciones */}
+          {/* Mis Invitaciones — invitaciones a clínicas (recibidas) */}
           <TabsContent value="invitations" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
-            {activeTab === 'invitations' && <Chunk><InvitationsPanel /></Chunk>}
+            {activeTab === 'invitations' && <Chunk><MyClinicInvitationsPanel /></Chunk>}
           </TabsContent>
         </div>
       </Tabs>

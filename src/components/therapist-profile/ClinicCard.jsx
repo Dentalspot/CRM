@@ -297,6 +297,25 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                   <Checkbox id={`is_public-${clinic.id}`} checked={clinic.is_public} onCheckedChange={(checked) => handleFieldChange('is_public', checked)} />
                   <Label htmlFor={`is_public-${clinic.id}`} className="font-normal text-gray-700 dark:text-gray-300">Mostrar este lugar en mi perfil y buscador.</Label>
                 </div>
+
+                <div className="flex items-start space-x-2 pt-2 col-span-1 md:col-span-2 bg-primary/5 border border-primary/20 rounded-md p-3">
+                  <Checkbox
+                    id={`is_owner-${clinic.id}`}
+                    checked={!!clinic.is_owner}
+                    onCheckedChange={(checked) => handleFieldChange('is_owner', !!checked)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor={`is_owner-${clinic.id}`} className="font-medium text-gray-800 dark:text-gray-200 cursor-pointer">
+                      Soy dueño/a de esta clínica
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Marca esta opción si eres el responsable o propietario. Te dará acceso a la
+                      vista de administración (equipo, pacientes consolidados, reportes) además
+                      de tu vista de dentista.
+                    </p>
+                  </div>
+                </div>
               </div>
               
               <AvailabilityManager clinic={clinic} onUpdate={onUpdate} />

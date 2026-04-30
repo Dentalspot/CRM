@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDashboardPathByRole } from '@/utils/roleRouting';
 import { USER_ROLES } from '@/constants/roles';
@@ -38,36 +38,73 @@ const APP_NAMES = {
 
 const RoleLandingRedirect = () => {
   const { profile, user, loading } = useAuth();
+  const location = useLocation();
   const [orgRole, setOrgRole] = useState(null);
   const [orgLoading, setOrgLoading] = useState(true);
+
+  /**
+   * Helper: navega solo si NO estamos ya en la URL target.
+   * Evita loops cuando otro componente (RoleGuard u otro) redirige de vuelta.
+   */
+  const safeNavigate = (target) => {
+    if (location.pathname === target) {
+      // Ya estamos ahí; no renderizar Navigate (evita loop).
+      // En su lugar mostrar un fallback sutil para que React no monte/desmonte rápido.
+      return (
+        <div className="flex h-screen w-full items-center justify-center text-muted-foreground text-sm">
+          <p>Cargando dashboard...</p>
+        </div>
+      );
+    }
+    return <Navigate to={target} replace />;
+  };
 
   // Consultar organization_members para determinar rol operativo real
   useEffect(() => {
     if (!user?.id || loading) return;
 
+    let cancelled = false;
     const fetchOrgRole = async () => {
-      const { data } = await supabase
-        .from('organization_members')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('is_active', true);
+      try {
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('is_active', true);
 
-      const roles = (data || []).map(r => r.role);
+        if (cancelled) return;
 
-      // Prioridad explícita: dentist > clinic_admin > assistant
-      if (roles.includes('dentist')) {
-        setOrgRole(USER_ROLES.THERAPIST);
-      } else if (roles.includes('clinic_admin')) {
-        setOrgRole(USER_ROLES.CLINIC);
-      } else if (roles.includes('assistant')) {
-        setOrgRole(USER_ROLES.ASSISTANT);
-      } else {
-        setOrgRole(null); // sin membresía → fallback a profiles.role
+        if (error) {
+          // RLS o tabla no accesible → fallback a profiles.role (no bloquea)
+          console.warn('[RoleLandingRedirect] organization_members query error:', error.message);
+          setOrgRole(null);
+          return;
+        }
+
+        const roles = (data || []).map(r => r.role);
+
+        // Prioridad explícita: dentist > clinic_admin > assistant
+        if (roles.includes('dentist')) {
+          setOrgRole(USER_ROLES.THERAPIST);
+        } else if (roles.includes('clinic_admin')) {
+          setOrgRole(USER_ROLES.CLINIC);
+        } else if (roles.includes('assistant')) {
+          setOrgRole(USER_ROLES.ASSISTANT);
+        } else {
+          setOrgRole(null); // sin membresía → fallback a profiles.role
+        }
+      } catch (err) {
+        // Cualquier error inesperado: fallback a profile.role, NO bloquear
+        console.warn('[RoleLandingRedirect] unexpected error:', err?.message);
+        if (!cancelled) setOrgRole(null);
+      } finally {
+        // CRÍTICO: siempre pasar orgLoading a false para que el redirect ocurra
+        if (!cancelled) setOrgLoading(false);
       }
-      setOrgLoading(false);
     };
 
     fetchOrgRole();
+    return () => { cancelled = true; };
   }, [user?.id, loading]);
 
   if (loading || orgLoading) {
@@ -83,7 +120,7 @@ const RoleLandingRedirect = () => {
 
   // Patients → universal dashboard, no origin check needed
   if (role === USER_ROLES.PATIENT) {
-    return <Navigate to={getDashboardPathByRole(role)} replace />;
+    return safeNavigate(getDashboardPathByRole(role));
   }
 
   // Professionals: check if they belong to THIS app
@@ -92,7 +129,7 @@ const RoleLandingRedirect = () => {
     if (!originApp || originApp === CURRENT_APP) {
       // Si org_members define un rol operativo, usarlo. Si no, fallback a profiles.role.
       const effectiveRole = orgRole || role;
-      return <Navigate to={getDashboardPathByRole(effectiveRole)} replace />;
+      return safeNavigate(getDashboardPathByRole(effectiveRole));
     }
 
     // Professional registered on a DIFFERENT app — show redirect message
@@ -131,7 +168,7 @@ const RoleLandingRedirect = () => {
   }
 
   // Admin or default
-  return <Navigate to={getDashboardPathByRole(role)} replace />;
+  return safeNavigate(getDashboardPathByRole(role));
 };
 
 export default RoleLandingRedirect;

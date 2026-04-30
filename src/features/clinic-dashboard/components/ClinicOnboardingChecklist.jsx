@@ -122,11 +122,13 @@ const ClinicOnboardingChecklist = ({ clinicInfo, onCreateClinic, onInviteTherapi
       const clinicId = clinicInfo.id;
 
       const [therapistsRes, patientsRes, appointmentsRes, subscriptionRes, clinicDetailRes] = await Promise.all([
-        // Terapeutas en la clínica
+        // Terapeutas en la clínica (excluyendo al propio usuario, que puede ser dueño-dentista)
         supabase
           .from('clinic_therapists')
-          .select('id')
+          .select('id, therapist_id')
           .eq('clinic_id', clinicId)
+          .eq('is_active', true)
+          .neq('therapist_id', user.id)
           .limit(1),
         // Pacientes asociados a terapeutas de la clínica
         supabase

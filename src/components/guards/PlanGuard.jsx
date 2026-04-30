@@ -17,7 +17,7 @@ import { Card, CardContent } from '@/components/ui/card';
  * Guard para proteger rutas por plan mínimo
  * 
  * @param {Object} props
- * @param {string} props.requiredPlan - Plan mínimo requerido ('individual', 'profesional', 'centro')
+ * @param {string} props.requiredPlan - Plan mínimo requerido ('pro', 'profesional', 'centro')
  * @param {string} props.feature - Alternativa: feature key para determinar plan automáticamente
  * @param {ReactNode} props.children - Contenido a mostrar si tiene acceso
  * @param {string} props.redirectTo - Ruta de redirección (default: '/planes')

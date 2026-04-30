@@ -35,7 +35,7 @@ export const validateRutForPassword = (rut) => {
 
 /**
  * Valida formato de email
- * @param {string} email 
+ * @param {string} email
  * @returns {boolean}
  */
 const isValidEmail = (email) => {
@@ -44,8 +44,169 @@ const isValidEmail = (email) => {
 };
 
 /**
+ * Fix C: si no se proveyó organization_id, derivarlo desde la primera
+ * clínica activa del dentista (vía clinic_therapists).
+ *
+ * Sin organization_id, los pacientes son invisibles para el equipo de la clínica.
+ *
+ * @param {string} therapistId
+ * @param {string|null} providedOrgId
+ * @returns {Promise<string|null>}
+ */
+const resolveOrganizationId = async (therapistId, providedOrgId) => {
+  if (providedOrgId) return providedOrgId;
+  try {
+    const { data, error } = await supabase
+      .from('clinic_therapists')
+      .select('clinics:clinic_id(organization_id)')
+      .eq('therapist_id', therapistId)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      logger.warn('[patientAccountService] resolveOrganizationId error:', error.message);
+      return null;
+    }
+    return data?.clinics?.organization_id || null;
+  } catch (err) {
+    logger.warn('[patientAccountService] resolveOrganizationId exception:', err?.message);
+    return null;
+  }
+};
+
+/**
+ * Fix B: crear row en patient_care_team al crear/vincular paciente.
+ * Sin esto, el paciente no ve a su dentista en su dashboard ("Equipo Tratante").
+ *
+ * @param {string} patientId - id de la fila en `patients`
+ * @param {string} dentistId - id del therapist (profile)
+ * @param {string|null} organizationId
+ */
+const ensurePrimaryCareTeam = async (patientId, dentistId, organizationId) => {
+  if (!patientId || !dentistId || !organizationId) {
+    logger.warn('[patientAccountService] ensurePrimaryCareTeam skipped: missing data', {
+      patientId, dentistId, organizationId,
+    });
+    return;
+  }
+  try {
+    // Idempotente: si ya existe (paciente+dentista activos), no falla por idx_pct_unique_dentist_active
+    const { error } = await supabase
+      .from('patient_care_team')
+      .insert({
+        patient_id: patientId,
+        dentist_id: dentistId,
+        organization_id: organizationId,
+        role: 'primary',
+        is_active: true,
+        assigned_by: dentistId,
+      });
+    if (error && !String(error.message).includes('duplicate')) {
+      logger.warn('[patientAccountService] ensurePrimaryCareTeam error:', error.message);
+    }
+  } catch (err) {
+    logger.warn('[patientAccountService] ensurePrimaryCareTeam exception:', err?.message);
+  }
+};
+
+/**
+ * Crea SOLO el row en `patients` (sin auth user) cuando el dentista no
+ * tiene email/RUT del paciente todavía. El paciente queda "sin cuenta"
+ * y el dentista puede invitarlo después para que cree su cuenta.
+ *
+ * @param {Object} params
+ * @param {string} params.therapistId
+ * @param {string} params.organizationId
+ * @param {string} params.fullName - obligatorio
+ * @param {string} params.phone - obligatorio
+ * @param {string|null} params.email - opcional
+ * @param {string|null} params.rut - opcional
+ */
+export const createPatientWithoutAccount = async ({
+  therapistId,
+  organizationId,
+  fullName,
+  phone,
+  email,
+  rut,
+}) => {
+  try {
+    if (!therapistId) throw new Error('ID de terapeuta es requerido');
+    if (!fullName?.trim()) throw new Error('Nombre del paciente es requerido');
+    if (!phone?.trim()) throw new Error('Teléfono del paciente es requerido');
+
+    // Derivar org_id si no se proveyó
+    organizationId = await resolveOrganizationId(therapistId, organizationId);
+
+    // Crear un profile "stub" sin auth user vinculado, para que apuntemos
+    // patients.profile_id a algo y el sistema funcione consistente.
+    // Este profile NO podrá hacer login (no hay auth.users row).
+    //
+    // Nota: profiles.id NORMALMENTE referencia auth.users.id. Crearemos uno
+    // con id manual y dejaremos email/rut nullables. Si la BD requiere FK
+    // a auth.users, esto fallará y caemos a profile_id=null.
+    let profileId = null;
+    try {
+      const stubId = crypto.randomUUID();
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .insert({
+          id: stubId,
+          full_name: fullName.trim(),
+          phone: phone.trim(),
+          email: email || `pending-${stubId}@dentalspot.local`,
+          rut: rut || null,
+          role: 'patient',
+        });
+      if (!profileErr) {
+        profileId = stubId;
+      } else {
+        logger.warn('[createPatientWithoutAccount] profile stub failed (non-blocking):', profileErr.message);
+      }
+    } catch (err) {
+      logger.warn('[createPatientWithoutAccount] profile stub exception:', err?.message);
+    }
+
+    const { data: newPatient, error: patientError } = await supabase
+      .from('patients')
+      .insert({
+        profile_id: profileId,  // puede ser null
+        therapist_id: therapistId,
+        organization_id: organizationId || null,
+        status: 'active',
+      })
+      .select()
+      .single();
+
+    if (patientError) throw patientError;
+
+    // Crear row en patient_care_team
+    if (newPatient?.id) {
+      await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
+    }
+
+    return {
+      success: true,
+      isNew: true,
+      hasAccount: false,
+      patientId: newPatient.id,
+      profileId,
+      fullName: fullName.trim(),
+      message: `Paciente "${fullName}" creado sin cuenta. Puedes invitarlo después.`,
+    };
+  } catch (err) {
+    logger.error('[createPatientWithoutAccount] error:', err);
+    return {
+      success: false,
+      error: err,
+      message: err?.message || 'No se pudo crear el paciente.',
+    };
+  }
+};
+
+/**
  * Crea cuenta de paciente automáticamente al agendar cita
- * 
+ *
  * @param {Object} params
  * @param {string} params.therapistId - UUID del terapeuta
  * @param {string} params.email - Email del paciente
@@ -72,6 +233,9 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
       throw new Error("Nombre del paciente es requerido");
     }
 
+    // Fix C: derivar organization_id si no se proveyó (ej: dentista sin org seleccionada)
+    organizationId = await resolveOrganizationId(therapistId, organizationId);
+
     // =========================================
     // 2. VERIFICAR SI YA EXISTE EL USUARIO
     // =========================================
@@ -95,6 +259,9 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
 
       if (existingPatient) {
         // Ya existe como paciente de este terapeuta
+        // Fix B: asegurar care_team aunque el paciente ya estuviera (idempotente)
+        await ensurePrimaryCareTeam(existingPatient.id, therapistId, organizationId);
+
         return {
           success: true,
           isNew: false,
@@ -118,6 +285,9 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
         .single();
 
       if (patientError) throw patientError;
+
+      // Fix B: crear row en patient_care_team
+      await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
 
       return {
         success: true,
@@ -260,6 +430,11 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
 
     if (patientError) {
       logger.error('Error creating patient record after retries:', patientError);
+    }
+
+    // Fix B: crear row en patient_care_team
+    if (newPatient?.id) {
+      await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
     }
 
     // =========================================

@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Phone, Mail } from 'lucide-react';
 
 const ROLE_LABELS = {
-  primary: 'Dentista principal',
+  primary: 'Principal',
   specialist: 'Especialista',
   consultant: 'Consultor',
 };
@@ -14,6 +14,19 @@ const ROLE_COLORS = {
   primary: 'bg-teal-100 text-teal-700',
   specialist: 'bg-blue-100 text-blue-700',
   consultant: 'bg-gray-100 text-gray-600',
+};
+
+// Formato CL: 56976163232 -> +56 9 7616 3232
+const formatPhone = (phone) => {
+  if (!phone) return null;
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('56')) {
+    return `+${digits.slice(0, 2)} ${digits.slice(2, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+  }
+  if (digits.length === 9) {
+    return `+56 ${digits.slice(0, 1)} ${digits.slice(1, 5)} ${digits.slice(5)}`;
+  }
+  return phone;
 };
 
 const MyCareTeam = ({ careTeam = [], loading }) => {
@@ -61,36 +74,55 @@ const MyCareTeam = ({ careTeam = [], loading }) => {
                 .toUpperCase();
 
               return (
-                <div key={member.id} className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 border">
-                  <Avatar className="h-10 w-10">
+                <div key={member.id} className="flex gap-3 p-3 rounded-lg bg-slate-50 border">
+                  <Avatar className="h-10 w-10 shrink-0">
                     <AvatarImage src={branding?.avatar_url} alt={dentist?.full_name} />
                     <AvatarFallback className="bg-teal-100 text-teal-700 text-xs font-semibold">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium truncate">{dentist?.full_name || 'Profesional'}</p>
-                      <Badge className={`text-[10px] ${ROLE_COLORS[member.role] || 'bg-gray-100'}`}>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    {/* Nombre + Badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <p
+                        className="text-sm font-semibold truncate flex-1"
+                        title={dentist?.full_name || 'Profesional'}
+                      >
+                        {dentist?.full_name || 'Profesional'}
+                      </p>
+                      <Badge
+                        className={`text-[10px] py-0 px-1.5 h-4 shrink-0 font-normal ${ROLE_COLORS[member.role] || 'bg-gray-100'}`}
+                      >
                         {ROLE_LABELS[member.role] || member.role}
                       </Badge>
                     </div>
+
                     {member.specialty && (
-                      <p className="text-xs text-muted-foreground">{member.specialty}</p>
+                      <p className="text-xs text-muted-foreground truncate" title={member.specialty}>
+                        {member.specialty}
+                      </p>
                     )}
-                    <div className="flex items-center gap-3 mt-1">
-                      {dentist?.phone && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3" /> {dentist.phone}
-                        </span>
-                      )}
-                      {dentist?.email && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3" /> {dentist.email}
-                        </span>
-                      )}
-                    </div>
+
+                    {/* Contacto */}
+                    {dentist?.phone && (
+                      <div
+                        className="text-xs text-muted-foreground flex items-center gap-1.5 truncate"
+                        title={dentist.phone}
+                      >
+                        <Phone className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{formatPhone(dentist.phone)}</span>
+                      </div>
+                    )}
+                    {dentist?.email && (
+                      <div
+                        className="text-xs text-muted-foreground flex items-center gap-1.5 truncate"
+                        title={dentist.email}
+                      >
+                        <Mail className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{dentist.email}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import ProfileAvatar from '@/components/shared/ProfileAvatar';
 import OnboardingChecklist from '@/features/therapist/components/OnboardingChecklist';
+import PendingClinicInvitations from '@/features/dashboard/components/PendingClinicInvitations';
 import AppointmentModal from '@/components/calendar/AppointmentModal';
 import WelcomeModal from '@/components/onboarding/WelcomeModal';
 import logger from '@/lib/utils/logger';
@@ -343,6 +344,9 @@ const TherapistDashboardPage = () => {
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-primary">
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 max-w-7xl space-y-6">
+          {/* Invitaciones pendientes a clínicas (solo render si hay) */}
+          <PendingClinicInvitations />
+
           <OnboardingChecklist />
 
           {/* ========== HERO BANNER ========== */}

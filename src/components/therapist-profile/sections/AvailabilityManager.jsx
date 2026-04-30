@@ -20,9 +20,11 @@ const timeOptions = Array.from({ length: 48 }, (_, i) => {
   return { value: time, label: time };
 });
 
-const AvailabilityManager = ({ clinicId, clinicModality }) => {
+const AvailabilityManager = ({ clinicId, clinicModality, therapistIdOverride, readOnlyTitle }) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  // Permite a clínica admin editar horario de OTRO dentista (vs. solo el del user logueado)
+  const effectiveTherapistId = therapistIdOverride || user?.id;
   const [availabilities, setAvailabilities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -33,13 +35,13 @@ const AvailabilityManager = ({ clinicId, clinicModality }) => {
   });
 
   const loadAvailability = useCallback(async () => {
-    if (!user?.id || !clinicId) return;
+    if (!effectiveTherapistId || !clinicId) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('therapist_availabilities')
         .select('*')
-        .eq('therapist_id', user.id)
+        .eq('therapist_id', effectiveTherapistId)
         .eq('clinic_id', clinicId);
 
       if (error) throw error;
@@ -56,7 +58,7 @@ const AvailabilityManager = ({ clinicId, clinicModality }) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, clinicId, toast]);
+  }, [effectiveTherapistId, clinicId, toast]);
 
   useEffect(() => {
     loadAvailability();
@@ -95,18 +97,19 @@ const AvailabilityManager = ({ clinicId, clinicModality }) => {
         throw new Error(`Hay horarios inválidos (Inicio >= Fin). Por favor corrígelos.`);
       }
 
-      // Borrar horarios existentes para esta clínica
+      // Borrar horarios existentes para esta clínica + dentista específico
       const { error: deleteError } = await supabase
         .from('therapist_availabilities')
         .delete()
-        .eq('clinic_id', clinicId);
+        .eq('clinic_id', clinicId)
+        .eq('therapist_id', effectiveTherapistId);
       if (deleteError) throw deleteError;
 
       // Insertar nuevos horarios
       if (availabilities.length > 0) {
         const schedulesToInsert = availabilities.map(slot => ({
           clinic_id: clinicId,
-          therapist_id: user.id,
+          therapist_id: effectiveTherapistId,
           day_of_week: DAY_TO_NUMBER[slot.day],
           start_time: slot.startTime,
           end_time: slot.endTime,
@@ -135,8 +138,14 @@ const AvailabilityManager = ({ clinicId, clinicModality }) => {
     >
       <Card className="p-6">
         <CardHeader className="p-0 mb-4">
-          <CardTitle className="text-xl font-bold">Gestionar Disponibilidad</CardTitle>
-          <CardDescription>Define tus horarios de atención para esta clínica.</CardDescription>
+          <CardTitle className="text-xl font-bold">
+            {readOnlyTitle || 'Gestionar Disponibilidad'}
+          </CardTitle>
+          <CardDescription>
+            {therapistIdOverride
+              ? 'Define los horarios de atención de este dentista en tu clínica.'
+              : 'Define tus horarios de atención para esta clínica.'}
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">

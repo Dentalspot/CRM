@@ -141,7 +141,7 @@ export const fetchSubscriptionHistory = apiHandler('fetchSubscriptionHistory', a
  *
  * @param {Object} params
  * @param {string} params.userId - ID del terapeuta
- * @param {string} params.planId - 'individual', 'profesional', 'centro'
+ * @param {string} params.planId - 'pro', 'profesional', 'centro'
  * @param {string} params.email - Email del pagador
  * @param {string} params.fullName - Nombre completo
  * @returns {Promise<Object>} URLs de checkout

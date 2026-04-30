@@ -269,9 +269,19 @@ export const AuthProvider = ({ children }) => {
             // Bloqueo cuenta eliminada (Ley 21.719 — derecho ARCO)
             if (userProfile?.deleted_at) {
               logger.auth('[AUTH] Cuenta eliminada detectada, forzando logout');
-              await supabase.auth.signOut();
+              // 1) Limpiar state local PRIMERO (evita que otros componentes
+              //    intenten re-render con datos eliminados)
+              setUser(null);
+              setProfile(null);
+              userRef.current = null;
+              // 2) signOut (limpia sesión Supabase). Suprimir error si ya está sin sesión.
+              try { await supabase.auth.signOut(); } catch (_) { /* ignore */ }
+              // 3) Solo redirigir si no estamos ya en /auth/* (evita loop)
               if (typeof window !== 'undefined') {
-                window.location.replace('/auth/login?reason=account_deleted');
+                const path = window.location.pathname;
+                if (!path.startsWith('/auth/')) {
+                  window.location.replace('/auth/login?reason=account_deleted');
+                }
               }
               return;
             }

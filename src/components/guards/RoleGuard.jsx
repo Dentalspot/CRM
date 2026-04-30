@@ -4,9 +4,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { Loader2 } from 'lucide-react';
 
+// Mapeo de roles de organization_members a USER_ROLES del frontend
+const ORG_ROLE_TO_FRONTEND = {
+  dentist: 'therapist',
+  clinic_admin: 'clinic',
+  assistant: 'assistant',
+};
+
 const RoleGuard = ({ children, allowedRoles = [] }) => {
   const { user, profile, loading } = useAuth();
-  const { effectiveRole, loading: orgLoading } = useCurrentOrganization();
+  const { effectiveRole, userOrgRoles = [], loading: orgLoading } = useCurrentOrganization();
   const location = useLocation();
 
   // Esperar a que tanto auth como org context terminen de cargar
@@ -22,11 +29,30 @@ const RoleGuard = ({ children, allowedRoles = [] }) => {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  // Usar effectiveRole de org_members si está disponible (dentist > clinic_admin > assistant)
-  // Fallback a profiles.role si no hay contexto de organización
-  const userRole = effectiveRole || profile?.role || user.user_metadata?.role;
+  // Permitir acceso si CUALQUIERA de los roles del usuario matchea:
+  //  - profile.role (rol primario)
+  //  - effectiveRole (priority dentist > clinic_admin > assistant)
+  //  - cualquier rol activo en organization_members (mapeado a frontend)
+  const profileRole = profile?.role || user.user_metadata?.role;
+  const orgEffectiveRole = effectiveRole;
+  const allOrgRolesMapped = userOrgRoles.map(r => ORG_ROLE_TO_FRONTEND[r] || r);
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+  if (allowedRoles.length === 0) return children;
+
+  const hasAccess =
+    (profileRole && allowedRoles.includes(profileRole)) ||
+    (orgEffectiveRole && allowedRoles.includes(orgEffectiveRole)) ||
+    allOrgRolesMapped.some(r => allowedRoles.includes(r));
+
+  if (!hasAccess) {
+    // Evitar loop: si ya estamos en /dashboard, no redirigir de vuelta a /dashboard
+    if (location.pathname === '/dashboard') {
+      return (
+        <div className="flex h-screen w-full items-center justify-center text-sm text-muted-foreground">
+          <p>No tienes acceso a esta sección.</p>
+        </div>
+      );
+    }
     return <Navigate to="/dashboard" replace />;
   }
 

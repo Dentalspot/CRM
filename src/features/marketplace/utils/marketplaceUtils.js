@@ -37,7 +37,7 @@ export const checkSubscriptionPlan = (subscription) => {
 
   if (planName.includes('profesional') || planName.includes('pro')) return 'professional';
   if (planName.includes('centro') || planName.includes('clinic')) return 'clinic';
-  if (planName.includes('individual')) return 'individual';
+  if (planName.includes('pro')) return 'pro';
   if (planName.includes('free') || planName.includes('gratuito') || !planName) return 'free';
 
   return 'unknown';
@@ -96,7 +96,7 @@ export const getMarketplaceRestrictions = (user, subscription) => {
     };
   }
 
-  if (planType === 'free' || planType === 'individual') {
+  if (planType === 'free' || planType === 'pro') {
     return {
       isRestricted: true,
       reason: 'plan',

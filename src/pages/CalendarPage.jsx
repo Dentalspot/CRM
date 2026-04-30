@@ -119,29 +119,30 @@ const CalendarPage = () => {
   // Data Fetching
   const fetchClinics = useCallback(async () => {
     if (!user) return;
+    // Combinar SIEMPRE owned + linked. La RPC get_therapist_clinics solo
+    // devuelve owned, lo cual omite clínicas a las que el dentista fue invitado.
     try {
-      const result = await getTherapistClinics(user.id);
-      setClinics(result?.clinics || []);
-    } catch (error) {
-      logger.warn('RPC get_therapist_clinics failed, falling back to direct query:', error.message);
-      // Fallback: query clinics directly
-      try {
-        const { data: ownedClinics } = await supabase
+      const [ownedRes, linkedRes] = await Promise.all([
+        supabase
           .from('clinics')
           .select('id, name, address, modalidad')
-          .eq('therapist_id', user.id);
-        const { data: linkedClinics } = await supabase
+          .eq('therapist_id', user.id),
+        supabase
           .from('clinic_therapists')
           .select('clinic:clinics(id, name, address, modalidad)')
           .eq('therapist_id', user.id)
-          .eq('is_active', true);
-        const linked = (linkedClinics || []).map(c => c.clinic).filter(Boolean);
-        const all = [...(ownedClinics || []), ...linked];
-        const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-        setClinics(unique);
-      } catch (fbErr) {
-        logger.warn('Clinics fallback also failed:', fbErr.message);
-      }
+          .eq('is_active', true),
+      ]);
+
+      const owned = ownedRes.data || [];
+      const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
+      const all = [...owned, ...linked];
+      // Dedup por id
+      const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
+      setClinics(unique);
+    } catch (err) {
+      logger.warn('fetchClinics error:', err?.message);
+      setClinics([]);
     }
   }, [user]);
 

@@ -19,6 +19,8 @@ export const OrganizationProvider = ({ children }) => {
   const [organizations, setOrganizations] = useState([]);
   const [currentOrganizationId, setCurrentOrgId] = useState(null);
   const [userOrgRoles, setUserOrgRoles] = useState([]);
+  // Roles por organización: { [orgId]: ['dentist', 'clinic_admin', ...] }
+  const [rolesByOrg, setRolesByOrg] = useState({});
   const [loading, setLoading] = useState(true);
 
   const storageKey = user?.id ? `${STORAGE_PREFIX}${user.id}` : null;
@@ -68,6 +70,16 @@ export const OrganizationProvider = ({ children }) => {
       const allRoles = [...new Set((data || []).map(r => r.role))];
       setUserOrgRoles(allRoles);
 
+      // Guardar roles por organización
+      const byOrg = {};
+      for (const row of (data || [])) {
+        if (!byOrg[row.organization_id]) byOrg[row.organization_id] = [];
+        if (!byOrg[row.organization_id].includes(row.role)) {
+          byOrg[row.organization_id].push(row.role);
+        }
+      }
+      setRolesByOrg(byOrg);
+
       setOrganizations(uniqueOrgs);
 
       if (uniqueOrgs.length === 1) {
@@ -109,12 +121,17 @@ export const OrganizationProvider = ({ children }) => {
   const isMultiOrg = organizations.length > 1;
   const currentOrganization = organizations.find(o => o.id === currentOrganizationId) || null;
 
-  // Rol operativo efectivo: dentist > clinic_admin > assistant
-  const effectiveRole = userOrgRoles.includes('dentist')
+  // Roles del usuario en la org seleccionada (no agregado de todas las orgs)
+  const currentOrgRoles = currentOrganizationId
+    ? (rolesByOrg[currentOrganizationId] || [])
+    : userOrgRoles; // si no hay org seleccionada, fallback a todos
+
+  // Rol operativo efectivo: dentist > clinic_admin > assistant (basado en la org actual)
+  const effectiveRole = currentOrgRoles.includes('dentist')
     ? 'therapist'
-    : userOrgRoles.includes('clinic_admin')
+    : currentOrgRoles.includes('clinic_admin')
       ? 'clinic'
-      : userOrgRoles.includes('assistant')
+      : currentOrgRoles.includes('assistant')
         ? 'assistant'
         : null;
 
@@ -125,8 +142,10 @@ export const OrganizationProvider = ({ children }) => {
     isMultiOrg,
     loading,
     setCurrentOrganizationId,
-    userOrgRoles,
-    effectiveRole,
+    userOrgRoles,         // todos los roles globales (todas las orgs)
+    currentOrgRoles,      // solo roles en la org actual
+    rolesByOrg,           // mapeo completo
+    effectiveRole,        // rol primario en la org actual
   };
 
   return (

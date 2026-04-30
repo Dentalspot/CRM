@@ -64,6 +64,7 @@ import { es } from 'date-fns/locale';
 import InviteTherapistModal from '@/components/clinic/InviteTherapistModal';
 import InviteAssistantModal from '@/components/clinic/InviteAssistantModal';
 import TherapistManagementModal from '@/components/clinic/TherapistManagementModal';
+import TherapistScheduleModal from '@/components/clinic/TherapistScheduleModal';
 import logger from '@/lib/utils/logger';
 
 const ClinicTherapistsManagementPage = () => {
@@ -89,6 +90,9 @@ const ClinicTherapistsManagementPage = () => {
   const [isInviteAssistantModalOpen, setIsInviteAssistantModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTherapist, setSelectedTherapist] = useState(null);
+  // Editor de horario por clínica (Fix B: clínica admin define horarios)
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [scheduleTherapist, setScheduleTherapist] = useState(null);
   
   // Actions state
   const [actionLoading, setActionLoading] = useState(null);
@@ -438,6 +442,17 @@ const ClinicTherapistsManagementPage = () => {
                   }}>
                     Ver Detalles / Editar
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    // row.id = junction table id; el ID real del dentista está en row.therapist_id
+                    setScheduleTherapist({
+                      id: row.therapist_id,
+                      full_name: row.profiles?.full_name || 'Dentista',
+                    });
+                    setIsScheduleModalOpen(true);
+                  }}>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Editar horario en clínica
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
               )}
@@ -760,12 +775,22 @@ const ClinicTherapistsManagementPage = () => {
         }}
       />
 
-      <TherapistManagementModal 
+      <TherapistManagementModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         clinicId={clinicInfo.id}
         therapistToEdit={selectedTherapist}
         onSuccess={fetchClinicData}
+      />
+
+      {/* Editor de horario del dentista en esta clínica */}
+      <TherapistScheduleModal
+        open={isScheduleModalOpen}
+        onOpenChange={setIsScheduleModalOpen}
+        therapist={scheduleTherapist}
+        clinicId={clinicInfo?.id}
+        clinicName={clinicInfo?.name}
+        clinicModality={clinicInfo?.modality || 'presencial'}
       />
 
       {/* Remove Confirmation */}

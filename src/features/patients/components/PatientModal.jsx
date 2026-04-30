@@ -44,16 +44,24 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
     if (isOpen && user?.id) {
       const fetchClinics = async () => {
         setLoadingClinics(true);
-        const { data, error } = await supabase
-          .from('clinics')
-          .select('id, name, type')
-          .eq('therapist_id', user.id)
-          .eq('is_public', true)
-          .order('name', { ascending: true });
-
-        if (!error && data) {
-          setClinics(data);
-        }
+        // Combinar owned + linked (multi-clínica)
+        const [ownedRes, linkedRes] = await Promise.all([
+          supabase
+            .from('clinics')
+            .select('id, name, type')
+            .eq('therapist_id', user.id),
+          supabase
+            .from('clinic_therapists')
+            .select('clinic:clinics(id, name, type)')
+            .eq('therapist_id', user.id)
+            .eq('is_active', true),
+        ]);
+        const owned = ownedRes.data || [];
+        const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
+        const all = [...owned, ...linked];
+        const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
+        unique.sort((a, b) => a.name.localeCompare(b.name));
+        setClinics(unique);
         setLoadingClinics(false);
       };
       fetchClinics();
@@ -89,23 +97,17 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email?.trim()) {
-      newErrors.email = 'El email es obligatorio.';
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = 'Formato de email inválido';
+    // Nombre y teléfono son obligatorios
+    if (!formData.full_name?.trim()) {
+      newErrors.full_name = 'El nombre es obligatorio';
+    }
+    if (!formData.phone?.trim()) {
+      newErrors.phone = 'El teléfono es obligatorio';
     }
 
-    if (!isEditing) {
-      if (!formData.full_name?.trim()) {
-        newErrors.full_name = 'El nombre es obligatorio';
-      }
-      if (!formData.rut?.trim()) {
-        newErrors.rut = 'El RUT es obligatorio para generar la contraseña temporal';
-      }
-    } else {
-      if (!formData.full_name?.trim()) {
-        newErrors.full_name = 'El nombre es obligatorio';
-      }
+    // Email solo se valida formato si fue ingresado (es opcional)
+    if (formData.email?.trim() && !/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = 'Formato de email inválido';
     }
 
     setErrors(newErrors);
@@ -176,14 +178,33 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
           return;
         }
 
-        const result = await createPatientAccount({
-          therapistId: user.id,
-          organizationId: currentOrganizationId,
-          email: formData.email,
-          fullName: formData.full_name,
-          rut: formData.rut,
-          phone: formData.phone
-        });
+        const hasEmail = !!formData.email?.trim();
+        const hasRut = !!formData.rut?.trim();
+
+        let result;
+        if (hasEmail && hasRut) {
+          // Flow completo: crea auth account con password basada en RUT
+          result = await createPatientAccount({
+            therapistId: user.id,
+            organizationId: currentOrganizationId,
+            email: formData.email,
+            fullName: formData.full_name,
+            rut: formData.rut,
+            phone: formData.phone
+          });
+        } else {
+          // Flow "sin cuenta": solo crea row en patients sin auth user.
+          // El paciente puede invitarse después manualmente para que se registre.
+          const { createPatientWithoutAccount } = await import('@/services/patientAccountService');
+          result = await createPatientWithoutAccount({
+            therapistId: user.id,
+            organizationId: currentOrganizationId,
+            fullName: formData.full_name,
+            phone: formData.phone,
+            email: formData.email || null,
+            rut: formData.rut || null,
+          });
+        }
 
         if (!result.success) throw new Error(result.message);
         setCreationResult(result);
@@ -291,26 +312,29 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
 
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="email">
-              Email del Paciente <span className="text-destructive">*</span>
-            </Label>
+            <Label htmlFor="email">Email del Paciente</Label>
             <Input
               id="email"
               name="email"
               type="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="ejemplo@correo.com"
+              placeholder="ejemplo@correo.com (opcional)"
               className={errors.email ? 'border-destructive' : ''}
               disabled={isEditing}
             />
             {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            <p className="text-xs text-muted-foreground">
+              Si lo ingresas se creará una cuenta. Si no, podrás invitarlo después.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Teléfono */}
             <div className="space-y-2">
-              <Label htmlFor="phone">Teléfono</Label>
+              <Label htmlFor="phone">
+                Teléfono <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="phone"
                 name="phone"
@@ -318,14 +342,14 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+56 9 1234 5678"
+                className={errors.phone ? 'border-destructive' : ''}
               />
+              {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
             </div>
 
             {/* RUT */}
             <div className="space-y-2">
-              <Label htmlFor="rut">
-                RUT/ID {!isEditing && <span className="text-destructive">*</span>}
-              </Label>
+              <Label htmlFor="rut">RUT/ID</Label>
               <Input
                 id="rut"
                 name="rut"
@@ -392,7 +416,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
       isOpen={showUpgradeModal}
       onClose={() => setShowUpgradeModal(false)}
       featureName="más pacientes"
-      requiredPlan="individual"
+      requiredPlan="pro"
       currentPlan={currentPlan}
     />
     </>

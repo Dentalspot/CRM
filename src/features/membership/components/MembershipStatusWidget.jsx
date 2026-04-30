@@ -28,28 +28,28 @@ import { es } from 'date-fns/locale';
 import logger from '@/lib/utils/logger';
 import { cn } from '@/lib/utils';
 
-// Colores y labels por plan (solo UI)
+// Colores y labels por plan (solo UI). Keys = slug en DB.
 const PLAN_UI = {
   free: {
-    label: 'Gratuito',
+    label: 'Free',
     color: 'bg-slate-100 text-slate-700',
     borderColor: 'border-l-slate-300',
     iconColor: 'text-slate-400'
   },
-  individual: {
-    label: 'Individual',
+  pro: {
+    label: 'Pro',
     color: 'bg-blue-100 text-blue-700',
     borderColor: 'border-l-blue-500',
     iconColor: 'text-blue-500'
   },
-  profesional: {
-    label: 'Profesional',
+  clinic: {
+    label: 'Clinic',
     color: 'bg-teal-100 text-teal-700',
     borderColor: 'border-l-teal-500',
     iconColor: 'text-teal-500'
   },
-  centro: {
-    label: 'Centro de Salud',
+  'clinic-plus': {
+    label: 'Clinic Plus',
     color: 'bg-purple-100 text-purple-700',
     borderColor: 'border-l-purple-500',
     iconColor: 'text-purple-500'

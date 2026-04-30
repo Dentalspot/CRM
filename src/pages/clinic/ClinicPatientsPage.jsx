@@ -114,25 +114,42 @@ const ClinicPatientsPage = () => {
       setDentists((ctData || []).map(ct => ct.profiles).filter(Boolean));
 
       // 3. Pacientes de la org (RLS pat_admin_select enforces)
-      // Incluye JOIN a profile del therapist_id para mostrar dentista asignado
-      const { data: patData, error: patErr } = await supabase
+      // Hacemos 3 queries y mergeamos en JS — evita problemas de FK ambigua en embeds
+      const { data: patRows, error: patErr } = await supabase
         .from('patients')
-        .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          status,
-          therapist_id,
-          last_appointment_date,
-          created_at,
-          therapist:therapist_id (id, full_name, email)
-        `)
+        .select('id, profile_id, therapist_id, status, last_appointment_date, created_at')
         .eq('organization_id', myClinic.organization_id)
         .order('created_at', { ascending: false });
 
       if (patErr) throw patErr;
-      setPatients(patData || []);
+
+      const patientList = patRows || [];
+
+      // Resolver datos personales de pacientes y dentistas
+      const profileIds = new Set();
+      patientList.forEach(p => {
+        if (p.profile_id) profileIds.add(p.profile_id);
+        if (p.therapist_id) profileIds.add(p.therapist_id);
+      });
+
+      let profilesById = {};
+      if (profileIds.size > 0) {
+        const { data: profileRows } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, phone')
+          .in('id', Array.from(profileIds));
+        profilesById = (profileRows || []).reduce((acc, p) => { acc[p.id] = p; return acc; }, {});
+      }
+
+      const enriched = patientList.map(p => ({
+        ...p,
+        full_name: profilesById[p.profile_id]?.full_name || '—',
+        email: profilesById[p.profile_id]?.email || '',
+        phone: profilesById[p.profile_id]?.phone || '',
+        therapist: p.therapist_id ? profilesById[p.therapist_id] || null : null,
+      }));
+
+      setPatients(enriched);
     } catch (err) {
       logger.error('ClinicPatientsPage fetch error:', err);
       toast({

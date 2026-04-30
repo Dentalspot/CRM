@@ -34,34 +34,7 @@ const InviteTherapistModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
 
     setLoading(true);
     try {
-      // Find therapist by email
-      const { data: therapist, error: findError } = await supabase
-        .from('profiles')
-        .select('id, full_name, role')
-        .eq('email', formData.email.trim().toLowerCase())
-        .maybeSingle();
-
-      if (findError) throw findError;
-
-      if (!therapist) {
-        throw new Error('No se encontró un profesional registrado con ese correo. El terapeuta debe tener una cuenta en DentalSpot.');
-      }
-
-      if (therapist.role !== 'therapist') {
-        throw new Error('El correo no corresponde a una cuenta de terapeuta.');
-      }
-
-      // Check if already linked
-      const { data: existing } = await supabase
-        .from('clinic_therapists')
-        .select('id')
-        .eq('clinic_id', clinicId)
-        .eq('therapist_id', therapist.id)
-        .maybeSingle();
-
-      if (existing) {
-        throw new Error('Este terapeuta ya está vinculado a tu clínica.');
-      }
+      const targetEmail = formData.email.trim().toLowerCase();
 
       // Spec 022 Phase E — Enforcement UX: bloquear si plan alcanzó límite de dentistas
       const allowed = await canCreate('dentist');
@@ -71,20 +44,66 @@ const InviteTherapistModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
         return;
       }
 
-      // Link therapist to clinic
-      const { error: linkError } = await supabase
-        .from('clinic_therapists')
-        .insert({
-          clinic_id: clinicId,
-          therapist_id: therapist.id,
-          is_active: true,
-        });
+      // Verificar que NO haya invitación pendiente o vinculo activo previo
+      const { data: existingInv } = await supabase
+        .from('clinic_invitations')
+        .select('id, status')
+        .eq('clinic_id', clinicId)
+        .eq('email', targetEmail)
+        .eq('status', 'pending')
+        .maybeSingle();
 
-      if (linkError) throw linkError;
+      if (existingInv) {
+        throw new Error('Ya hay una invitación pendiente para este correo.');
+      }
+
+      // Crear invitación (con token + envío email) via edge function
+      const { data: result, error: invErr } = await supabase.functions.invoke('clinic-invitations', {
+        body: {
+          action: 'create',
+          clinic_id: clinicId,
+          email: targetEmail,
+          message: formData.message?.trim() || null,
+          role: 'therapist',
+        },
+      });
+
+      if (invErr || !result?.success) {
+        throw new Error(result?.message || invErr?.message || 'No se pudo crear la invitación.');
+      }
+
+      // Crear notification in-app si el invitado YA tiene cuenta en la plataforma
+      try {
+        const { data: profileMatch } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .eq('email', targetEmail)
+          .maybeSingle();
+
+        if (profileMatch?.id) {
+          const { data: clinicData } = await supabase
+            .from('clinics')
+            .select('name')
+            .eq('id', clinicId)
+            .maybeSingle();
+
+          await supabase.rpc('create_in_app_notification', {
+            p_user_id: profileMatch.id,
+            p_type: 'clinic_invitation',
+            p_title: 'Te invitaron a una clínica',
+            p_message: `${clinicData?.name || 'Una clínica'} quiere que formes parte de su equipo. Acepta o rechaza desde "Mis Invitaciones".`,
+            p_action_url: '/dashboard/profile?tab=invitations',
+            p_data: { clinic_id: clinicId, clinic_name: clinicData?.name },
+          });
+        }
+      } catch (notifErr) {
+        // Non-blocking: si la notif falla, la invitación email ya se envió
+        logger.warn('In-app notification failed (non-blocking):', notifErr?.message);
+      }
 
       toast({
-        title: "Terapeuta agregado",
-        description: `${therapist.full_name || formData.email} se ha vinculado a tu clínica.`,
+        title: 'Invitación enviada',
+        description: `Se envió un correo a ${targetEmail}. Recibirá la invitación en su dashboard si ya tiene cuenta.`,
       });
 
       setFormData({ email: '', message: '' });
@@ -164,12 +183,12 @@ const InviteTherapistModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
       </DialogContent>
     </Dialog>
 
-    {/* Spec 022 Phase E — Modal de upgrade cuando alcanza límite de dentistas */}
+    {/* Modal de upgrade cuando alcanza límite de dentistas */}
     <UpgradeModal
       isOpen={showUpgradeModal}
       onClose={() => setShowUpgradeModal(false)}
       featureName="más dentistas en tu clínica"
-      requiredPlan="professional"
+      requiredPlan="clinic"
       currentPlan={currentPlan}
     />
     </>

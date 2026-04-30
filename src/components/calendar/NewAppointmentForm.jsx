@@ -393,7 +393,7 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
       isOpen={showUpgradeModal}
       onClose={() => setShowUpgradeModal(false)}
       featureName="más citas por mes"
-      requiredPlan="individual"
+      requiredPlan="pro"
       currentPlan={currentPlan}
     />
     </>

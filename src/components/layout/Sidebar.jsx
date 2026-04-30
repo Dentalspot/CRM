@@ -126,9 +126,14 @@ const SidebarItem = ({ item, isSubItem = false, onClick, onAction }) => {
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const { effectiveRole: effectiveOrgRole } = useCurrentOrganization();
+  const { effectiveRole: effectiveOrgRole, currentOrgRoles = [] } = useCurrentOrganization();
 
   const userRole = effectiveOrgRole || profile?.role || user?.role || 'patient';
+
+  // Detecta dual role: dentista que también es admin de la clínica ACTUALMENTE seleccionada.
+  // Sensible al organization_id activo: solo se ve "Mi Clínica" en orgs donde es dueño.
+  const isAlsoClinicAdmin = currentOrgRoles.includes('clinic_admin');
+  const isPrimarilyTherapist = userRole === USER_ROLES.THERAPIST;
 
   const handleLogout = async () => {
     try {
@@ -159,6 +164,16 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Blog & Preguntas', icon: BookOpen, path: '/dashboard/therapist/questions' },
             ],
           },
+          // Sección extra para dentistas que también son dueños/admin de su clínica.
+          // Muestra acciones administrativas además de su vista profesional.
+          ...(isAlsoClinicAdmin ? [{
+            section: 'Mi Clínica',
+            items: [
+              { name: 'Pacientes de la clínica', icon: Users, path: '/dashboard/clinic/patients' },
+              { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
+              { name: 'Reportes de la clínica', icon: BarChart, path: '/dashboard/clinic/reports' },
+            ],
+          }] : []),
           {
             section: 'Evaluaciones Clínicas',
             items: [

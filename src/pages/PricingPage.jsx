@@ -38,8 +38,8 @@ import { useMetaTracking } from '@/hooks/useMetaTracking';
 
 const pricingPlans = [
   {
-    id: 'individual',
-    name: 'Individual',
+    id: 'pro',
+    name: 'Pro',
     subtitle: 'Organízate',
     icon: <Zap />,
     priceMonthly: 29,
@@ -440,7 +440,7 @@ const ComparisonTable = () => {
             <th className="text-center py-4 px-2 w-1/6">
               <div className="flex flex-col items-center">
                 <Zap className="h-6 w-6 text-primary mb-1" />
-                <span className="text-sm font-semibold text-gray-600">Individual</span>
+                <span className="text-sm font-semibold text-gray-600">Pro</span>
                 <span className="text-lg font-bold text-gray-900">$29</span>
               </div>
             </th>
