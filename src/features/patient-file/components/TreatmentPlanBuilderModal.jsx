@@ -143,13 +143,25 @@ const TreatmentPlanBuilderModal = ({
     if (!user?.id) return;
     setLoadingClinics(true);
     try {
-      const { data, error } = await supabase
-        .from('clinics')
-        .select('id, name, address')
-        .eq('therapist_id', user.id)
-        .eq('is_active', true);
-
-      if (!error) setClinics(data || []);
+      // Combinar owned + linked (multi-clinica)
+      const [ownedRes, linkedRes] = await Promise.all([
+        supabase
+          .from('clinics')
+          .select('id, name, address')
+          .eq('therapist_id', user.id)
+          .eq('is_active', true),
+        supabase
+          .from('clinic_therapists')
+          .select('clinic:clinics(id, name, address, is_active)')
+          .eq('therapist_id', user.id)
+          .eq('is_active', true),
+      ]);
+      const owned = ownedRes.data || [];
+      const linked = (linkedRes.data || []).map(r => r.clinic).filter(c => c && c.is_active !== false);
+      const all = [...owned, ...linked];
+      const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
+      unique.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setClinics(unique);
     } catch (err) {
       logger.error('Error loading clinics:', err);
     } finally {
