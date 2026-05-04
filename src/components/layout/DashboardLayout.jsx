@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -74,6 +74,25 @@ const DashboardLayout = () => {
     setSidebarOpen(false);
   };
 
+  // Bloquear scroll del body cuando el drawer mobile está abierto.
+  // En desktop (md+) el sidebar es estático y no necesita lock.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    if (!isMobile) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [sidebarOpen]);
+
+  // Cerrar drawer con Escape (estándar a11y).
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') handleSidebarClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sidebarOpen]);
+
   return (
     <OrganizationProvider>
       <div className="flex h-screen bg-background">
@@ -84,12 +103,15 @@ const DashboardLayout = () => {
           onClose={handleSidebarClose}
         />
 
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-20 bg-black/50 md:hidden"
-            onClick={handleSidebarClose}
-          />
-        )}
+        {/* Backdrop con fade. Mantenemos el div siempre montado para animación
+            opacity, controlamos pointer-events para no bloquear cuando cerrado. */}
+        <div
+          className={`fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity duration-300 ${
+            sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={handleSidebarClose}
+          aria-hidden={!sidebarOpen}
+        />
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <DashboardHeader onMenuToggle={handleMenuToggle} />

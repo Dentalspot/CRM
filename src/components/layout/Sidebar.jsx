@@ -261,7 +261,10 @@ const Sidebar = ({ isOpen, onClose }) => {
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-background transition-transform duration-300 ease-in-out md:static md:translate-x-0",
+        // Mobile: drawer fixed con safe-area para notch iPhone (pt-safe).
+        // Desktop (md+): static, siempre visible.
+        "fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r bg-background transition-transform duration-300 ease-in-out md:static md:w-64 md:max-w-none md:translate-x-0",
+        "pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]",
         isOpen ? "translate-x-0 shadow-xl" : "-translate-x-full"
       )}
     >
