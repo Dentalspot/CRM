@@ -8,6 +8,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ import { searchPatientsForAgenda } from '@/lib/patientApi';
 
 const CalendarPage = () => {
   const { user } = useAuth();
+  const { currentOrganizationId } = useCurrentOrganization();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -117,19 +119,19 @@ const CalendarPage = () => {
   };
 
   // Data Fetching
+  // Scopear las clínicas a la org seleccionada en el header (Cristobal multi-org).
+  // Sin esto, en Mi Agenda aparecen clínicas de Igeldo cuando estás en Álamos.
   const fetchClinics = useCallback(async () => {
     if (!user) return;
-    // Combinar SIEMPRE owned + linked. La RPC get_therapist_clinics solo
-    // devuelve owned, lo cual omite clínicas a las que el dentista fue invitado.
     try {
       const [ownedRes, linkedRes] = await Promise.all([
         supabase
           .from('clinics')
-          .select('id, name, address, modalidad')
+          .select('id, name, address, modalidad, organization_id')
           .eq('therapist_id', user.id),
         supabase
           .from('clinic_therapists')
-          .select('clinic:clinics(id, name, address, modalidad)')
+          .select('clinic:clinics(id, name, address, modalidad, organization_id)')
           .eq('therapist_id', user.id)
           .eq('is_active', true),
       ]);
@@ -137,14 +139,16 @@ const CalendarPage = () => {
       const owned = ownedRes.data || [];
       const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
       const all = [...owned, ...linked];
-      // Dedup por id
       const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-      setClinics(unique);
+      const scoped = currentOrganizationId
+        ? unique.filter(c => c.organization_id === currentOrganizationId)
+        : unique;
+      setClinics(scoped);
     } catch (err) {
       logger.warn('fetchClinics error:', err?.message);
       setClinics([]);
     }
-  }, [user]);
+  }, [user, currentOrganizationId]);
 
   const fetchReminders = useCallback(async () => {
     if (!user) return;

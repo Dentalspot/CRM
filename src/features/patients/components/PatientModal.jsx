@@ -16,7 +16,7 @@ import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import useActivePlanLimits from '@/hooks/useActivePlanLimits';
 import UpgradeModal from '@/components/modals/UpgradeModal';
 
-const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
+const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId = null }) => {
   const { toast } = useToast();
   const { handleUpsertPatient } = usePatients();
   const { user } = useAuth();
@@ -44,15 +44,16 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
     if (isOpen && user?.id) {
       const fetchClinics = async () => {
         setLoadingClinics(true);
-        // Combinar owned + linked (multi-clínica)
+        // Combinar owned + linked + scopear a la org seleccionada en el header
+        // (sin esto, en Álamos veo Igeldo y viceversa).
         const [ownedRes, linkedRes] = await Promise.all([
           supabase
             .from('clinics')
-            .select('id, name, type')
+            .select('id, name, type, organization_id')
             .eq('therapist_id', user.id),
           supabase
             .from('clinic_therapists')
-            .select('clinic:clinics(id, name, type)')
+            .select('clinic:clinics(id, name, type, organization_id)')
             .eq('therapist_id', user.id)
             .eq('is_active', true),
         ]);
@@ -60,13 +61,16 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
         const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
         const all = [...owned, ...linked];
         const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-        unique.sort((a, b) => a.name.localeCompare(b.name));
-        setClinics(unique);
+        const scoped = currentOrganizationId
+          ? unique.filter(c => c.organization_id === currentOrganizationId)
+          : unique;
+        scoped.sort((a, b) => a.name.localeCompare(b.name));
+        setClinics(scoped);
         setLoadingClinics(false);
       };
       fetchClinics();
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, currentOrganizationId]);
 
   useEffect(() => {
     if (isOpen) {
@@ -80,19 +84,21 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
           attention_type: patient.attention_type || 'consulta_privada'
         });
       } else {
+        // Si viene desde AppointmentModal con una clínica preseleccionada,
+        // arranca con esa para no obligar al user a re-elegirla.
         setFormData({
           full_name: '',
           email: '',
           phone: '',
           rut: '',
-          clinic_id: null,
+          clinic_id: defaultClinicId || null,
           attention_type: 'consulta_privada'
         });
       }
       setErrors({});
       setCreationResult(null);
     }
-  }, [patient, isOpen, isEditing]);
+  }, [patient, isOpen, isEditing, defaultClinicId]);
 
   const validateForm = () => {
     const newErrors = {};

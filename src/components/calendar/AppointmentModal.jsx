@@ -601,10 +601,12 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
       </AlertDialogContent>
     </AlertDialog>
 
-    {/* Modal para crear paciente nuevo */}
+    {/* Modal para crear paciente nuevo. defaultClinicId pre-selecciona la
+        clínica de la cita para que el user no tenga que re-elegirla. */}
     <PatientModal
       isOpen={isNewPatientModalOpen}
       onOpenChange={setIsNewPatientModalOpen}
+      defaultClinicId={formData.clinic_id || null}
       onSave={async (newPatient) => {
         setIsNewPatientModalOpen(false);
         // Refetch para asegurar la lista canónica desde Supabase
