@@ -311,12 +311,12 @@ const PatientTable = ({
                   {onBookAppointment && (
                     <Button
                       variant="ghost"
-                      size="sm"
                       className="h-8 px-2 text-teal-600 hover:bg-teal-50"
                       onClick={() => onBookAppointment(patient.id)}
                       title="Agendar cita"
                     >
-                      <CalendarPlus className="h-4 w-4" />
+                      <CalendarPlus className="h-4 w-4 mr-1" />
+                      Agendar
                     </Button>
                   )}
                   <Button
