@@ -533,9 +533,17 @@ const WeeklyAgendaView = ({
         }
       }}
     >
-      {/* Scrollable wrapper for mobile */}
-      <div className="overflow-x-auto">
-      <div className="min-w-[640px]">
+      {/* Scrollable wrapper for mobile.
+          Mobile: scroll horizontal con momentum iOS + hint visual en borde derecho.
+          min-w 720px = ~85px/columna (8 cols), suficiente para leer cards sin
+          truncar tanto. */}
+      <div
+        className="overflow-x-auto relative"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        {/* Scroll hint: gradiente sutil a la derecha que sugiere "hay más" */}
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white/80 to-transparent md:hidden z-10" />
+      <div className="min-w-[720px]">
       {/* Header with days */}
       <div className="grid grid-cols-8 border-b bg-gray-50/80 sticky top-0 z-30">
         <div className="p-2 border-r bg-gray-50" />
