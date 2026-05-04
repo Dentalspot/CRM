@@ -50,3 +50,6 @@ public/llms.txt
 
 # Spec Kit — transient state (tracks active spec directory)
 .specify/feature.json
+
+# MCP local config (referencia env vars con tokens)
+.mcp.json

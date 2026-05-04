@@ -21,6 +21,8 @@ import PatientSheet from './PatientSheet';
 import AppointmentModal from '@/components/calendar/AppointmentModal';
 import MergeablePatientTable from './MergeablePatientTable';
 import usePatientsPanel from '../hooks/usePatientsPanel';
+import useTherapistClinics from '@/hooks/useTherapistClinics';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 
 const PatientsPanel = () => {
   const {
@@ -38,10 +40,19 @@ const PatientsPanel = () => {
     merging,
     selectedPatientsData, primaryPatient, secondaryPatient,
     pieMode, selectedForPie, addingToPie,
+    clinicFilter, setClinicFilter,
     handleEdit, handleViewDetails, handleSave, handleClearFilters,
     toggleMergeMode, handleSelectForMerge, openMergeModal, handleMergePatients,
     togglePieMode, handleTogglePie, handleAddToPie,
   } = usePatientsPanel();
+
+  // Decision 1B: el filtro de clínicas se restringe a la org seleccionada
+  // arriba (OrganizationSelector). Si quieren ver clínicas de otra org,
+  // cambian el switcher en el header.
+  const { currentOrganizationId } = useCurrentOrganization();
+  const { clinics: orgClinics } = useTherapistClinics({
+    organizationId: currentOrganizationId,
+  });
 
   const [bookingPatientId, setBookingPatientId] = useState(null);
 
@@ -185,7 +196,22 @@ const PatientsPanel = () => {
                 </SelectContent>
               </Select>
 
-              {(searchTerm || sortBy !== 'lastAppointmentDate') && (
+              {orgClinics.length > 0 && (
+                <Select value={clinicFilter} onValueChange={setClinicFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Clínica" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las clínicas</SelectItem>
+                    {orgClinics.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                    <SelectItem value="unassigned">Sin clínica asignada</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+
+              {(searchTerm || sortBy !== 'lastAppointmentDate' || clinicFilter !== 'all') && (
                 <Button variant="ghost" onClick={handleClearFilters} size="icon">
                   <X className="h-4 w-4" />
                 </Button>

@@ -31,10 +31,14 @@ const FREE_PLAN_FALLBACK = {
  * @returns {Promise<Object>} Subscription details including plan status and validity
  */
 export const fetchCurrentSubscription = apiHandler('fetchCurrentSubscription', async (userId) => {
+  // Solo subs ACTIVE cuentan como plan actual. Pending = intento de checkout
+  // sin pagar, no debe otorgar features (bug detectado en QA: una sub pending
+  // de Pro se mostraba como "Plan Pro" y desbloqueaba límites).
   const { data, error } = await supabase
     .from('therapist_subscriptions')
     .select('*')
     .eq('therapist_id', userId)
+    .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();

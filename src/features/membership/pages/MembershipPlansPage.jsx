@@ -230,9 +230,15 @@ const MembershipPlansPage = () => {
             .eq('id', couponApplied.id);
         }
 
-        if (result.success && result.init_point) {
-          toast({ title: 'Abriendo MercadoPago', description: 'Se abrirá una nueva ventana para completar el pago...' });
-          window.open(result.init_point, '_blank');
+        if (result.success && (result.sandbox_init_point || result.init_point)) {
+          toast({ title: 'Redirigiendo a MercadoPago', description: 'Te llevamos al checkout para completar el pago...' });
+          // Navegamos en la misma pestaña — `window.open` con `_blank` post-await
+          // es bloqueado por los popup blockers de los browsers.
+          // Si MP devuelve sandbox_init_point (token TEST), preferirlo: el
+          // init_point "normal" apunta a prod y rechaza buyers sandbox.
+          // En prod (token APP_USR) MP no devuelve sandbox_init_point.
+          const checkoutUrl = result.sandbox_init_point || result.init_point;
+          window.location.href = checkoutUrl;
         }
       }
     } catch (error) {

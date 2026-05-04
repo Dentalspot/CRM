@@ -19,7 +19,11 @@ import logger from '@/lib/utils/logger';
  * @param {boolean} opts.enabled - si false, no carga (default true)
  */
 export const useTherapistClinics = (opts = {}) => {
-  const { select = 'id, name, address, type, modalidad, is_active', enabled = true } = opts;
+  const {
+    select = 'id, name, address, type, modalidad, is_active, organization_id',
+    enabled = true,
+    organizationId = null, // si se pasa, filtra a clínicas de esa org
+  } = opts;
   const { user } = useAuth();
 
   const [clinics, setClinics] = useState([]);
@@ -47,8 +51,11 @@ export const useTherapistClinics = (opts = {}) => {
       const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
       const all = [...owned, ...linked];
       const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-      unique.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      setClinics(unique);
+      const scoped = organizationId
+        ? unique.filter(c => c.organization_id === organizationId)
+        : unique;
+      scoped.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setClinics(scoped);
     } catch (err) {
       logger.warn('[useTherapistClinics] fetch error:', err.message);
       setError(err);
@@ -56,7 +63,7 @@ export const useTherapistClinics = (opts = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, enabled, select]);
+  }, [user?.id, enabled, select, organizationId]);
 
   useEffect(() => { fetchClinics(); }, [fetchClinics]);
 

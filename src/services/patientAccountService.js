@@ -138,42 +138,22 @@ export const createPatientWithoutAccount = async ({
     // Derivar org_id si no se proveyó
     organizationId = await resolveOrganizationId(therapistId, organizationId);
 
-    // Crear un profile "stub" sin auth user vinculado, para que apuntemos
-    // patients.profile_id a algo y el sistema funcione consistente.
-    // Este profile NO podrá hacer login (no hay auth.users row).
-    //
-    // Nota: profiles.id NORMALMENTE referencia auth.users.id. Crearemos uno
-    // con id manual y dejaremos email/rut nullables. Si la BD requiere FK
-    // a auth.users, esto fallará y caemos a profile_id=null.
-    let profileId = null;
-    try {
-      const stubId = crypto.randomUUID();
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .insert({
-          id: stubId,
-          full_name: fullName.trim(),
-          phone: phone.trim(),
-          email: email || `pending-${stubId}@dentalspot.local`,
-          rut: rut || null,
-          role: 'patient',
-        });
-      if (!profileErr) {
-        profileId = stubId;
-      } else {
-        logger.warn('[createPatientWithoutAccount] profile stub failed (non-blocking):', profileErr.message);
-      }
-    } catch (err) {
-      logger.warn('[createPatientWithoutAccount] profile stub exception:', err?.message);
-    }
-
+    // Guardamos los datos de contacto directamente en `patients` (columnas
+    // denormalizadas full_name/email/phone/rut). NO creamos stub en `profiles`
+    // porque su RLS exige id = auth.uid(). Cuando el paciente acepte la
+    // invitación y registre cuenta, profile_id se vincula y el frontend hace
+    // fallback al profile real.
     const { data: newPatient, error: patientError } = await supabase
       .from('patients')
       .insert({
-        profile_id: profileId,  // puede ser null
+        profile_id: null,
         therapist_id: therapistId,
         organization_id: organizationId || null,
         status: 'active',
+        full_name: fullName.trim(),
+        phone: phone.trim(),
+        email: email?.trim() || null,
+        rut: rut?.trim() || null,
       })
       .select()
       .single();
@@ -190,7 +170,7 @@ export const createPatientWithoutAccount = async ({
       isNew: true,
       hasAccount: false,
       patientId: newPatient.id,
-      profileId,
+      profileId: null,
       fullName: fullName.trim(),
       message: `Paciente "${fullName}" creado sin cuenta. Puedes invitarlo después.`,
     };

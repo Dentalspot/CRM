@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Users, Calendar, FolderKanban } from 'lucide-react';
 import useDebounce from '@/hooks/useDebounce';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { getTherapistPatients, getTherapistStats } from '@/lib/patientApi';
 import logger from '@/lib/utils/logger';
 import { supabase } from '@/lib/supabaseClient';
@@ -10,6 +11,7 @@ import { supabase } from '@/lib/supabaseClient';
 const usePatientsPanel = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { currentOrganizationId } = useCurrentOrganization();
 
   // Estados
   const [allPatients, setAllPatients] = useState([]);
@@ -33,6 +35,8 @@ const usePatientsPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('lastAppointmentDate');
   const [sortDirection, setSortDirection] = useState('desc');
+  // 'all' | 'unassigned' | <clinicId>
+  const [clinicFilter, setClinicFilter] = useState('all');
 
   // Modales
   const [isModalOpen, setModalOpen] = useState(false);
@@ -61,21 +65,21 @@ const usePatientsPanel = () => {
     if (!user?.id) return;
     setStatsLoading(true);
     try {
-      const statsData = await getTherapistStats(user.id);
+      const statsData = await getTherapistStats(user.id, currentOrganizationId);
       setStats(statsData);
     } catch (err) {
       logger.error('Error cargando estadísticas:', err);
     } finally {
       setStatsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, currentOrganizationId]);
 
   const fetchPatients = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await getTherapistPatients(user.id);
+      const data = await getTherapistPatients(user.id, null, currentOrganizationId);
       setAllPatients(data);
     } catch (err) {
       logger.error('Error cargando pacientes:', err);
@@ -84,7 +88,7 @@ const usePatientsPanel = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, toast]);
+  }, [user?.id, toast, currentOrganizationId]);
 
   useEffect(() => {
     fetchStats();
@@ -107,6 +111,13 @@ const usePatientsPanel = () => {
       );
     }
 
+    // Filtro por clínica de atención
+    if (clinicFilter === 'unassigned') {
+      result = result.filter(p => !p.clinic_id);
+    } else if (clinicFilter !== 'all') {
+      result = result.filter(p => p.clinic_id === clinicFilter);
+    }
+
     result.sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
@@ -121,7 +132,7 @@ const usePatientsPanel = () => {
 
     setFilteredPatients(result);
     setPage(1);
-  }, [allPatients, debouncedSearchTerm, sortBy, sortDirection]);
+  }, [allPatients, debouncedSearchTerm, sortBy, sortDirection, clinicFilter]);
 
   // ============================================
   // PAGINATION
@@ -155,6 +166,7 @@ const usePatientsPanel = () => {
     setSearchTerm('');
     setSortBy('lastAppointmentDate');
     setSortDirection('desc');
+    setClinicFilter('all');
   };
 
   // ============================================
@@ -415,6 +427,7 @@ const usePatientsPanel = () => {
     // Filters
     searchTerm, setSearchTerm,
     sortBy, setSortBy,
+    clinicFilter, setClinicFilter,
     // Modals
     isModalOpen, setModalOpen,
     isSheetOpen, setSheetOpen,

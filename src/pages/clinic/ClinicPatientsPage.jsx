@@ -67,6 +67,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import logger from '@/lib/utils/logger';
+import ClinicPatientCreateModal from './ClinicPatientCreateModal';
 
 const ClinicPatientsPage = () => {
   const { user } = useAuth();
@@ -80,6 +81,7 @@ const ClinicPatientsPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDentist, setSelectedDentist] = useState('all');
+  const [createOpen, setCreateOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -117,7 +119,7 @@ const ClinicPatientsPage = () => {
       // Hacemos 3 queries y mergeamos en JS — evita problemas de FK ambigua en embeds
       const { data: patRows, error: patErr } = await supabase
         .from('patients')
-        .select('id, profile_id, therapist_id, status, last_appointment_date, created_at')
+        .select('id, profile_id, therapist_id, status, last_appointment_date, created_at, full_name, email, phone, rut')
         .eq('organization_id', myClinic.organization_id)
         .order('created_at', { ascending: false });
 
@@ -141,11 +143,13 @@ const ClinicPatientsPage = () => {
         profilesById = (profileRows || []).reduce((acc, p) => { acc[p.id] = p; return acc; }, {});
       }
 
+      // Fallback al campo denormalizado en `patients` cuando no hay profile.
       const enriched = patientList.map(p => ({
         ...p,
-        full_name: profilesById[p.profile_id]?.full_name || '—',
-        email: profilesById[p.profile_id]?.email || '',
-        phone: profilesById[p.profile_id]?.phone || '',
+        full_name: profilesById[p.profile_id]?.full_name || p.full_name || '—',
+        email: profilesById[p.profile_id]?.email || p.email || '',
+        phone: profilesById[p.profile_id]?.phone || p.phone || '',
+        rut: p.rut || '',
         therapist: p.therapist_id ? profilesById[p.therapist_id] || null : null,
       }));
 
@@ -218,10 +222,17 @@ const ClinicPatientsPage = () => {
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             </Button>
             <Button
-              onClick={() => toast({
-                title: 'Crear paciente — próximamente',
-                description: 'El formulario de alta desde la clínica se integrará en la próxima iteración. Por ahora, los dentistas crean pacientes desde su panel.',
-              })}
+              onClick={() => {
+                if (dentists.length === 0) {
+                  toast({
+                    variant: 'destructive',
+                    title: 'Sin dentistas activos',
+                    description: 'Invita primero un dentista a la clínica para poder asignarle pacientes.',
+                  });
+                  return;
+                }
+                setCreateOpen(true);
+              }}
               className="bg-primary"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -364,6 +375,14 @@ const ClinicPatientsPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ClinicPatientCreateModal
+        isOpen={createOpen}
+        onOpenChange={setCreateOpen}
+        organizationId={clinic?.organization_id}
+        dentists={dentists}
+        onCreated={fetchData}
+      />
     </>
   );
 };

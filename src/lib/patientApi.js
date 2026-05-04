@@ -371,9 +371,11 @@ export const downloadPatientDocument = async (filePath) => {
   return data.signedUrl;
 };
 
-export const getTherapistPatients = async (therapistId, searchTerm) => {
+export const getTherapistPatients = async (therapistId, searchTerm, organizationId = null) => {
   // RLS filtra automáticamente por care_team + org membership.
   // No se filtra por therapist_id en el frontend — la seguridad la da RLS.
+  // Cuando hay org seleccionada en el header, scopear a esa org para que el
+  // dentista multi-org no vea pacientes de otras orgs mezclados.
   let query = supabase
     .from('patients')
     .select(`
@@ -381,6 +383,7 @@ export const getTherapistPatients = async (therapistId, searchTerm) => {
       profile:profiles (id, full_name, email, phone, rut, birthdate)
     `)
     .eq('status', 'active');
+  if (organizationId) query = query.eq('organization_id', organizationId);
 
   if (searchTerm) {
     // RPC legacy: sigue usando therapist_id internamente.
@@ -390,18 +393,24 @@ export const getTherapistPatients = async (therapistId, searchTerm) => {
       p_search_term: searchTerm || null
     });
     if (rpcError) throw rpcError;
+    // RPC no filtra por org — filtramos client-side
+    if (organizationId && Array.isArray(rpcData)) {
+      return rpcData.filter(p => p.organization_id === organizationId);
+    }
     return rpcData;
   }
 
   const { data, error } = await query;
   if (error) throw error;
 
+  // Fallback: si profile_id está vinculado, prevalece profile; si no, los
+  // campos denormalizados de la tabla `patients` (pacientes "sin cuenta").
   return data.map(p => ({
     ...p,
-    full_name: p.profile?.full_name,
-    email: p.profile?.email,
-    phone: p.profile?.phone,
-    rut: p.profile?.rut,
+    full_name: p.profile?.full_name || p.full_name,
+    email: p.profile?.email || p.email,
+    phone: p.profile?.phone || p.phone,
+    rut: p.profile?.rut || p.rut,
     birthdate: p.profile?.birthdate
   }));
 };
@@ -410,9 +419,10 @@ export const getTherapistPatients = async (therapistId, searchTerm) => {
  * Get therapist stats in a single DB roundtrip.
  * Uses RPC get_therapist_stats instead of 3 separate count queries.
  */
-export const getTherapistStats = apiHandler('getTherapistStats', async (therapistId) => {
+export const getTherapistStats = apiHandler('getTherapistStats', async (therapistId, organizationId = null) => {
   const { data, error } = await supabase.rpc('get_therapist_stats', {
-    p_therapist_id: therapistId
+    p_therapist_id: therapistId,
+    p_organization_id: organizationId,
   });
 
   if (error) throw error;

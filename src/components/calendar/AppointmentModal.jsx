@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -154,28 +154,33 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
   }, [isOpen, isEditing, appointmentData, slotInfo, propSelectedClinic]);
 
   // Filtrar pacientes según clínica seleccionada (Task 3)
-  useEffect(() => {
-    if (isOpen && user?.id) {
-      const fetchPatients = async () => {
-        setLoadingPatients(true);
-        // Filtrar pacientes por organización activa (no por therapist_id)
-        let query = supabase.from('patients').select('id, attention_type, clinic_id, organization_id, profile:profiles(full_name)').eq('status', 'active');
-        if (currentOrganizationId) {
-          query = query.eq('organization_id', currentOrganizationId);
-        }
-        
-        const selectedClinicObj = clinics.find(c => c.id === formData.clinic_id);
-        if (selectedClinicObj?.type === 'colegio') {
-          query = query.eq('attention_type', 'pie_escolar').eq('clinic_id', formData.clinic_id);
-        }
-        
-        const { data } = await query;
-        setPatients(data || []);
-        setLoadingPatients(false);
-      };
-      fetchPatients();
+  const fetchPatients = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingPatients(true);
+    // Filtrar pacientes por organización activa (no por therapist_id).
+    // Incluimos columnas denormalizadas (full_name, etc.) para soportar
+    // pacientes "sin cuenta" sin profile vinculado.
+    let query = supabase
+      .from('patients')
+      .select('id, attention_type, clinic_id, organization_id, full_name, profile:profiles(full_name)')
+      .eq('status', 'active');
+    if (currentOrganizationId) {
+      query = query.eq('organization_id', currentOrganizationId);
     }
-  }, [isOpen, user, formData.clinic_id, clinics]);
+
+    const selectedClinicObj = clinics.find(c => c.id === formData.clinic_id);
+    if (selectedClinicObj?.type === 'colegio') {
+      query = query.eq('attention_type', 'pie_escolar').eq('clinic_id', formData.clinic_id);
+    }
+
+    const { data } = await query;
+    setPatients(data || []);
+    setLoadingPatients(false);
+  }, [user?.id, currentOrganizationId, formData.clinic_id, clinics]);
+
+  useEffect(() => {
+    if (isOpen) fetchPatients();
+  }, [isOpen, fetchPatients]);
 
   // Handler para limpiar block_type si no es colegio (Task 2)
   const handleClinicChange = (val) => {
@@ -591,16 +596,15 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     <PatientModal
       isOpen={isNewPatientModalOpen}
       onOpenChange={setIsNewPatientModalOpen}
-      onSave={(newPatient) => {
-        // Agregar el nuevo paciente a la lista y seleccionarlo
+      onSave={async (newPatient) => {
+        setIsNewPatientModalOpen(false);
+        // Refetch para asegurar la lista canónica desde Supabase
+        // (cubre RLS, multi-org y filtros por clinic_id).
+        await fetchPatients();
+        // Auto-seleccionar el recién creado si lo conocemos.
         if (newPatient?.id) {
-          setPatients(prev => [...prev, {
-            id: newPatient.id,
-            profile: { full_name: newPatient.full_name || newPatient.profile?.full_name },
-          }]);
           setFormData(prev => ({ ...prev, patient_id: newPatient.id }));
         }
-        setIsNewPatientModalOpen(false);
       }}
     />
     </>

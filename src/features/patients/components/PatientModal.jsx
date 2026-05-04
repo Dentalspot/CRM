@@ -222,7 +222,15 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave }) => {
 
   const handleCloseAfterCreation = () => {
     onOpenChange(false);
-    if (onSave) onSave();
+    // Pasamos el resultado de creación al padre para que pueda actualizar
+    // su lista de pacientes (ej: AppointmentModal seleccionando el nuevo).
+    if (onSave) {
+      onSave({
+        id: creationResult?.patientId,
+        full_name: creationResult?.fullName || formData.full_name,
+        profile: { full_name: creationResult?.fullName || formData.full_name },
+      });
+    }
   };
 
   // --- Panel de confirmación post-creación ---
