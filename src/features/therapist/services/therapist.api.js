@@ -390,6 +390,10 @@ export const getTherapistAppointments = async (therapistId, startDate, endDate, 
       *,
       patient:patients!appointments_patient_id_fkey (
         id,
+        full_name,
+        email,
+        phone,
+        rut,
         profile:profiles!patients_profile_id_fkey (
           id,
           full_name,

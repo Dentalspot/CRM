@@ -8,6 +8,10 @@ export const getTherapistAppointments = async (therapistId, start, end, clinicId
       *,
       patient:patients (
         id,
+        full_name,
+        email,
+        phone,
+        rut,
         profile:profiles (
           full_name,
           email,
