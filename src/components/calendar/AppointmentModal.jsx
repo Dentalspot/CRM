@@ -56,6 +56,8 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
   });
 
   // Fetch clínicas del terapeuta — combina owned + linked (multi-clínica)
+  // Scopeadas a la org seleccionada en el header para no mezclar Igeldo
+  // cuando el dentista está en Álamos (y viceversa).
   useEffect(() => {
     if (isOpen && user?.id) {
       const fetchClinics = async () => {
@@ -75,7 +77,10 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
         const all = [...owned, ...linked];
         const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-        setClinics(unique);
+        const scoped = currentOrganizationId
+          ? unique.filter(c => c.organization_id === currentOrganizationId)
+          : unique;
+        setClinics(scoped);
         setLoadingClinics(false);
       };
       fetchClinics();
@@ -84,7 +89,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
       supabase.from('therapist_services').select('*').eq('therapist_id', user.id).eq('is_active', true)
         .then(({data}) => setServices(data || []));
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, currentOrganizationId]);
 
   // Fetch appointment details if editing
   useEffect(() => {
@@ -415,7 +420,11 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
                 <SelectValue placeholder={loadingPatients ? "Cargando..." : "Selecciona paciente"} />
               </SelectTrigger>
               <SelectContent>
-                {patients.map(p => <SelectItem key={p.id} value={p.id}>{p.profile?.full_name}</SelectItem>)}
+                {patients.map(p => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.profile?.full_name || p.full_name || 'Paciente sin nombre'}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
