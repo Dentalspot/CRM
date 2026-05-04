@@ -69,6 +69,7 @@ const IncomeTable = ({ rows, loading, role }) => {
           <TableRow>
             <TableHead>Fecha</TableHead>
             <TableHead>Paciente</TableHead>
+            <TableHead>Clínica</TableHead>
             <TableHead>Presupuesto</TableHead>
             <TableHead>Método</TableHead>
             <TableHead className="text-right">Bruto</TableHead>
@@ -90,6 +91,9 @@ const IncomeTable = ({ rows, loading, role }) => {
                   {format(new Date(r.payment_date), 'dd MMM yyyy', { locale: es })}
                 </TableCell>
                 <TableCell className="text-sm">{r.patient_name}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {r.clinic_name || 'Sin clínica'}
+                </TableCell>
                 <TableCell className="text-sm">
                   {r.budget_number ? `#${r.budget_number}` : '—'}{' '}
                   <span className="text-muted-foreground text-xs truncate">{r.budget_title}</span>
@@ -117,9 +121,10 @@ const IncomeTable = ({ rows, loading, role }) => {
             );
           })}
 
-          {/* Totales */}
+          {/* Totales (colSpan ajustado: 5 cols antes de "Bruto" — fecha,
+              paciente, clínica, presupuesto, método). */}
           <TableRow className="bg-muted/30 font-semibold">
-            <TableCell colSpan={4} className="text-right">Totales:</TableCell>
+            <TableCell colSpan={5} className="text-right">Totales:</TableCell>
             <TableCell className="text-right font-mono">${formatCLP(totals.gross)}</TableCell>
             <TableCell></TableCell>
             <TableCell className="text-right font-mono text-emerald-700">

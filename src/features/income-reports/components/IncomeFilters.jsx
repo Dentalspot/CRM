@@ -44,7 +44,14 @@ const presets = {
   },
 };
 
-const IncomeFilters = ({ filters, setFilters, therapists = [], showTherapistFilter = false }) => {
+const IncomeFilters = ({
+  filters,
+  setFilters,
+  therapists = [],
+  showTherapistFilter = false,
+  clinics = [],
+  showClinicFilter = false,
+}) => {
   const applyPreset = (preset) => {
     const range = presets[preset]();
     setFilters({ ...filters, ...range });
@@ -99,6 +106,27 @@ const IncomeFilters = ({ filters, setFilters, therapists = [], showTherapistFilt
               </SelectContent>
             </Select>
           </div>
+
+          {showClinicFilter && clinics.length > 0 && (
+            <div>
+              <Label htmlFor="clinic" className="text-xs">Clínica</Label>
+              <Select
+                value={filters.clinicId || 'all'}
+                onValueChange={(v) => setFilters({ ...filters, clinicId: v === 'all' ? null : v })}
+              >
+                <SelectTrigger id="clinic" className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las clínicas</SelectItem>
+                  {clinics.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                  <SelectItem value="unassigned">Sin clínica</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {showTherapistFilter && (
             <div>

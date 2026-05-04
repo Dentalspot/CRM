@@ -7,7 +7,7 @@ import { USER_ROLES } from '@/constants/roles';
 import IncomeKPIs from '../components/IncomeKPIs';
 import IncomeFilters from '../components/IncomeFilters';
 import IncomeTable from '../components/IncomeTable';
-import { useIncomeReport, useClinicTherapists } from '../hooks/useIncomeReport';
+import { useIncomeReport, useClinicTherapists, useTherapistOwnClinics } from '../hooks/useIncomeReport';
 
 const fmtISO = (d) => d.toISOString().slice(0, 10);
 
@@ -38,10 +38,15 @@ const IncomeReportsPage = () => {
     ...defaultRange,
     method: null,
     therapistId: null,
+    clinicId: null,
   });
 
   // Lista de dentistas (solo se carga si es vista clínica)
   const { therapists } = useClinicTherapists(isClinicView, null);
+
+  // Lista de clínicas del dentista (solo se carga en vista therapist).
+  // El dropdown sirve para diferenciar ingresos por clínica (multi-org).
+  const therapistClinics = useTherapistOwnClinics(displayRole === 'therapist', user?.id);
 
   const { rows, kpis, loading } = useIncomeReport(filters, displayRole);
 
@@ -62,6 +67,8 @@ const IncomeReportsPage = () => {
           setFilters={setFilters}
           therapists={therapists}
           showTherapistFilter={isClinicView}
+          clinics={therapistClinics}
+          showClinicFilter={displayRole === 'therapist'}
         />
 
         <IncomeKPIs kpis={kpis} role={displayRole} />
