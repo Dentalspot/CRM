@@ -383,7 +383,7 @@ export const getTherapistClinics = async (therapistId) => {
   return data;
 };
 
-export const getTherapistAppointments = async (therapistId, startDate, endDate, clinicId) => {
+export const getTherapistAppointments = async (therapistId, startDate, endDate, clinicId, organizationId = null) => {
   let query = supabase
     .from('appointments')
     .select(`
@@ -406,6 +406,12 @@ export const getTherapistAppointments = async (therapistId, startDate, endDate, 
     .eq('therapist_id', therapistId)
     .gte('date', startDate)
     .lte('date', endDate);
+
+  // Scopear a la org seleccionada en el header (Cristobal multi-org).
+  // Sin esto, en Igeldo aparecen las citas de Álamos y viceversa.
+  if (organizationId) {
+    query = query.eq('organization_id', organizationId);
+  }
 
   if (clinicId) {
     query = query.eq('clinic_id', clinicId);

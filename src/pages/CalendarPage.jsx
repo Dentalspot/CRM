@@ -169,7 +169,8 @@ const CalendarPage = () => {
         user.id,
         weekStart,
         weekEnd,
-        selectedClinic !== 'all' ? selectedClinic : null
+        selectedClinic !== 'all' ? selectedClinic : null,
+        currentOrganizationId
       );
       
       // Merge appointments with reminders
@@ -185,7 +186,7 @@ const CalendarPage = () => {
     } catch (error) {
       logger.error('Error al cargar citas:', error);
     }
-  }, [user, currentWeek, selectedClinic, reminders]); 
+  }, [user, currentWeek, selectedClinic, reminders, currentOrganizationId]);
 
   const fetchBlockedTimes = useCallback(async () => {
     if (!user) return;
