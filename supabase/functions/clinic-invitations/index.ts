@@ -1,5 +1,5 @@
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://dentalspot.cl',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
@@ -107,7 +107,15 @@ Deno.serve(async (req) => {
       // Para role='therapist' preservamos el comportamiento legacy (bypass validations
       // arriba, solo check de duplicado en clinic_therapists)
       if (role === "therapist" && profileMatch) {
-        const { data: existing } = await supabase.from("clinic_therapists").select("id").eq("clinic_id", clinic_id).eq("therapist_id", profileMatch.id).maybeSingle();
+        // Solo bloquear si la membresía está ACTIVA. Si está inactiva (deleted/desinvitado),
+        // permitir re-invitación (el accept la reactiva).
+        const { data: existing } = await supabase
+          .from("clinic_therapists")
+          .select("id")
+          .eq("clinic_id", clinic_id)
+          .eq("therapist_id", profileMatch.id)
+          .eq("is_active", true)
+          .maybeSingle();
         if (existing) {
           return new Response(JSON.stringify({ success: false, message: "Ya es miembro" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
@@ -243,13 +251,78 @@ Deno.serve(async (req) => {
       let redirectTo = "/dashboard";
 
       if (inviteRole === "therapist") {
-        // Flow legacy: insert en clinic_therapists (preserva comportamiento actual)
-        const { error: linkError } = await supabase.from("clinic_therapists").insert({
-          clinic_id: invite.clinic_id,
-          therapist_id: user.id,
-          is_active: true
-        });
-        if (linkError && !linkError.message.includes("duplicate key")) throw linkError;
+        // 1. Insert en clinic_therapists (legacy, preserva comportamiento).
+        //    Si ya existe (re-invitación) reactivar.
+        const { data: existingLink } = await supabase
+          .from("clinic_therapists")
+          .select("id, is_active")
+          .eq("clinic_id", invite.clinic_id)
+          .eq("therapist_id", user.id)
+          .maybeSingle();
+
+        if (existingLink) {
+          if (!existingLink.is_active) {
+            const { error: reactErr } = await supabase
+              .from("clinic_therapists")
+              .update({ is_active: true })
+              .eq("id", existingLink.id);
+            if (reactErr) throw reactErr;
+          }
+        } else {
+          const { error: linkError } = await supabase.from("clinic_therapists").insert({
+            clinic_id: invite.clinic_id,
+            therapist_id: user.id,
+            is_active: true
+          });
+          if (linkError && !linkError.message.includes("duplicate key")) throw linkError;
+        }
+
+        // 2. Insert/reactivar también en organization_members con role='dentist'
+        //    (bug detectado en QA: faltaba este step → multi-org switching no
+        //    veía la nueva org del dentista invitado, hot-fix manual via SQL).
+        const { data: clinicForOrg } = await supabase
+          .from("clinics")
+          .select("organization_id, name")
+          .eq("id", invite.clinic_id)
+          .single();
+
+        if (!clinicForOrg?.organization_id) {
+          throw new Error("Clínica sin organización asociada (contactá soporte).");
+        }
+
+        const { data: existingMembership } = await supabase
+          .from("organization_members")
+          .select("id, is_active")
+          .eq("user_id", user.id)
+          .eq("organization_id", clinicForOrg.organization_id)
+          .eq("role", "dentist")
+          .maybeSingle();
+
+        if (existingMembership) {
+          if (!existingMembership.is_active) {
+            const { error: reactErr } = await supabase
+              .from("organization_members")
+              .update({ is_active: true, deactivated_at: null })
+              .eq("id", existingMembership.id);
+            if (reactErr) throw reactErr;
+            console.log("Dentist membership reactivated:", existingMembership.id);
+          } else {
+            console.log("Dentist already active — idempotent accept:", existingMembership.id);
+          }
+        } else {
+          const { error: insertOrgErr } = await supabase
+            .from("organization_members")
+            .insert({
+              organization_id: clinicForOrg.organization_id,
+              user_id: user.id,
+              role: "dentist",
+              is_active: true,
+              invited_by: invite.invited_by,
+            });
+          if (insertOrgErr) throw insertOrgErr;
+          console.log("Dentist membership created for user:", user.id);
+        }
+
         redirectTo = "/dashboard/therapist";
       } else if (inviteRole === "assistant") {
         // Flow nuevo spec 023: insert/reactivate en organization_members
