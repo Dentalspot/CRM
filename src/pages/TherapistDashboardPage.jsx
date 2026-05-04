@@ -25,7 +25,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import ProfileAvatar from '@/components/shared/ProfileAvatar';
-import OnboardingChecklist from '@/features/therapist/components/OnboardingChecklist';
+// import OnboardingChecklist from '@/features/therapist/components/OnboardingChecklist'; // pausado: sistema de puntos/wallet
 import PendingClinicInvitations from '@/features/dashboard/components/PendingClinicInvitations';
 import AppointmentModal from '@/components/calendar/AppointmentModal';
 import WelcomeModal from '@/components/onboarding/WelcomeModal';
@@ -347,7 +347,10 @@ const TherapistDashboardPage = () => {
           {/* Invitaciones pendientes a clínicas (solo render si hay) */}
           <PendingClinicInvitations />
 
-          <OnboardingChecklist />
+          {/* OnboardingChecklist desactivado — el sistema de puntos/wallet
+              queda en pausa. Reactivar quitando los comentarios cuando
+              decidamos reintroducir gamificación.
+              <OnboardingChecklist /> */}
 
           {/* ========== HERO BANNER ========== */}
           <motion.div
