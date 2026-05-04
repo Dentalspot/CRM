@@ -250,11 +250,18 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     if (!slotInfo?.id) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      // .select() devuelve las filas borradas — si RLS bloquea silenciosamente
+      // el array queda vacío y NO mostramos el toast falso "Cita eliminada"
+      // (bug F detectado en prod: toast aparecía pero la cita seguía en BD).
+      const { data, error } = await supabase
         .from('appointments')
         .delete()
-        .eq('id', slotInfo.id);
+        .eq('id', slotInfo.id)
+        .select();
       if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error('No tienes permisos para eliminar esta cita.');
+      }
       toast({ title: 'Cita eliminada', description: 'La hora ha sido liberada.' });
       onAppointmentUpdated?.();
       onOpenChange(false);
