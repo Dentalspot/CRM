@@ -29,9 +29,10 @@ const STATUS_STYLES = {
     label: 'Confirmada',
   },
   scheduled: {
-    card: 'bg-sky-50 border-l-sky-400',
-    badge: 'bg-sky-100 text-sky-700 border-sky-200',
-    pill: 'bg-sky-100 text-sky-700',
+    // Programada: blanco con sombra suave (mismo look del calendario).
+    card: 'bg-white border-l-gray-300 shadow-sm',
+    badge: 'bg-gray-100 text-gray-700 border-gray-200',
+    pill: 'bg-gray-100 text-gray-700',
     label: 'Programada',
   },
   cancelled: {

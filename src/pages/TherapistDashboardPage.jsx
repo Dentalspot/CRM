@@ -524,22 +524,24 @@ const TherapistDashboardPage = () => {
               </Card>
             </motion.div>
 
-            {/* Blue — Active Patients */}
+            {/* Blue — Active Patients (clickeable → Mis Pacientes) */}
             <motion.div whileHover={{ scale: 1.02, y: -5 }}>
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-400 to-cyan-500 text-white overflow-hidden h-full">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <Users className="h-6 w-6 sm:h-8 sm:w-8 opacity-80" />
-                    <Activity className="h-4 w-4 sm:h-5 sm:w-5 opacity-60" />
-                  </div>
-                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                    <>
-                      <div className="text-3xl sm:text-4xl font-black mb-1">{stats.activePatients}</div>
-                      <div className="text-xs sm:text-sm font-medium opacity-90">Pacientes Activos</div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+              <Link to="/dashboard/patients" className="block h-full" aria-label="Ir a Mis Pacientes">
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-400 to-cyan-500 text-white overflow-hidden h-full cursor-pointer hover:shadow-xl transition-shadow">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <Users className="h-6 w-6 sm:h-8 sm:w-8 opacity-80" />
+                      <Activity className="h-4 w-4 sm:h-5 sm:w-5 opacity-60" />
+                    </div>
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                      <>
+                        <div className="text-3xl sm:text-4xl font-black mb-1">{stats.activePatients}</div>
+                        <div className="text-xs sm:text-sm font-medium opacity-90">Pacientes Activos</div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             </motion.div>
 
             {/* Pink — Attended */}
@@ -560,22 +562,24 @@ const TherapistDashboardPage = () => {
               </Card>
             </motion.div>
 
-            {/* Orange — Income */}
+            {/* Orange — Income (clickeable → Reportes de ingresos) */}
             <motion.div whileHover={{ scale: 1.02, y: -5 }}>
-              <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-400 to-red-500 text-white overflow-hidden h-full">
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 opacity-80" />
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 opacity-60" />
-                  </div>
-                  {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
-                    <>
-                      <div className="text-2xl sm:text-3xl font-black mb-1">{incomeFormatted}</div>
-                      <div className="text-xs sm:text-sm font-medium opacity-90">Ingresos del mes</div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+              <Link to="/dashboard/income-reports" className="block h-full" aria-label="Ir a Reportes de Ingresos">
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-400 to-red-500 text-white overflow-hidden h-full cursor-pointer hover:shadow-xl transition-shadow">
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 opacity-80" />
+                      <Clock className="h-4 w-4 sm:h-5 sm:w-5 opacity-60" />
+                    </div>
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
+                      <>
+                        <div className="text-2xl sm:text-3xl font-black mb-1">{incomeFormatted}</div>
+                        <div className="text-xs sm:text-sm font-medium opacity-90">Ingresos del mes</div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
             </motion.div>
           </div>
 
