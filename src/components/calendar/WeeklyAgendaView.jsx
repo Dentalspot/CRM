@@ -547,9 +547,9 @@ const WeeklyAgendaView = ({
         {/* Scroll hint: gradiente sutil a la derecha que sugiere "hay más" */}
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white/80 to-transparent md:hidden z-10" />
       <div className="min-w-[720px]">
-      {/* Header with days. La esquina top-left es sticky en ambos ejes para
-          que se mantenga visible cuando scrolleas horizontal o vertical. */}
-      <div className="grid grid-cols-8 border-b bg-gray-50/80 sticky top-0 z-30">
+      {/* Header with days. Columna de horas angosta (50px) — el resto se
+          reparte equitativamente entre los 7 días. */}
+      <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b bg-gray-50/80 sticky top-0 z-30">
         <div className="p-2 border-r bg-gray-50 sticky left-0 z-40" />
         {weekDays.map((day) => {
           const dateStr = format(day, 'yyyy-MM-dd');
@@ -595,7 +595,7 @@ const WeeklyAgendaView = ({
           containing block que rompe el sticky horizontal. El scroll
           vertical pasa al nivel de página (más natural en mobile). */}
       <div className="flex-1">
-        <div className="grid grid-cols-8">
+        <div className="grid grid-cols-[50px_repeat(7,1fr)]">
           <div className="border-r bg-gray-50 sticky left-0 z-20">
             {timeSlots.map((time, idx) => (
               <div
