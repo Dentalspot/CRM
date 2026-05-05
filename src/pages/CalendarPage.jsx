@@ -285,6 +285,16 @@ const CalendarPage = () => {
     setAppointmentModalOpen(true);
   };
 
+  // Atajo desde Acciones Rápidas: abre AppointmentModal sin slot pre-elegido,
+  // user llena fecha/hora desde el form.
+  const handleNewAppointment = () => {
+    setSelectedSlot({
+      clinicId: selectedClinic !== 'all' ? selectedClinic : (clinics.length > 0 ? clinics[0].id : null)
+    });
+    setSelectedBlockedTime(null);
+    setAppointmentModalOpen(true);
+  };
+
   const handleAppointmentClick = (appointment) => {
     setSelectedSlot({
       isEditing: true,
@@ -370,24 +380,44 @@ const CalendarPage = () => {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-xl shadow-sm p-4 mb-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              <h1 className="text-2xl font-bold text-gray-800">Mi Agenda</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handlePreviousWeek}><ChevronLeft className="h-4 w-4" /></Button>
-              <Button variant="outline" onClick={handleToday} className="min-w-[80px]">Hoy</Button>
-              <div className="text-center px-3">
-                <p className="text-sm font-semibold text-gray-700 capitalize">{format(currentWeek, 'MMMM yyyy', { locale: es })}</p>
-                <p className="text-xs text-gray-500">Semana del {format(currentWeek, 'd')} al {format(addDays(currentWeek, 6), 'd')}</p>
+          {/* Mobile: stack vertical (titulo / nav semana / buscador).
+              Desktop (lg+): row horizontal con todo en una línea. */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Mi Agenda</h1>
               </div>
-              <Button variant="outline" size="sm" onClick={handleNextWeek}><ChevronRight className="h-4 w-4" /></Button>
-              <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="lg:hidden"
+                aria-label="Actualizar agenda"
+              >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
             </div>
-            <div className="relative w-full sm:w-[250px]">
+
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={handlePreviousWeek} aria-label="Semana anterior">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleToday} className="min-w-[60px] h-9 px-3">Hoy</Button>
+              <div className="text-center px-2 flex-1 lg:flex-initial">
+                <p className="text-xs sm:text-sm font-semibold text-gray-700 capitalize">{format(currentWeek, 'MMMM yyyy', { locale: es })}</p>
+                <p className="text-[10px] sm:text-xs text-gray-500">Semana del {format(currentWeek, 'd')} al {format(addDays(currentWeek, 6), 'd')}</p>
+              </div>
+              <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={handleNextWeek} aria-label="Semana siguiente">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 hidden lg:inline-flex" onClick={handleRefresh} disabled={refreshing} aria-label="Actualizar agenda">
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+
+            <div className="relative w-full lg:w-[250px]">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Buscar paciente..."
@@ -434,6 +464,7 @@ const CalendarPage = () => {
               onClinicChange={handleClinicChange}
               onRefresh={handleRefresh}
               onBlockTime={handleOpenBlockModal}
+              onNewAppointment={handleNewAppointment}
             />
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-3">

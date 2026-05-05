@@ -15,12 +15,12 @@ import {
   Calendar as CalendarIcon,
   CheckCircle2,
   Clock,
-  RefreshCw,
   Ban,
   Users,
   Lightbulb,
   XCircle,
-  UserX
+  UserX,
+  Plus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,7 @@ const AgendaSidebar = ({
   appointments = [],
   onRefresh,
   onBlockTime,
+  onNewAppointment,
   className
 }) => {
   const navigate = useNavigate();
@@ -93,8 +94,9 @@ const AgendaSidebar = ({
   return (
     <div className={cn("flex flex-col h-full gap-4", className)}>
 
-      {/* 0) Today's appointments card - always visible */}
-      <Card className="shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+      {/* 0) Today's appointments card.
+          Mobile order 2 (Resumen primero), Desktop order 1 (preserva). */}
+      <Card className="order-2 lg:order-1 shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
         <CardHeader className="p-3 pb-1">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-700">
             <CalendarIcon className="h-4 w-4" />
@@ -111,8 +113,16 @@ const AgendaSidebar = ({
                 const timeStr = appt.start_time?.substring(0, 5) || '--:--';
                 const patientName = appt.patient?.profile?.full_name || appt.patient?.full_name || 'Paciente';
                 const serviceName = appt.service?.service_name || null;
-                const statusLabel = { completed: 'Completada', confirmed: 'Confirmada', canceled: 'Cancelada', cancelled: 'Cancelada', 'no-show': 'Ausente' }[appt.status] || 'Pendiente';
-                const statusColor = { completed: 'border-green-300 text-green-600', confirmed: 'border-blue-300 text-blue-600', canceled: 'border-red-300 text-red-500', cancelled: 'border-red-300 text-red-500', 'no-show': 'border-amber-300 text-amber-700' }[appt.status] || 'border-gray-200 text-gray-500';
+                const statusLabel = { completed: 'Completada', confirmed: 'Confirmada', canceled: 'Cancelada', cancelled: 'Cancelada', 'no-show': 'Ausente' }[appt.status] || 'Programada';
+                // Badges con fondo de color suave + texto fuerte → más legible
+                // que solo border (especialmente en mobile).
+                const statusColor = {
+                  completed: 'bg-green-100 text-green-700 border-green-200',
+                  confirmed: 'bg-blue-100 text-blue-700 border-blue-200',
+                  canceled: 'bg-red-100 text-red-700 border-red-200',
+                  cancelled: 'bg-red-100 text-red-700 border-red-200',
+                  'no-show': 'bg-amber-100 text-amber-800 border-amber-200',
+                }[appt.status] || 'bg-sky-100 text-sky-700 border-sky-200';
                 return (
                   <div key={appt.id || i} className="flex items-start gap-2 py-1.5 border-b border-blue-50 last:border-0">
                     <div className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 mt-0.5">
@@ -134,8 +144,8 @@ const AgendaSidebar = ({
         </CardContent>
       </Card>
 
-      {/* 1) Clinic Selector with colors */}
-      <Card className="shadow-sm border-2 border-primary bg-gradient-to-br from-primary to-white">
+      {/* 1) Clinic Selector with colors. Mobile order 3, Desktop order 2. */}
+      <Card className="order-3 lg:order-2 shadow-sm border-2 border-primary bg-gradient-to-br from-primary to-white">
         <CardHeader className="p-3 pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
             <MapPin className="h-4 w-4" />
@@ -189,8 +199,8 @@ const AgendaSidebar = ({
         </CardContent>
       </Card>
 
-      {/* 2) Today's Summary - Clickable with detail popovers */}
-      <Card className="shadow-none border bg-white/50">
+      {/* 2) Today's Summary. Mobile order 1 (PRIMERO en mobile), Desktop order 3. */}
+      <Card className="order-1 lg:order-3 shadow-none border bg-white/50">
         <CardHeader className="p-3 pb-1">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-700">
             <CalendarIcon className="h-4 w-4 text-primary" />
@@ -252,9 +262,9 @@ const AgendaSidebar = ({
         </CardContent>
       </Card>
 
-      {/* 3) Next Appointments */}
+      {/* 3) Next Appointments. Mobile order 5, Desktop order 4. */}
       {nextAppointments.length > 0 && (
-        <Card className="shadow-none border bg-white/50">
+        <Card className="order-5 lg:order-4 shadow-none border bg-white/50">
           <CardHeader className="p-3 pb-1">
             <CardTitle className="text-sm font-medium text-slate-700">
               Próximas Citas
@@ -286,22 +296,22 @@ const AgendaSidebar = ({
         </Card>
       )}
 
-      <Separator className="opacity-50" />
+      <Separator className="order-6 lg:order-5 opacity-50 hidden lg:block" />
 
-      {/* 4) Quick Actions */}
-      <div className="space-y-2">
+      {/* 4) Quick Actions. Mobile order 4, Desktop order 6. */}
+      <div className="order-4 lg:order-6 space-y-2">
         <label className="text-xs font-medium text-muted-foreground ml-1">
           Acciones Rápidas
         </label>
         <div className="grid gap-2">
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
-            className="w-full justify-start gap-2 bg-white h-9"
-            onClick={onRefresh}
+            className="w-full justify-start gap-2 h-10 bg-primary hover:bg-primary/90 text-primary-foreground"
+            onClick={onNewAppointment}
           >
-            <RefreshCw className="h-3.5 w-3.5 text-slate-500" />
-            Actualizar Agenda
+            <Plus className="h-4 w-4" />
+            Agendar Cita
           </Button>
           <Button
             variant="outline"
@@ -324,10 +334,10 @@ const AgendaSidebar = ({
         </div>
       </div>
 
-      <div className="flex-1" />
+      <div className="hidden lg:block flex-1 order-7" />
 
-      {/* 5) Tip Card */}
-      <Card className="bg-yellow-50 border-yellow-100 mt-auto shadow-none">
+      {/* 5) Tip Card. Mobile order 7 (al final), Desktop order 8. */}
+      <Card className="order-7 lg:order-8 bg-yellow-50 border-yellow-100 mt-auto shadow-none">
         <CardContent className="p-3">
           <div className="flex items-start gap-2">
             <Lightbulb className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
