@@ -21,6 +21,7 @@ import BlockTimeForm from './BlockTimeForm';
 import PatientModal from '@/features/patients/components/PatientModal';
 import logger from '@/lib/utils/logger';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
+import useTherapistClinics from '@/hooks/useTherapistClinics';
 
 const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: propSelectedClinic, onAppointmentCreated, onAppointmentUpdated, onSessionCompleted }) => {
   const { toast } = useToast();
@@ -33,9 +34,14 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
   const [appointmentData, setAppointmentData] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // States required for the unified inline form
-  const [clinics, setClinics] = useState([]);
-  const [loadingClinics, setLoadingClinics] = useState(false);
+  // States required for the unified inline form.
+  // Clínicas vienen del hook compartido (combina owned+linked + scope por org).
+  // Solo se carga cuando isOpen=true para evitar fetch innecesario.
+  const { clinics, loading: loadingClinics } = useTherapistClinics({
+    select: '*',
+    organizationId: currentOrganizationId,
+    enabled: isOpen,
+  });
   const [patients, setPatients] = useState([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [services, setServices] = useState([]);
@@ -55,41 +61,13 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     status: 'scheduled',
   });
 
-  // Fetch clínicas del terapeuta — combina owned + linked (multi-clínica)
-  // Scopeadas a la org seleccionada en el header para no mezclar Igeldo
-  // cuando el dentista está en Álamos (y viceversa).
+  // Fetch services (clínicas vienen via useTherapistClinics arriba).
   useEffect(() => {
     if (isOpen && user?.id) {
-      const fetchClinics = async () => {
-        setLoadingClinics(true);
-        const [ownedRes, linkedRes] = await Promise.all([
-          supabase
-            .from('clinics')
-            .select('*')
-            .eq('therapist_id', user.id),
-          supabase
-            .from('clinic_therapists')
-            .select('clinic:clinics(*)')
-            .eq('therapist_id', user.id)
-            .eq('is_active', true),
-        ]);
-        const owned = ownedRes.data || [];
-        const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
-        const all = [...owned, ...linked];
-        const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-        const scoped = currentOrganizationId
-          ? unique.filter(c => c.organization_id === currentOrganizationId)
-          : unique;
-        setClinics(scoped);
-        setLoadingClinics(false);
-      };
-      fetchClinics();
-
-      // Fetch services
       supabase.from('therapist_services').select('*').eq('therapist_id', user.id).eq('is_active', true)
         .then(({data}) => setServices(data || []));
     }
-  }, [isOpen, user, currentOrganizationId]);
+  }, [isOpen, user]);
 
   // Fetch appointment details if editing
   useEffect(() => {

@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
+import useTherapistClinics from '@/hooks/useTherapistClinics';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,11 @@ const CalendarPage = () => {
   const [appointments, setAppointments] = useState([]);
   const [blockedTimes, setBlockedTimes] = useState([]);
   const [availabilityData, setAvailabilityData] = useState([]);
-  const [clinics, setClinics] = useState([]);
+  // Clínicas via hook compartido (combina owned+linked + scope por org).
+  const { clinics } = useTherapistClinics({
+    select: 'id, name, address, modalidad, organization_id',
+    organizationId: currentOrganizationId,
+  });
   const [selectedClinic, setSelectedClinic] = useState('all');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -118,37 +123,7 @@ const CalendarPage = () => {
     setShowSearchResults(false);
   };
 
-  // Data Fetching
-  // Scopear las clínicas a la org seleccionada en el header (Cristobal multi-org).
-  // Sin esto, en Mi Agenda aparecen clínicas de Igeldo cuando estás en Álamos.
-  const fetchClinics = useCallback(async () => {
-    if (!user) return;
-    try {
-      const [ownedRes, linkedRes] = await Promise.all([
-        supabase
-          .from('clinics')
-          .select('id, name, address, modalidad, organization_id')
-          .eq('therapist_id', user.id),
-        supabase
-          .from('clinic_therapists')
-          .select('clinic:clinics(id, name, address, modalidad, organization_id)')
-          .eq('therapist_id', user.id)
-          .eq('is_active', true),
-      ]);
-
-      const owned = ownedRes.data || [];
-      const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
-      const all = [...owned, ...linked];
-      const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-      const scoped = currentOrganizationId
-        ? unique.filter(c => c.organization_id === currentOrganizationId)
-        : unique;
-      setClinics(scoped);
-    } catch (err) {
-      logger.warn('fetchClinics error:', err?.message);
-      setClinics([]);
-    }
-  }, [user, currentOrganizationId]);
+  // (clínicas ahora vienen via useTherapistClinics — ver hook en imports)
 
   const fetchReminders = useCallback(async () => {
     if (!user) return;
@@ -232,9 +207,7 @@ const CalendarPage = () => {
     setLoading(false);
   }, [fetchAppointments, fetchBlockedTimes, fetchAvailability, fetchReminders]);
 
-  useEffect(() => {
-      fetchClinics();
-  }, [fetchClinics]);
+  // (clínicas se cargan automáticamente via useTherapistClinics)
 
   useEffect(() => {
       if (!user) return;

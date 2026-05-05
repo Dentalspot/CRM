@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { createPatientAccount } from '@/services/patientAccountService';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
+import useTherapistClinics from '@/hooks/useTherapistClinics';
 import useActivePlanLimits from '@/hooks/useActivePlanLimits';
 import UpgradeModal from '@/components/modals/UpgradeModal';
 
@@ -33,44 +34,16 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
     attention_type: 'consulta_privada'
   });
 
-  const [clinics, setClinics] = useState([]);
-  const [loadingClinics, setLoadingClinics] = useState(false);
+  // Clínicas via hook compartido. Solo se carga cuando el modal está open.
+  const { clinics, loading: loadingClinics } = useTherapistClinics({
+    select: 'id, name, type, organization_id',
+    organizationId: currentOrganizationId,
+    enabled: isOpen,
+  });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [creationResult, setCreationResult] = useState(null);
   const isEditing = !!patient;
-
-  useEffect(() => {
-    if (isOpen && user?.id) {
-      const fetchClinics = async () => {
-        setLoadingClinics(true);
-        // Combinar owned + linked + scopear a la org seleccionada en el header
-        // (sin esto, en Álamos veo Igeldo y viceversa).
-        const [ownedRes, linkedRes] = await Promise.all([
-          supabase
-            .from('clinics')
-            .select('id, name, type, organization_id')
-            .eq('therapist_id', user.id),
-          supabase
-            .from('clinic_therapists')
-            .select('clinic:clinics(id, name, type, organization_id)')
-            .eq('therapist_id', user.id)
-            .eq('is_active', true),
-        ]);
-        const owned = ownedRes.data || [];
-        const linked = (linkedRes.data || []).map(r => r.clinic).filter(Boolean);
-        const all = [...owned, ...linked];
-        const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-        const scoped = currentOrganizationId
-          ? unique.filter(c => c.organization_id === currentOrganizationId)
-          : unique;
-        scoped.sort((a, b) => a.name.localeCompare(b.name));
-        setClinics(scoped);
-        setLoadingClinics(false);
-      };
-      fetchClinics();
-    }
-  }, [isOpen, user, currentOrganizationId]);
 
   useEffect(() => {
     if (isOpen) {

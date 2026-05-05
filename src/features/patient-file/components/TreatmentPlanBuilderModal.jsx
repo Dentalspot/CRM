@@ -36,6 +36,8 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
+import useTherapistClinics from '@/hooks/useTherapistClinics';
 import { format, addWeeks, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -69,6 +71,7 @@ const TreatmentPlanBuilderModal = ({
   patientName = null
 }) => {
   const { user } = useAuth();
+  const { currentOrganizationId } = useCurrentOrganization();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [loadingAction, setLoadingAction] = useState(null); // 'save', 'assign', 'publish'
@@ -98,20 +101,19 @@ const TreatmentPlanBuilderModal = ({
     clinicId: '',
   });
 
-  // Clinics for appointment scheduling
-  const [clinics, setClinics] = useState([]);
-  const [loadingClinics, setLoadingClinics] = useState(false);
+  // Clinics for appointment scheduling — hook compartido (owned+linked + org scope).
+  // Solo se carga cuando el modal está abierto Y el tab assign activo.
+  const { clinics, loading: loadingClinics } = useTherapistClinics({
+    select: 'id, name, address, organization_id',
+    organizationId: currentOrganizationId,
+    enabled: isOpen && activeTab === 'assign',
+  });
 
   // Check if already published
   const [isPublished, setIsPublished] = useState(false);
   const [marketplaceItemId, setMarketplaceItemId] = useState(null);
 
-  // Load clinics when assignment tab is active
-  useEffect(() => {
-    if (isOpen && patientId && activeTab === 'assign') {
-      loadClinics();
-    }
-  }, [isOpen, patientId, activeTab, user?.id]);
+  // (clínicas se cargan automáticamente via useTherapistClinics)
 
   // Check marketplace status
   useEffect(() => {
@@ -139,35 +141,7 @@ const TreatmentPlanBuilderModal = ({
     }
   };
 
-  const loadClinics = async () => {
-    if (!user?.id) return;
-    setLoadingClinics(true);
-    try {
-      // Combinar owned + linked (multi-clinica)
-      const [ownedRes, linkedRes] = await Promise.all([
-        supabase
-          .from('clinics')
-          .select('id, name, address')
-          .eq('therapist_id', user.id)
-          .eq('is_active', true),
-        supabase
-          .from('clinic_therapists')
-          .select('clinic:clinics(id, name, address, is_active)')
-          .eq('therapist_id', user.id)
-          .eq('is_active', true),
-      ]);
-      const owned = ownedRes.data || [];
-      const linked = (linkedRes.data || []).map(r => r.clinic).filter(c => c && c.is_active !== false);
-      const all = [...owned, ...linked];
-      const unique = Array.from(new Map(all.map(c => [c.id, c])).values());
-      unique.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      setClinics(unique);
-    } catch (err) {
-      logger.error('Error loading clinics:', err);
-    } finally {
-      setLoadingClinics(false);
-    }
-  };
+  // (loadClinics removido — useTherapistClinics maneja todo)
 
   useEffect(() => {
     if (isOpen) {
