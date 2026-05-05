@@ -587,10 +587,11 @@ const WeeklyAgendaView = ({
       </div>
 
       {/* Time grid. La columna de horas es sticky left:0 para que las
-          horas (08:00, 09:00...) sigan visibles al scrollear horizontal
-          en mobile. Bg sólido (gray-50) para tapar las celdas de día
-          que pasan "debajo" durante el scroll. */}
-      <div className="flex-1 overflow-y-auto">
+          horas (08:00, 09:00...) sigan visibles al scrollear horizontal.
+          OJO: NO usar overflow-y-auto en este wrapper — crea un
+          containing block que rompe el sticky horizontal. El scroll
+          vertical pasa al nivel de página (más natural en mobile). */}
+      <div className="flex-1">
         <div className="grid grid-cols-8">
           <div className="border-r bg-gray-50 sticky left-0 z-20">
             {timeSlots.map((time, idx) => (
