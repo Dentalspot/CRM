@@ -544,9 +544,10 @@ const WeeklyAgendaView = ({
         {/* Scroll hint: gradiente sutil a la derecha que sugiere "hay más" */}
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white/80 to-transparent md:hidden z-10" />
       <div className="min-w-[720px]">
-      {/* Header with days */}
+      {/* Header with days. La esquina top-left es sticky en ambos ejes para
+          que se mantenga visible cuando scrolleas horizontal o vertical. */}
       <div className="grid grid-cols-8 border-b bg-gray-50/80 sticky top-0 z-30">
-        <div className="p-2 border-r bg-gray-50" />
+        <div className="p-2 border-r bg-gray-50 sticky left-0 z-40" />
         {weekDays.map((day) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const hasAvailability = availabilityMap[dateStr] && Object.values(availabilityMap[dateStr]).some(s => s.available);
@@ -585,10 +586,13 @@ const WeeklyAgendaView = ({
         })}
       </div>
 
-      {/* Time grid */}
+      {/* Time grid. La columna de horas es sticky left:0 para que las
+          horas (08:00, 09:00...) sigan visibles al scrollear horizontal
+          en mobile. Bg sólido (gray-50) para tapar las celdas de día
+          que pasan "debajo" durante el scroll. */}
       <div className="flex-1 overflow-y-auto">
         <div className="grid grid-cols-8">
-          <div className="border-r bg-gray-50/30">
+          <div className="border-r bg-gray-50 sticky left-0 z-20">
             {timeSlots.map((time, idx) => (
               <div
                 key={time}
