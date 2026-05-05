@@ -8,7 +8,7 @@ import {
   Shield, Award, DollarSign, UserCheck, FileWarning
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { useMetaTracking } from '@/hooks/useMetaTracking';
 
@@ -148,22 +148,27 @@ const TherapistDashboardPage = () => {
           .gte('date', format(monthStart, 'yyyy-MM-dd'))
           .lte('date', format(monthEnd, 'yyyy-MM-dd')),
 
+        // Próximas Citas: solo HOY + MAÑANA, max 10, excluye canceladas
+        // y completadas. Incluye patient.full_name (denormalizado) para
+        // pacientes sin profile vinculado.
         supabase
           .from('appointments')
           .select(`
             id, date, start_time, modality_patient, status,
             patient:patients!appointments_patient_id_fkey(
               id,
+              full_name,
               profile:profiles!patients_profile_id_fkey(full_name)
             )
           `)
           .eq('therapist_id', user.id)
           .gte('date', format(today, 'yyyy-MM-dd'))
+          .lte('date', format(addDays(today, 1), 'yyyy-MM-dd'))
           .neq('status', 'cancelled')
           .neq('status', 'completed')
           .order('date', { ascending: true })
           .order('start_time', { ascending: true })
-          .limit(5),
+          .limit(10),
       ]);
 
       const uniqueAttended = new Set((attendedRes.data || []).map(a => a.patient_id)).size;
@@ -173,7 +178,7 @@ const TherapistDashboardPage = () => {
       const filteredUpcoming = (upcomingRes.data || []).filter(app => {
         const appDate = new Date(`${app.date}T${app.start_time}`);
         return appDate >= now;
-      }).slice(0, 4);
+      }).slice(0, 10);
 
       setStats({
         activePatients: patientsRes.count || 0,
@@ -607,7 +612,11 @@ const TherapistDashboardPage = () => {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
                         >
-                          <UpcomingAppointmentCard appointment={app} index={index} />
+                          <UpcomingAppointmentCard
+                            appointment={app}
+                            index={index}
+                            onReschedule={(patientId) => setBookingPatientId(patientId)}
+                          />
                         </motion.div>
                       ))}
                     </div>
