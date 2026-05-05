@@ -366,7 +366,10 @@ const WeeklyAgendaView = ({
 
     const duration = apt.duration_minutes || 60;
     const heightSlots = Math.ceil(duration / 30);
-    const style = { height: `${heightSlots * 32}px`, zIndex: 20 };
+    // z-index 10: por encima del bg del slot pero por debajo de la columna
+    // de horas sticky (z-20), así no se ven los cards bajo las horas al
+    // scrollear horizontal en mobile.
+    const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
 
     let colorClasses = "";
     let blockLabel = "";
