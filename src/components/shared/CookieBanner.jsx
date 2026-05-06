@@ -14,15 +14,23 @@ const DEFAULT_CONSENT = {
 
 /**
  * Apply consent: enable/disable tracking based on user choices.
- * NOTE: Meta Pixel base tracking (PageView) now loads unconditionally via MetaPixelProvider.
+ * NOTE: Meta Pixel base tracking (PageView) loads unconditionally via MetaPixelProvider.
  * Marketing consent controls personalized/custom event tracking with PII data.
+ *
+ * Para nuevas integraciones (GA, Mixpanel, etc), gate sus scripts con:
+ *   if (window.__dentalspot_analytics_consent) { initGA(); }
+ *   if (window.__dentalspot_marketing_consent) { initPixelCustom(); }
+ *
+ * También dispatcheamos un evento global "dentalspot:consent-changed" con el
+ * detalle, para que componentes interesados (ej. providers que ya estén
+ * montados) puedan reaccionar dinámicamente sin recargar la página.
  */
 function applyConsent(consent) {
-  // Store marketing consent flag for useMetaTracking hook to check
-  if (typeof window !== 'undefined') {
-    window.__dentalspot_marketing_consent = consent.marketing;
-  }
-  // Future: analytics (Google Analytics, etc.)
+  if (typeof window === 'undefined') return;
+  window.__dentalspot_marketing_consent = consent.marketing;
+  window.__dentalspot_analytics_consent = consent.analytics;
+  window.__dentalspot_essential_consent = consent.essential;
+  window.dispatchEvent(new CustomEvent('dentalspot:consent-changed', { detail: consent }));
 }
 
 /**
@@ -92,11 +100,26 @@ const CATEGORIES = [
   },
 ];
 
+/**
+ * Helper externo: abrir el banner programáticamente desde otros componentes
+ * (ej. footer "Gestionar cookies", perfil → privacidad).
+ *
+ * Uso:
+ *   import { openCookieBanner } from '@/components/shared/CookieBanner';
+ *   <button onClick={openCookieBanner}>Gestionar cookies</button>
+ */
+export function openCookieBanner() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('dentalspot:open-cookie-banner'));
+  }
+}
+
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [consent, setConsent] = useState(DEFAULT_CONSENT);
 
+  // Cargar consent guardado en mount, y mostrar banner solo si no hay registro
   useEffect(() => {
     const stored = localStorage.getItem(CONSENT_KEY);
     if (stored) {
@@ -104,13 +127,27 @@ export default function CookieBanner() {
         const parsed = JSON.parse(stored);
         if (parsed.version === CONSENT_VERSION) {
           applyConsent(parsed.consent);
-          return; // Already consented, don't show banner
+          // Hidrato el state con la elección previa para que al reabrir
+          // el banner muestre lo que ya había aceptado.
+          if (parsed.consent) setConsent({ ...DEFAULT_CONSENT, ...parsed.consent });
+          return;
         }
       } catch {}
     }
-    // Show banner after a short delay
     const timer = setTimeout(() => setVisible(true), 1500);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listener para abrir el banner programáticamente (revocación / re-consent).
+  // Cuando el user clica "Gestionar cookies" desde el footer o su perfil,
+  // se dispara este evento y reabrimos con la sección de detalle expandida.
+  useEffect(() => {
+    const onOpen = () => {
+      setExpanded(true);
+      setVisible(true);
+    };
+    window.addEventListener('dentalspot:open-cookie-banner', onOpen);
+    return () => window.removeEventListener('dentalspot:open-cookie-banner', onOpen);
   }, []);
 
   const saveConsent = (selectedConsent) => {

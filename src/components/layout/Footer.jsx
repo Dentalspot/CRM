@@ -2,7 +2,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
-import { Mail, Phone, MapPin, Heart, Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
+import { Mail, Phone, MapPin, Heart, Facebook, Instagram, Linkedin, Twitter, Cookie } from 'lucide-react';
+import { openCookieBanner } from '@/components/shared/CookieBanner';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -74,6 +75,18 @@ const Footer = () => {
                   </Link>
                 </li>
               ))}
+              {/* Botón de revocación de consent (Ley 21.719: derecho a revocar
+                  el consentimiento debe ser tan accesible como otorgarlo). */}
+              <li>
+                <button
+                  type="button"
+                  onClick={openCookieBanner}
+                  className="text-slate-400 hover:text-primary transition-colors text-sm flex items-center gap-1.5"
+                >
+                  <Cookie className="w-3.5 h-3.5" />
+                  Gestionar cookies
+                </button>
+              </li>
             </ul>
           </div>
         </div>
