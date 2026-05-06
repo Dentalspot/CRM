@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
+import AnonymizePatientButton from '@/features/legal/components/AnonymizePatientButton';
 import { getPatientFile, getDocumentTemplates } from '@/lib/patientApi';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -383,6 +384,29 @@ const PatientFilePage = () => {
             </Tabs>
           </div>
         </div>
+
+        {/* Pie de página: zona de derechos ARCO. Discreto pero accesible:
+            la anonimización es irreversible y debe haber decisión consciente. */}
+        {!patient?.is_anonymized && (
+          <div className="mt-8 pt-6 border-t border-dashed border-gray-200">
+            <div className="flex items-start justify-between gap-4 text-xs text-muted-foreground">
+              <div className="max-w-xl">
+                <p className="font-semibold text-gray-700 mb-1">Derechos del titular (Ley 21.719)</p>
+                <p>
+                  Si el paciente ejerce su derecho de supresión bajo Ley 21.719 art. 13,
+                  podés anonimizar todos sus datos personales conservando la integridad
+                  estadística de citas y tratamientos pasados. La acción queda registrada
+                  en auditoría.
+                </p>
+              </div>
+              <AnonymizePatientButton
+                patientId={id}
+                patientName={patient.full_name}
+                redirectTo="/dashboard/patients"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
