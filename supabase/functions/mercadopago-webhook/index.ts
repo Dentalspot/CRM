@@ -4,7 +4,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://dentalspot.cl',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 };
@@ -23,18 +23,76 @@ Deno.serve(async (req) => {
 
   try {
     const accessToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    const webhookSecret = Deno.env.get('MERCADOPAGO_WEBHOOK_SECRET');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     if (!accessToken) throw new Error('MERCADOPAGO_ACCESS_TOKEN no configurado');
 
+    // ── Webhook signature verification ──
+    // MercadoPago sends x-signature header with ts= and v1= values
+    // Verify HMAC-SHA256 to prevent forged webhook calls
+    const xSignature = req.headers.get('x-signature');
+    const xRequestId = req.headers.get('x-request-id');
+
+    if (webhookSecret && xSignature && xRequestId) {
+      const parts = Object.fromEntries(
+        xSignature.split(',').map((p: string) => {
+          const [k, v] = p.split('=');
+          return [k.trim(), v.trim()];
+        })
+      );
+
+      const ts = parts['ts'];
+      const v1 = parts['v1'];
+
+      if (ts && v1) {
+        // Read body as text for signature, then parse
+        const bodyText = await req.text();
+        const bodyObj = JSON.parse(bodyText);
+        const dataId = bodyObj.data?.id;
+
+        // Build the manifest string per MercadoPago docs
+        const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
+
+        // HMAC-SHA256
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+          'raw',
+          encoder.encode(webhookSecret),
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign']
+        );
+        const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(manifest));
+        const computedHash = Array.from(new Uint8Array(signature))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        if (computedHash !== v1) {
+          console.error('Webhook signature verification FAILED');
+          return new Response(
+            JSON.stringify({ error: 'Invalid signature' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Signature valid — use the already-parsed body
+        var body = bodyObj;
+      } else {
+        var body = await req.json();
+      }
+    } else {
+      // No webhook secret configured or no signature header — accept but log warning
+      var body = await req.json();
+      if (webhookSecret) {
+        console.warn('Webhook received without x-signature header');
+      }
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const body = await req.json();
-    console.log('========== WEBHOOK RECEIVED ==========');
-    console.log('Type:', body.type);
-    console.log('Action:', body.action);
-    console.log('Data ID:', body.data?.id);
+    console.log('Webhook:', body.type, body.action, body.data?.id);
 
     const { type, data } = body;
 
