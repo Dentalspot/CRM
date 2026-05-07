@@ -209,7 +209,10 @@ const Sidebar = ({ isOpen, onClose }) => {
           {
             section: 'Cuenta',
             items: [
-              { name: 'Mi Perfil', icon: Settings, path: '/dashboard/profile' },
+              // Página dedicada para paciente (Privacidad/ARCO Ley 21.719 +
+              // Seguridad). Antes apuntaba a /dashboard/profile que era la
+              // página del therapist con tabs irrelevantes.
+              { name: 'Mi Cuenta', icon: Settings, path: '/dashboard/patient/account' },
             ],
           },
         ];
