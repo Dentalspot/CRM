@@ -376,11 +376,14 @@ export const getTherapistPatients = async (therapistId, searchTerm, organization
   // No se filtra por therapist_id en el frontend — la seguridad la da RLS.
   // Cuando hay org seleccionada en el header, scopear a esa org para que el
   // dentista multi-org no vea pacientes de otras orgs mezclados.
+  // Desambiguar el embed: patients tiene 2 FKs a profiles (profile_id y
+  // anonymized_by, esta última agregada por el feature ARCO de anonimización).
+  // Sin desambiguar, PostgREST devuelve 400 ("more than one relationship").
   let query = supabase
     .from('patients')
     .select(`
       *,
-      profile:profiles (id, full_name, email, phone, rut, birthdate)
+      profile:profiles!patients_profile_id_fkey (id, full_name, email, phone, rut, birthdate)
     `)
     .eq('status', 'active');
   if (organizationId) query = query.eq('organization_id', organizationId);
