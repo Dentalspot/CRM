@@ -4,7 +4,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from '@/App';
 import '@/index.css';
-import 'leaflet/dist/leaflet.css';
+// leaflet CSS movido a SearchResultsMap (única página que usa el mapa)
+// para no bloquear render inicial del resto de la app.
 import { initSentry } from '@/lib/sentry';
 
 // Sentry: inicializar lo antes posible para capturar errores del bootstrap.

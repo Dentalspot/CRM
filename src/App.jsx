@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
@@ -10,9 +10,15 @@ import { HelmetProvider } from 'react-helmet-async';
 
 import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import AppRouter from '@/app/AppRouter';
-import FloatingAssistant from '@/features/chatbot/components/FloatingAssistant';
+// CookieBanner se mantiene eager: aparece en el primer render de cualquier
+// página y debe estar disponible para legal compliance (Ley 21.719).
 import CookieBanner from '@/components/shared/CookieBanner';
-import FeedbackPopup from '@/components/shared/FeedbackPopup';
+
+// Diferimos componentes secundarios que no son necesarios en el primer paint.
+// FloatingAssistant carga el chatbot AI (~30KB) y FeedbackPopup el form de
+// feedback — ninguno bloquea la experiencia inicial del usuario.
+const FloatingAssistant = lazy(() => import('@/features/chatbot/components/FloatingAssistant'));
+const FeedbackPopup = lazy(() => import('@/components/shared/FeedbackPopup'));
 
 function App() {
   return (
@@ -23,9 +29,11 @@ function App() {
             <AdminPermissionProvider>
               <CartProvider>
                 <AppRouter />
-                <FloatingAssistant />
+                <Suspense fallback={null}>
+                  <FloatingAssistant />
+                  <FeedbackPopup />
+                </Suspense>
                 <CookieBanner />
-                <FeedbackPopup />
                 <Toaster />
               </CartProvider>
             </AdminPermissionProvider>

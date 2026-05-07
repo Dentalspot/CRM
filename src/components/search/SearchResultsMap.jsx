@@ -8,6 +8,9 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Icon, LatLngBounds } from 'leaflet';
+// CSS de leaflet acá (no en main.jsx) para no bloquear el render inicial
+// del resto de la app — solo se carga cuando alguien usa el mapa.
+import 'leaflet/dist/leaflet.css';
 import { MapPin, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
