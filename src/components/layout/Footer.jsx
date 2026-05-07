@@ -21,6 +21,7 @@ const Footer = () => {
       { label: 'Términos y Condiciones', href: '/legal/terminos-condiciones' },
       { label: 'Política de Privacidad', href: '/legal/politica-privacidad' },
       { label: 'Política de Cookies', href: '/legal/politica-cookies' },
+      { label: 'Ejercer derechos ARCO', href: '/legal/procedimiento-arco' },
       { label: 'Disclaimer Clínico', href: '/legal/disclaimer-clinico' },
     ]
   };

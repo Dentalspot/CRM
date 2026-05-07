@@ -4,7 +4,10 @@ import { Cookie, Shield, BarChart3, Megaphone, ChevronDown, ChevronUp } from 'lu
 import { supabase } from '@/lib/supabaseClient';
 
 const CONSENT_KEY = 'dentalspot_cookie_consent';
-const CONSENT_VERSION = '1.0';
+// Bump cuando cambie la Política de Cookies (legal_documents.slug='politica-cookies').
+// Debe coincidir con el major version del documento legal publicado.
+// Cambio v1.0 → 2.0 = nueva política con tabla técnica de cookies + procedimiento ARCO (Ley 21.719).
+const CONSENT_VERSION = '2.0';
 
 const DEFAULT_CONSENT = {
   essential: true,    // Always true, can't be disabled
