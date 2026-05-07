@@ -53,7 +53,7 @@ const RescheduleAppointmentPage = () => {
             *,
             patient:patients (
               id,
-              profile:profiles (
+              profile:profiles!patients_profile_id_fkey (
                 full_name,
                 email,
                 phone

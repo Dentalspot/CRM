@@ -41,7 +41,7 @@ const PatientProgressPage = () => {
         .select(`
           id,
           profile_id,
-          profile:profiles(full_name)
+          profile:profiles!patients_profile_id_fkey(full_name)
         `)
         .eq('status', 'active');
         // RLS filtra por care_team + org membership

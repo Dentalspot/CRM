@@ -246,7 +246,7 @@ export const getNotizSessions = async (therapistId) => {
     .select(`
       *,
       patient_record:patients!notiz_sessions_patient_id_fkey (
-        profile:profiles (
+        profile:profiles!patients_profile_id_fkey (
           full_name
         )
       )

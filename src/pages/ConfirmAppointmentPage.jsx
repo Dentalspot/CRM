@@ -56,7 +56,7 @@ const ConfirmAppointmentPage = () => {
             patient:patients (
               id,
               notes,
-              profile:profiles (
+              profile:profiles!patients_profile_id_fkey (
                 full_name,
                 email,
                 phone,

@@ -10,7 +10,7 @@ import { apiHandler } from '@/lib/api/apiHandler';
 export const fetchPatientProfile = apiHandler.mutation('fetchPatientProfile', async (patientId) => {
   const { data, error } = await supabase
     .from('patients')
-    .select(`*, profile:profiles (id, full_name, email, phone, birthdate, rut, gender, region_id, city_id)`)
+    .select(`*, profile:profiles!patients_profile_id_fkey (id, full_name, email, phone, birthdate, rut, gender, region_id, city_id)`)
     .eq('id', patientId)
     .single();
 

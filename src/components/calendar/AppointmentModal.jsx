@@ -82,7 +82,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
               *, 
               patient:patients (
                 id,
-                profile:profiles (full_name, email, phone)
+                profile:profiles!patients_profile_id_fkey (full_name, email, phone)
               ), 
               clinics(*)
             `)
@@ -145,7 +145,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     // pacientes "sin cuenta" sin profile vinculado.
     let query = supabase
       .from('patients')
-      .select('id, attention_type, clinic_id, organization_id, full_name, profile:profiles(full_name)')
+      .select('id, attention_type, clinic_id, organization_id, full_name, profile:profiles!patients_profile_id_fkey(full_name)')
       .eq('status', 'active');
     if (currentOrganizationId) {
       query = query.eq('organization_id', currentOrganizationId);

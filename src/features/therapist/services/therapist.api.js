@@ -150,7 +150,7 @@ export const fetchTherapistPatients = async (therapistId) => {
         status,
         created_at,
         updated_at,
-        profile:profiles (
+        profile:profiles!patients_profile_id_fkey (
           id,
           full_name,
           email,
