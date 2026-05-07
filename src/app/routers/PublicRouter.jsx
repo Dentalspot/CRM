@@ -9,6 +9,7 @@ const HomePage = lazy(() => import('@/pages/HomePage'));
 const PricingPage = lazy(() => import('@/pages/PricingPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const StatusPage = lazy(() => import('@/pages/StatusPage'));
 const AuthPage = lazy(() => import('@/features/auth/pages/AuthPage'));
 const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
 const TherapistPublicProfilePage = lazy(() => import('@/pages/TherapistPublicProfilePage'));
@@ -54,6 +55,9 @@ const PublicRouter = () => {
           {/* DYNAMIC SLUG: Must be the absolute last route inside the Layout block */}
           <Route path="/:slug" element={<TherapistPublicProfilePage />} />
         </Route>
+
+        {/* Status público (sin Layout — standalone) */}
+        <Route path="/status" element={<StatusPage />} />
 
         {/* 404 Not Found */}
         <Route path="*" element={<NotFoundPage />} />

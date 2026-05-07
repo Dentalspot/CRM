@@ -206,9 +206,9 @@ const SearchResultsMap = ({ therapists = [], loading = false }) => {
                 <div className="flex items-center gap-3 mb-3 border-b pb-2">
                   <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
                     {marker.therapist.avatar_url ? (
-                      <img 
-                        src={marker.therapist.avatar_url} 
-                        alt="" 
+                      <img
+                        src={marker.therapist.avatar_url}
+                        alt={`Foto de ${marker.therapist.full_name || 'profesional'}`}
                         className="h-full w-full object-cover"
                       />
                     ) : (

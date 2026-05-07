@@ -212,7 +212,13 @@ const PatientsPanel = () => {
               )}
 
               {(searchTerm || sortBy !== 'lastAppointmentDate' || clinicFilter !== 'all') && (
-                <Button variant="ghost" onClick={handleClearFilters} size="icon">
+                <Button
+                  variant="ghost"
+                  onClick={handleClearFilters}
+                  size="icon"
+                  aria-label="Limpiar filtros"
+                  title="Limpiar filtros"
+                >
                   <X className="h-4 w-4" />
                 </Button>
               )}
