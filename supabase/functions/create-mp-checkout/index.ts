@@ -31,9 +31,14 @@ Deno.serve(async (req) => {
     const body = await req.json()
     // F-014 (spec 019): `final_price` del cliente se ignora deliberadamente.
     // El precio final se calcula server-side desde subscription_plans + discount_coupons.
-    // Spec 022: billing_cycle del cliente se acepta (monthly | annual), default monthly.
+    // Spec 022: billing_cycle del cliente se acepta (monthly | yearly), default monthly.
+    // Compat: aceptamos 'annual' (legacy) y normalizamos a 'yearly' porque el
+    // constraint de DB therapist_subscriptions_billing_cycle_check sólo permite
+    // monthly|quarterly|yearly.
     const { plan_name, therapist_id, payer_email, payer_name, coupon_code } = body
-    const billing_cycle: 'monthly' | 'annual' = body.billing_cycle === 'annual' ? 'annual' : 'monthly'
+    const rawCycle = body.billing_cycle
+    const billing_cycle: 'monthly' | 'yearly' =
+      (rawCycle === 'yearly' || rawCycle === 'annual') ? 'yearly' : 'monthly'
 
     if (!plan_name || !therapist_id || !payer_email) {
       return new Response(
@@ -170,11 +175,11 @@ Deno.serve(async (req) => {
       couponMaxRenewals = coupon.max_renewals ?? null
     }
 
-    // Spec 022: si billing_cycle === 'annual', aplicar descuento anual server-side.
+    // Spec 022: si billing_cycle === 'yearly', aplicar descuento anual server-side.
     // Fórmula: chargePrice_annual = chargePrice_monthly × 12 × (1 - annual_discount_percent/100)
     // Aplica DESPUÉS del cupón (si lo hubo), sobre el chargePrice ya calculado.
     const annualDiscountPercent = Number(plan.annual_discount_percent) || 0
-    if (billing_cycle === 'annual' && annualDiscountPercent > 0) {
+    if (billing_cycle === 'yearly' && annualDiscountPercent > 0) {
       chargePrice = Math.round(chargePrice * 12 * (1 - annualDiscountPercent / 100))
     }
 
@@ -185,7 +190,7 @@ Deno.serve(async (req) => {
     // tracking de applied_coupon_code + current_renewal_count para renovaciones futuras.
     if (chargePrice <= 0) {
       const nowBypass = new Date()
-      const periodDaysBypass = billing_cycle === 'annual' ? 365 : 30
+      const periodDaysBypass = billing_cycle === 'yearly' ? 365 : 30
       const periodEndBypass = new Date(nowBypass.getTime() + periodDaysBypass * 24 * 60 * 60 * 1000)
       const initialRenewalCountBypass = validatedCouponCode && couponMaxRenewals !== null ? 1 : 0
       const appliedCouponCodeBypass = validatedCouponCode && couponMaxRenewals !== null ? validatedCouponCode : null
@@ -253,7 +258,7 @@ Deno.serve(async (req) => {
         title: validatedCouponCode
           ? `${plan.name} - DENTALSPOT (Cupón: ${validatedCouponCode})`
           : `${plan.name} - DENTALSPOT`,
-        description: billing_cycle === 'annual'
+        description: billing_cycle === 'yearly'
           ? `Suscripción anual - ${plan.name} (ahorra ${annualDiscountPercent}%)`
           : `Suscripción mensual - ${plan.name}`,
         quantity: 1,
@@ -301,7 +306,7 @@ Deno.serve(async (req) => {
     // 4. Guardar en Supabase
     // Spec 022: period_end según billing_cycle (30 días mensual, 365 días anual)
     const now = new Date()
-    const periodDays = billing_cycle === 'annual' ? 365 : 30
+    const periodDays = billing_cycle === 'yearly' ? 365 : 30
     const periodEnd = new Date(now.getTime() + periodDays * 24 * 60 * 60 * 1000)
 
     // Spec 022: tracking inicial del cupón si tiene max_renewals

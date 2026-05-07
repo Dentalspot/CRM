@@ -206,8 +206,10 @@ const MembershipPlansPage = () => {
           original_price: planPricing.priceCLP,
           coupon_id: couponApplied?.id || null,
           coupon_code: couponApplied?.code || null,
-          // Spec 022: pasar billing_cycle según toggle UI isYearly
-          billing_cycle: isYearly ? 'annual' : 'monthly',
+          // Spec 022: pasar billing_cycle según toggle UI isYearly.
+          // Valor 'yearly' (NO 'annual') para coincidir con el constraint
+          // de therapist_subscriptions (CHECK monthly|quarterly|yearly).
+          billing_cycle: isYearly ? 'yearly' : 'monthly',
         });
 
         // Spec 022: si el edge function retornó bypass_mp=true (cupón 100%),
