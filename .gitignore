@@ -53,3 +53,6 @@ public/llms.txt
 
 # MCP local config (referencia env vars con tokens)
 .mcp.json
+
+# DB backups locales (ver scripts/backup-db.sh)
+backups/
