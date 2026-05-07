@@ -63,7 +63,69 @@ const IncomeTable = ({ rows, loading, role }) => {
   );
 
   return (
-    <div className="border rounded-lg overflow-x-auto">
+    <>
+      {/* MOBILE — cards apilados (la tabla horizontal se rompe <md). */}
+      <div className="md:hidden space-y-3">
+        {rows.map((r) => {
+          const statusInfo = STATUS_LABELS[r.budget_status] || STATUS_LABELS.enviado;
+          const mainAmount = isClinic ? r.commission_amount : r.net_amount;
+          const mainLabel = isClinic ? 'Comisión' : 'Neto';
+          return (
+            <div key={r.payment_id} className="rounded-xl border bg-white p-4 shadow-sm space-y-2">
+              {/* Header: paciente + estado */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-sm truncate">{r.patient_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(r.payment_date), 'dd MMM yyyy', { locale: es })}
+                    {r.clinic_name && r.clinic_name !== 'Sin clínica' && (
+                      <> · <span className="truncate">{r.clinic_name}</span></>
+                    )}
+                  </p>
+                </div>
+                <Badge className={`${statusInfo.color} text-[10px] shrink-0`}>{statusInfo.label}</Badge>
+              </div>
+
+              {/* Montos: bruto + neto/comisión + comisión% */}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-100">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Bruto</p>
+                  <p className="text-sm font-mono font-semibold">${formatCLP(r.amount)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{mainLabel}</p>
+                  <p className="text-sm font-mono font-semibold text-emerald-700">${formatCLP(mainAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Comisión</p>
+                  <p className="text-sm font-mono font-semibold text-muted-foreground">{Number(r.commission_percent).toFixed(0)}%</p>
+                </div>
+              </div>
+
+              {/* Footer: método + presupuesto */}
+              <div className="flex items-center justify-between pt-1 text-xs text-muted-foreground">
+                <span>{METHOD_LABELS[r.payment_method] || r.payment_method}</span>
+                {r.budget_number && <span className="truncate">#{r.budget_number}</span>}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Total mobile */}
+        <div className="rounded-xl bg-muted/40 p-4 font-semibold">
+          <div className="flex items-center justify-between text-sm">
+            <span>Total bruto</span>
+            <span className="font-mono">${formatCLP(totals.gross)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm text-emerald-700 mt-1">
+            <span>{isClinic ? 'Total comisión' : 'Total neto'}</span>
+            <span className="font-mono">${formatCLP(isClinic ? totals.commission : totals.net)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* DESKTOP — tabla clásica. */}
+      <div className="hidden md:block border rounded-lg overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -134,7 +196,8 @@ const IncomeTable = ({ rows, loading, role }) => {
           </TableRow>
         </TableBody>
       </Table>
-    </div>
+      </div>
+    </>
   );
 };
 
