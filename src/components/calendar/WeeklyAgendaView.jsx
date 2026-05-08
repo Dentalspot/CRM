@@ -440,25 +440,50 @@ const WeeklyAgendaView = ({
                 </div>
                 <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-50 flex-shrink-0" />
               </div>
-              <div className="flex items-center gap-1 mt-0.5 text-[10px] opacity-80">
-                {apt.block_type ? (
-                   <span className="truncate">{blockLabel}</span>
-                ) : (
-                  <><MapPin className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{getClinicName(apt.clinic_id) || (isOnline ? 'Online' : 'Presencial')}</span></>
-                )}
-              </div>
-              {!apt.block_type && apt.service?.service_name && (
-                <div className="text-[9px] opacity-60 truncate mt-0.5">
+              {/* Línea 2: procedimiento (servicio) o tipo de bloque.
+                  Si no hay servicio definido, mostrar "Sin procedimiento" en italic. */}
+              {apt.block_type ? (
+                <div className="text-[10px] opacity-80 truncate mt-0.5">
+                  {blockLabel}
+                </div>
+              ) : apt.service?.service_name ? (
+                <div className="text-[10px] opacity-80 truncate mt-0.5">
                   {apt.service.service_name}
+                </div>
+              ) : (
+                <div className="text-[10px] opacity-60 italic truncate mt-0.5">
+                  Sin procedimiento
+                </div>
+              )}
+              {/* Footer: signo de exclamación si la cita tiene nota.
+                  La nota completa aparece en el tooltip on hover. */}
+              {!apt.block_type && apt.notes && apt.notes.trim().length > 0 && (
+                <div className="flex items-center gap-1 mt-0.5 text-[10px] opacity-90">
+                  <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate">Nota</span>
                 </div>
               )}
             </div>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="bottom" className="max-w-xs">
             <p className="font-semibold">{patientName}</p>
             <p className="text-xs">{apt.start_time?.substring(0, 5)} - {apt.end_time?.substring(0, 5)} ({apt.duration_minutes || 60} min)</p>
             {apt.block_type && <p className="text-xs font-medium mt-1">Bloque: {blockLabel}</p>}
+            {!apt.block_type && (
+              <p className="text-xs">
+                <span className="font-medium">Procedimiento:</span>{' '}
+                {apt.service?.service_name || <span className="italic opacity-70">Sin procedimiento</span>}
+              </p>
+            )}
             {apt.clinic_id && <p className="text-xs text-muted-foreground">{getClinicName(apt.clinic_id)}</p>}
+            {!apt.block_type && apt.notes && apt.notes.trim().length > 0 && (
+              <div className="mt-2 pt-2 border-t border-border">
+                <p className="text-xs font-medium flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> Nota:
+                </p>
+                <p className="text-xs whitespace-pre-wrap mt-0.5">{apt.notes}</p>
+              </div>
+            )}
             <p className="text-xs text-blue-500 mt-1">Arrastra para reprogramar</p>
           </TooltipContent>
         </Tooltip>

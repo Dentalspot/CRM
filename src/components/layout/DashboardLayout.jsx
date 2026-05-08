@@ -22,7 +22,7 @@ import {
 const therapistNavLinks = [
   { href: '/dashboard/therapist', label: 'Mi Panel', icon: LayoutDashboard },
   { href: '/dashboard/profile', label: 'Mi Perfil', icon: User },
-  { href: '/dashboard/calendar', label: 'Calendario', icon: Calendar },
+  { href: '/dashboard/calendar', label: 'Agenda', icon: Calendar },
   { href: '/dashboard/patients', label: 'Mis Pacientes', icon: Users },
   { href: '/dashboard/reports', label: 'Reportes', icon: FileText },
   { href: '/dashboard/membership', label: 'Mi Plan', icon: CreditCard },

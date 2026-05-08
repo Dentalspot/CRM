@@ -155,7 +155,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             items: [
               { name: 'Dashboard', icon: Home, path: '/dashboard/therapist' },
               { name: 'Mi Perfil', icon: Briefcase, path: '/dashboard/profile' },
-              { name: 'Calendario', icon: Calendar, path: '/dashboard/calendar' },
+              { name: 'Agenda', icon: Calendar, path: '/dashboard/calendar' },
               { name: 'Mis Pacientes', icon: Users, path: '/dashboard/patients' },
               { name: 'Ingresos', icon: TrendingUp, path: '/dashboard/income-reports' },
               ...(FEATURE_FLAGS.MARKETPLACE
