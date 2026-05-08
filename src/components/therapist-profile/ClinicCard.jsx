@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, ChevronDown, Trash2, Clock, PlusCircle, XCircle, Lock } from 'lucide-react';
+import { Building, ChevronDown, Trash2, Clock, PlusCircle, XCircle, Lock, CheckCircle2 } from 'lucide-react';
 import useLocation from '@/hooks/useLocation';
 import { useAddOnAccess } from '@/hooks/useAddOnAccess';
 import UpgradeModal from '@/components/modals/UpgradeModal';
 import { Badge } from '@/components/ui/badge';
 import { ADD_ON_PIE } from '@/constants/planFeatures';
 import { formatRutEmpresa } from '@/services/clinicDetectionService';
+import { cn } from '@/lib/utils';
 
 const weekDays = [
   { id: 1, name: 'Lunes' }, { id: 2, name: 'Martes' }, { id: 3, name: 'Miércoles' },
@@ -51,10 +52,10 @@ const AvailabilityManager = ({ clinic, onUpdate }) => {
   return (
     <div className="space-y-4 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
       <div className="flex justify-between items-center">
-        <h4 className="font-semibold text-md text-gray-800 dark:text-gray-200 flex items-center" style={{color: '#ff74c3'}}>
+        <h4 className="font-semibold text-md text-primary flex items-center">
           <Clock className="mr-2 h-5 w-5" /> Horarios de Atención
         </h4>
-        <Button variant="outline" size="sm" onClick={handleAddSchedule} className="border-[#33e1d1] text-[#33e1d1] hover:bg-[#33e1d1] hover:text-white">
+        <Button variant="outline" size="sm" onClick={handleAddSchedule} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
           <PlusCircle className="mr-2 h-4 w-4" /> Agregar Horario
         </Button>
       </div>
@@ -183,9 +184,12 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-4">
-          <Building className="h-6 w-6 text-primary" style={{color: '#ff74c3'}} />
+          <Building className={cn(
+            "h-6 w-6",
+            clinic.is_owner && !clinic.is_new ? "text-green-600" : "text-primary"
+          )} />
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold text-gray-800 dark:text-white" style={{color: '#2D2D2D'}}>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
               {clinic.name || 'Nueva Clínica'}
             </h3>
             <Badge variant="outline" className={`ml-2 text-xs py-0 h-5 font-normal ${badgeInfo.color}`}>
@@ -228,7 +232,7 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label style={{color: '#ff74c3'}}>RUT Empresa</Label>
+                  <Label>RUT Empresa</Label>
                   <Input
                     value={clinic.rut_empresa || ''}
                     onChange={(e) => handleFieldChange('rut_empresa', formatRutEmpresa(e.target.value))}
@@ -241,12 +245,12 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                 </div>
 
                 <div>
-                  <Label htmlFor={`name-${clinic.id}`} style={{color: '#ff74c3'}}>Nombre del Lugar</Label>
+                  <Label htmlFor={`name-${clinic.id}`}>Nombre del Lugar</Label>
                   <Input id={`name-${clinic.id}`} value={clinic.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} placeholder="Ej: Centro Médico Fonovida" required disabled={!canEditClinicData} />
                 </div>
 
                 <div>
-                  <Label style={{color: '#ff74c3'}}>Tipo de Lugar</Label>
+                  <Label>Tipo de Lugar</Label>
                   <Select value={clinic.type || 'consulta_privada'} onValueChange={(value) => handleFieldChange('type', value)} disabled={!canEditClinicData}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona el tipo" />
@@ -267,7 +271,7 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <Label htmlFor={`rbd-${clinic.id}`} style={{color: '#ff74c3'}}>RBD del Establecimiento</Label>
+                    <Label htmlFor={`rbd-${clinic.id}`}>RBD del Establecimiento</Label>
                     <Input
                       id={`rbd-${clinic.id}`}
                       value={clinic.rbd || ''}
@@ -279,12 +283,12 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                 )}
 
                 <div>
-                  <Label htmlFor={`address-${clinic.id}`} style={{color: '#ff74c3'}}>Dirección</Label>
+                  <Label htmlFor={`address-${clinic.id}`}>Dirección</Label>
                   <Input id={`address-${clinic.id}`} value={clinic.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} placeholder="Ej: Av. Siempre Viva 742" required disabled={!canEditClinicData} />
                 </div>
 
                 <div>
-                  <Label style={{color: '#ff74c3'}}>Región</Label>
+                  <Label>Región</Label>
                   <Select value={clinic.region_id?.toString()} onValueChange={handleRegionChange} disabled={!canEditClinicData}>
                     <SelectTrigger disabled={loadingRegions || !canEditClinicData}>
                       <SelectValue placeholder={loadingRegions ? "Cargando..." : "Selecciona una región"} />
@@ -296,7 +300,7 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                 </div>
 
                 <div>
-                  <Label style={{color: '#ff74c3'}}>Ciudad</Label>
+                  <Label>Ciudad</Label>
                   <Select value={clinic.city_id?.toString()} onValueChange={handleCityChange} disabled={!clinic.region_id || loadingCities || !canEditClinicData} required>
                     <SelectTrigger>
                       <SelectValue placeholder={loadingCities ? "Cargando..." : "Selecciona una ciudad"} />
@@ -308,7 +312,7 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                 </div>
                 
                 <div>
-                  <Label style={{ color: '#ff74c3' }}>Modalidad</Label>
+                  <Label>Modalidad</Label>
                   <Select value={clinic.modality} onValueChange={(value) => handleFieldChange('modality', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona modalidad" />
@@ -325,24 +329,47 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                   <Label htmlFor={`is_public-${clinic.id}`} className="font-normal text-gray-700 dark:text-gray-300">Mostrar este lugar en mi perfil y buscador.</Label>
                 </div>
 
-                <div className="flex items-start space-x-2 pt-2 col-span-1 md:col-span-2 bg-primary/5 border border-primary/20 rounded-md p-3">
-                  <Checkbox
-                    id={`is_owner-${clinic.id}`}
-                    checked={!!clinic.is_owner}
-                    onCheckedChange={(checked) => handleFieldChange('is_owner', !!checked)}
-                    className="mt-0.5"
-                  />
-                  <div className="flex-1">
-                    <Label htmlFor={`is_owner-${clinic.id}`} className="font-medium text-gray-800 dark:text-gray-200 cursor-pointer">
-                      Soy dueño/a de esta clínica
-                    </Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Marca esta opción si eres el responsable o propietario. Te dará acceso a la
-                      vista de administración (equipo, pacientes consolidados, reportes) además
-                      de tu vista de dentista.
-                    </p>
+                {/* Estado del dueño/a:
+                    - Si ya guardó como dueño (is_owner=true && !is_new) →
+                      tarjeta verde con CheckCircle, copy en pasado.
+                    - Si no, tarjeta neutra con checkbox para reclamar dueño. */}
+                {clinic.is_owner && !clinic.is_new ? (
+                  <div className="flex items-start gap-3 pt-2 col-span-1 md:col-span-2 bg-green-50 border border-green-200 rounded-md p-3">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-green-900">Eres dueño/a de esta clínica</p>
+                      <p className="text-xs text-green-800/90 mt-0.5">
+                        Tienes acceso a la vista de administración (equipo, pacientes consolidados, reportes) además de tu vista de dentista. Si esto no es correcto, desmarca para revertir.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleFieldChange('is_owner', false)}
+                        className="text-[11px] text-green-700 hover:text-green-900 underline underline-offset-2 mt-1.5"
+                      >
+                        Ya no soy dueño/a
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-start space-x-2 pt-2 col-span-1 md:col-span-2 bg-primary/5 border border-primary/20 rounded-md p-3">
+                    <Checkbox
+                      id={`is_owner-${clinic.id}`}
+                      checked={!!clinic.is_owner}
+                      onCheckedChange={(checked) => handleFieldChange('is_owner', !!checked)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor={`is_owner-${clinic.id}`} className="font-medium text-gray-800 dark:text-gray-200 cursor-pointer">
+                        Soy dueño/a de esta clínica
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Marca esta opción si eres el responsable o propietario. Te dará acceso a la
+                        vista de administración (equipo, pacientes consolidados, reportes) además
+                        de tu vista de dentista.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <AvailabilityManager clinic={clinic} onUpdate={onUpdate} />
