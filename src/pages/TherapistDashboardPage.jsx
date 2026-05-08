@@ -24,6 +24,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/components/ui/use-toast';
 import ProfileAvatar from '@/components/shared/ProfileAvatar';
 // import OnboardingChecklist from '@/features/therapist/components/OnboardingChecklist'; // pausado: sistema de puntos/wallet
 import PendingClinicInvitations from '@/features/dashboard/components/PendingClinicInvitations';
@@ -75,6 +76,7 @@ const getDentalLevel = (score) => {
 const TherapistDashboardPage = () => {
   const { user, profile } = useAuth();
   const { trackEvent } = useMetaTracking();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -150,7 +152,8 @@ const TherapistDashboardPage = () => {
 
         // Próximas Citas: solo HOY + MAÑANA, max 10, excluye canceladas
         // y completadas. Incluye patient.full_name (denormalizado) para
-        // pacientes sin profile vinculado.
+        // pacientes sin profile vinculado, y service.service_name para
+        // mostrar el procedimiento en la tarjeta.
         supabase
           .from('appointments')
           .select(`
@@ -159,7 +162,8 @@ const TherapistDashboardPage = () => {
               id,
               full_name,
               profile:profiles!patients_profile_id_fkey(full_name)
-            )
+            ),
+            service:therapist_services!appointments_service_id_fkey(id, service_name)
           `)
           .eq('therapist_id', user.id)
           .gte('date', format(today, 'yyyy-MM-dd'))
@@ -315,6 +319,38 @@ const TherapistDashboardPage = () => {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Cambiar estado de una cita desde la tarjeta de Próximas Citas.
+  // Si el nuevo estado es 'completed' o 'cancelled', la cita se filtra del
+  // widget (la query original excluye esos dos estados) — refrescamos al
+  // remover localmente para no esperar un refetch.
+  const handleAppointmentStatusChange = useCallback(async (appointmentId, newStatus) => {
+    const previous = upcomingAppointments;
+    // Optimistic update
+    setUpcomingAppointments((prev) =>
+      (newStatus === 'completed' || newStatus === 'cancelled')
+        ? prev.filter((a) => a.id !== appointmentId)
+        : prev.map((a) => (a.id === appointmentId ? { ...a, status: newStatus } : a))
+    );
+
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: newStatus })
+      .eq('id', appointmentId);
+
+    if (error) {
+      // Rollback
+      setUpcomingAppointments(previous);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo actualizar',
+        description: error.message || 'Intenta de nuevo.',
+      });
+      return;
+    }
+
+    toast({ title: 'Estado actualizado' });
+  }, [upcomingAppointments, toast]);
 
   if (!user || !profile) {
     return (
@@ -620,6 +656,7 @@ const TherapistDashboardPage = () => {
                             appointment={app}
                             index={index}
                             onReschedule={(patientId) => setBookingPatientId(patientId)}
+                            onStatusChange={handleAppointmentStatusChange}
                           />
                         </motion.div>
                       ))}

@@ -2,7 +2,13 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Video, MapPin, Clock, CalendarPlus } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Stethoscope, Clock, CalendarPlus, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, isToday, isTomorrow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -55,10 +61,22 @@ const STATUS_STYLES = {
   },
 };
 
-const UpcomingAppointmentCard = ({ appointment, index = 0, onReschedule }) => {
-  const { date, start_time, modality, patient, status } = appointment;
+// Estados por los que el dentista puede mover una cita desde el dashboard.
+// 'no-show' se incluye para marcar ausentes; 'completed' y 'cancelled' la
+// quitan de la lista de "Próximas Citas" porque la query las excluye.
+const STATUS_OPTIONS = [
+  { value: 'scheduled', label: 'Programada' },
+  { value: 'confirmed', label: 'Confirmada' },
+  { value: 'completed', label: 'Completada' },
+  { value: 'no-show', label: 'Ausente' },
+  { value: 'cancelled', label: 'Cancelada' },
+];
+
+const UpcomingAppointmentCard = ({ appointment, index = 0, onReschedule, onStatusChange }) => {
+  const { id, date, start_time, patient, status, service } = appointment;
 
   const patientName = patient?.profile?.full_name || patient?.full_name || 'Paciente';
+  const serviceName = service?.service_name;
 
   const getDateLabel = (dateStr) => {
     const d = new Date(dateStr + 'T00:00:00');
@@ -69,7 +87,6 @@ const UpcomingAppointmentCard = ({ appointment, index = 0, onReschedule }) => {
 
   const dateLabel = getDateLabel(date);
   const timeLabel = start_time?.substring(0, 5);
-  const isOnline = modality === 'online' || modality === 'video_call';
   const styles = STATUS_STYLES[status] || STATUS_STYLES.scheduled;
 
   return (
@@ -103,14 +120,62 @@ const UpcomingAppointmentCard = ({ appointment, index = 0, onReschedule }) => {
               </h4>
             </Link>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 bg-white/70">
-                {isOnline ? <Video className="w-3 h-3 mr-1" /> : <MapPin className="w-3 h-3 mr-1" />}
-                {isOnline ? 'Online' : 'Presencial'}
+              {/* Procedimiento — antes era Presencial/Online. */}
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0 bg-white/70 max-w-[180px]">
+                <Stethoscope className="w-3 h-3 mr-1 shrink-0" />
+                {serviceName ? (
+                  <span className="truncate">{serviceName}</span>
+                ) : (
+                  <span className="italic opacity-70">Sin procedimiento</span>
+                )}
               </Badge>
-              <Badge className={cn('text-[10px] h-5 px-1.5 shrink-0', styles.badge)}>
-                <Clock className="w-3 h-3 mr-1" />
-                {styles.label}
-              </Badge>
+
+              {/* Estado — clickable. Abre dropdown para cambiar el estado.
+                  Si no hay handler (uso read-only), queda como Badge plano. */}
+              {onStatusChange ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Cambiar estado (actual: ${styles.label})`}
+                      className={cn(
+                        'inline-flex items-center gap-1 text-[10px] h-5 px-1.5 rounded-full shrink-0',
+                        'border font-semibold transition-colors hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/40',
+                        styles.badge,
+                      )}
+                    >
+                      <Clock className="w-3 h-3" />
+                      <span>{styles.label}</span>
+                      <ChevronDown className="w-3 h-3 opacity-70" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44">
+                    {STATUS_OPTIONS.map((opt) => (
+                      <DropdownMenuItem
+                        key={opt.value}
+                        disabled={opt.value === status}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (opt.value !== status) onStatusChange(id, opt.value);
+                        }}
+                        className={cn(
+                          'text-xs cursor-pointer',
+                          opt.value === status && 'font-semibold',
+                        )}
+                      >
+                        {opt.label}
+                        {opt.value === status && <span className="ml-auto text-[10px] opacity-60">(actual)</span>}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Badge className={cn('text-[10px] h-5 px-1.5 shrink-0', styles.badge)}>
+                  <Clock className="w-3 h-3 mr-1" />
+                  {styles.label}
+                </Badge>
+              )}
             </div>
           </div>
 
