@@ -361,7 +361,7 @@ const MyClinicsSection = () => {
         <Button variant="outline" onClick={handleAddClinic} disabled={isSaving || clinics.length >= MAX_CLINICS} className="text-gray-800 dark:text-gray-200">
           <PlusCircle className="mr-2 h-4 w-4" /> Agregar Lugar
         </Button>
-        <Button onClick={handleSaveAll} disabled={isSaving || loading} size="lg" className="w-full sm:w-auto bg-[#ff74c3] text-white hover:bg-gradient-to-r hover:from-[#ff74c3] hover:to-[#33e1d1]">
+        <Button onClick={handleSaveAll} disabled={isSaving || loading} size="lg" className="w-full sm:w-auto">
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           {isSaving ? 'Guardando...' : 'Guardar Todo'}
         </Button>
