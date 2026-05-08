@@ -561,6 +561,35 @@ const WeeklyAgendaView = ({
         }
       }}
     >
+      {/* Legend — simbología arriba, fuera del scroll horizontal para que
+          siempre quede visible aunque el usuario scrollee la grilla en mobile. */}
+      <div className="border-b bg-white px-4 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-white border border-gray-300 rounded" />
+          <span>Programada</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-blue-100 border-l-2 border-blue-500 rounded" />
+          <span>Confirmada</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-green-100 border-l-2 border-green-500 rounded" />
+          <span>Completada</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-red-100 border-l-2 border-red-400 rounded" />
+          <span>Cancelada</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-amber-900/10 border-l-2 border-amber-800 rounded" />
+          <span>Ausente</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-red-50 border border-dashed border-red-300 rounded" />
+          <span>Bloqueado</span>
+        </div>
+      </div>
+
       {/* Scrollable wrapper for mobile.
           Mobile: scroll horizontal con momentum iOS + hint visual en borde derecho.
           min-w 720px = ~85px/columna (8 cols), suficiente para leer cards sin
@@ -706,34 +735,6 @@ const WeeklyAgendaView = ({
 
       </div>{/* close min-w-[640px] */}
       </div>{/* close overflow-x-auto */}
-
-      {/* Legend */}
-      <div className="border-t bg-gray-50 px-4 py-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-white border border-gray-300 rounded" />
-          <span>Programada</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-blue-100 border-l-2 border-blue-500 rounded" />
-          <span>Confirmada</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-green-100 border-l-2 border-green-500 rounded" />
-          <span>Completada</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-red-100 border-l-2 border-red-400 rounded" />
-          <span>Cancelada</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-amber-900/10 border-l-2 border-amber-800 rounded" />
-          <span>Ausente</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 bg-red-50 border border-dashed border-red-300 rounded" />
-          <span>Bloqueado</span>
-        </div>
-      </div>
     </div>
   );
 };
