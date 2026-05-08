@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, ChevronDown, Trash2, Clock, PlusCircle, XCircle } from 'lucide-react';
+import { Building, ChevronDown, Trash2, Clock, PlusCircle, XCircle, Lock } from 'lucide-react';
 import useLocation from '@/hooks/useLocation';
 import { useAddOnAccess } from '@/hooks/useAddOnAccess';
 import UpgradeModal from '@/components/modals/UpgradeModal';
@@ -164,6 +164,18 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
 
   const badgeInfo = getTypeBadge(clinic.type || 'consulta_privada');
 
+  // Datos de la clínica (RUT, nombre, tipo, dirección, región, ciudad, RBD)
+  // sólo se pueden editar si el dentista es:
+  //   1. el creador (clinic.is_new — recién agregada, todavía no se guardó)
+  //   2. atiende en consulta privada propia (type='consulta_privada')
+  //   3. marcó "Soy dueño/a" — declara que administra la clínica
+  // En cualquier otro caso (clínica institucional sin ser dueño) los campos
+  // generales de la clínica los gestiona el admin de la clínica.
+  // Lo que sí puede editar siempre: modalidad, is_public, is_owner (para
+  // reclamar dueño), horarios de atención.
+  const canEditClinicData =
+    !!clinic.is_new || clinic.type === 'consulta_privada' || !!clinic.is_owner;
+
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm bg-white dark:bg-gray-800 relative">
       <div
@@ -201,6 +213,19 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
             className="overflow-hidden"
           >
             <div className="p-6 pt-2 space-y-6 border-t border-gray-200 dark:border-gray-700">
+              {/* Aviso si la clínica institucional no la administra el dentista. */}
+              {!canEditClinicData && (
+                <div className="flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                  <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium">Datos administrados por la clínica</p>
+                    <p className="text-xs text-amber-800/90 mt-0.5">
+                      Los datos generales de esta clínica (nombre, RUT, dirección) los gestiona su administración. Tu disponibilidad y horarios sí los puedes editar abajo. Si eres responsable de esta clínica, marca <span className="font-semibold">"Soy dueño/a"</span> más abajo.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label style={{color: '#ff74c3'}}>RUT Empresa</Label>
@@ -210,18 +235,19 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                     placeholder="76.123.456-7"
                     maxLength={12}
                     className="font-mono"
+                    disabled={!canEditClinicData}
                   />
                   <p className="text-xs text-muted-foreground">RUT de la empresa o institución (opcional para consulta privada)</p>
                 </div>
 
                 <div>
                   <Label htmlFor={`name-${clinic.id}`} style={{color: '#ff74c3'}}>Nombre del Lugar</Label>
-                  <Input id={`name-${clinic.id}`} value={clinic.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} placeholder="Ej: Centro Médico Fonovida" required />
+                  <Input id={`name-${clinic.id}`} value={clinic.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} placeholder="Ej: Centro Médico Fonovida" required disabled={!canEditClinicData} />
                 </div>
-                
+
                 <div>
                   <Label style={{color: '#ff74c3'}}>Tipo de Lugar</Label>
-                  <Select value={clinic.type || 'consulta_privada'} onValueChange={(value) => handleFieldChange('type', value)}>
+                  <Select value={clinic.type || 'consulta_privada'} onValueChange={(value) => handleFieldChange('type', value)} disabled={!canEditClinicData}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona el tipo" />
                     </SelectTrigger>
@@ -242,24 +268,25 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                     exit={{ opacity: 0, height: 0 }}
                   >
                     <Label htmlFor={`rbd-${clinic.id}`} style={{color: '#ff74c3'}}>RBD del Establecimiento</Label>
-                    <Input 
-                      id={`rbd-${clinic.id}`} 
-                      value={clinic.rbd || ''} 
-                      onChange={(e) => handleFieldChange('rbd', e.target.value)} 
-                      placeholder="Ej: 12345-6" 
+                    <Input
+                      id={`rbd-${clinic.id}`}
+                      value={clinic.rbd || ''}
+                      onChange={(e) => handleFieldChange('rbd', e.target.value)}
+                      placeholder="Ej: 12345-6"
+                      disabled={!canEditClinicData}
                     />
                   </motion.div>
                 )}
 
                 <div>
                   <Label htmlFor={`address-${clinic.id}`} style={{color: '#ff74c3'}}>Dirección</Label>
-                  <Input id={`address-${clinic.id}`} value={clinic.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} placeholder="Ej: Av. Siempre Viva 742" required />
+                  <Input id={`address-${clinic.id}`} value={clinic.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} placeholder="Ej: Av. Siempre Viva 742" required disabled={!canEditClinicData} />
                 </div>
-                
+
                 <div>
                   <Label style={{color: '#ff74c3'}}>Región</Label>
-                  <Select value={clinic.region_id?.toString()} onValueChange={handleRegionChange}>
-                    <SelectTrigger disabled={loadingRegions}>
+                  <Select value={clinic.region_id?.toString()} onValueChange={handleRegionChange} disabled={!canEditClinicData}>
+                    <SelectTrigger disabled={loadingRegions || !canEditClinicData}>
                       <SelectValue placeholder={loadingRegions ? "Cargando..." : "Selecciona una región"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -267,10 +294,10 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label style={{color: '#ff74c3'}}>Ciudad</Label>
-                  <Select value={clinic.city_id?.toString()} onValueChange={handleCityChange} disabled={!clinic.region_id || loadingCities} required>
+                  <Select value={clinic.city_id?.toString()} onValueChange={handleCityChange} disabled={!clinic.region_id || loadingCities || !canEditClinicData} required>
                     <SelectTrigger>
                       <SelectValue placeholder={loadingCities ? "Cargando..." : "Selecciona una ciudad"} />
                     </SelectTrigger>
