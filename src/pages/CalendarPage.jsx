@@ -12,6 +12,7 @@ import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import useTherapistClinics from '@/hooks/useTherapistClinics';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -345,6 +346,62 @@ const CalendarPage = () => {
     }
   };
 
+  // Cambiar estado de una cita desde la AgendaSidebar (Citas de Hoy).
+  // Update optimista en `appointments` → re-deriva stats del Resumen.
+  // Toast con botón "Deshacer" (8s) que revierte el cambio.
+  const handleAppointmentStatusChange = useCallback(async (appointmentId, newStatus) => {
+    const snapshot = appointments;
+    const target = snapshot.find((a) => a.id === appointmentId);
+    const previousStatus = target?.status;
+
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === appointmentId ? { ...a, status: newStatus } : a))
+    );
+
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: newStatus })
+      .eq('id', appointmentId);
+
+    if (error) {
+      setAppointments(snapshot);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo actualizar',
+        description: error.message || 'Intenta de nuevo.',
+      });
+      return;
+    }
+
+    const handleUndo = async () => {
+      if (!previousStatus) return;
+      setAppointments(snapshot);
+      const { error: undoError } = await supabase
+        .from('appointments')
+        .update({ status: previousStatus })
+        .eq('id', appointmentId);
+      if (undoError) {
+        toast({
+          variant: 'destructive',
+          title: 'No se pudo deshacer',
+          description: undoError.message || 'Intenta de nuevo.',
+        });
+        return;
+      }
+      toast({ title: 'Cambio revertido' });
+    };
+
+    toast({
+      title: 'Estado actualizado',
+      duration: 8000,
+      action: previousStatus ? (
+        <ToastAction altText="Deshacer cambio de estado" onClick={handleUndo}>
+          Deshacer
+        </ToastAction>
+      ) : undefined,
+    });
+  }, [appointments, toast]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6 lg:py-8">
@@ -438,6 +495,7 @@ const CalendarPage = () => {
               onRefresh={handleRefresh}
               onBlockTime={handleOpenBlockModal}
               onNewAppointment={handleNewAppointment}
+              onStatusChange={handleAppointmentStatusChange}
             />
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-4">

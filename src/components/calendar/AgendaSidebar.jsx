@@ -20,17 +20,33 @@ import {
   Lightbulb,
   XCircle,
   UserX,
-  Plus
+  Plus,
+  ChevronDown,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getClinicColor } from './WeeklyAgendaView';
+
+// Mismos estados disponibles que en UpcomingAppointmentCard.
+const STATUS_OPTIONS = [
+  { value: 'scheduled', label: 'Programada' },
+  { value: 'confirmed', label: 'Confirmada' },
+  { value: 'completed', label: 'Completada' },
+  { value: 'no-show', label: 'Ausente' },
+  { value: 'cancelled', label: 'Cancelada' },
+];
 
 const AgendaSidebar = ({
   clinics = [],
@@ -40,6 +56,7 @@ const AgendaSidebar = ({
   onRefresh,
   onBlockTime,
   onNewAppointment,
+  onStatusChange,
   className
 }) => {
   const navigate = useNavigate();
@@ -123,20 +140,70 @@ const AgendaSidebar = ({
                   cancelled: 'bg-red-100 text-red-700 border-red-200',
                   'no-show': 'bg-amber-100 text-amber-800 border-amber-200',
                 }[appt.status] || 'bg-sky-100 text-sky-700 border-sky-200';
+                const patientId = appt.patient?.id;
                 return (
                   <div key={appt.id || i} className="flex items-start gap-2 py-1.5 border-b border-blue-50 last:border-0">
                     <div className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 mt-0.5">
                       {timeStr}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-gray-800 truncate">{patientName}</p>
+                      {/* Nombre como link a la ficha clínica del paciente. */}
+                      {patientId ? (
+                        <Link
+                          to={`/dashboard/patients/${patientId}/clinical-history`}
+                          className="text-xs font-medium text-gray-800 truncate block hover:text-primary hover:underline transition-colors"
+                          title={`Ver ficha de ${patientName}`}
+                        >
+                          {patientName}
+                        </Link>
+                      ) : (
+                        <p className="text-xs font-medium text-gray-800 truncate">{patientName}</p>
+                      )}
                       {serviceName && (
                         <p className="text-[10px] text-gray-500 truncate">{serviceName}</p>
                       )}
                     </div>
-                    <Badge variant="outline" className={cn("text-[9px] px-1 py-0 shrink-0", statusColor)}>
-                      {statusLabel}
-                    </Badge>
+                    {/* Badge clickable para cambiar el estado. Si no se pasó
+                        onStatusChange, queda como Badge plano (read-only). */}
+                    {onStatusChange && appt.id ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={`Cambiar estado (actual: ${statusLabel})`}
+                            className={cn(
+                              "inline-flex items-center gap-0.5 text-[9px] px-1 py-0 h-4 rounded-full border font-semibold shrink-0",
+                              "transition-colors hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary/40",
+                              statusColor
+                            )}
+                          >
+                            <span>{statusLabel}</span>
+                            <ChevronDown className="w-2.5 h-2.5 opacity-70" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {STATUS_OPTIONS.map((opt) => {
+                            const isCurrent = opt.value === appt.status
+                              || (opt.value === 'cancelled' && appt.status === 'canceled');
+                            return (
+                              <DropdownMenuItem
+                                key={opt.value}
+                                disabled={isCurrent}
+                                onClick={() => { if (!isCurrent) onStatusChange(appt.id, opt.value); }}
+                                className={cn('text-xs cursor-pointer', isCurrent && 'font-semibold')}
+                              >
+                                {opt.label}
+                                {isCurrent && <span className="ml-auto text-[10px] opacity-60">(actual)</span>}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <Badge variant="outline" className={cn("text-[9px] px-1 py-0 shrink-0", statusColor)}>
+                        {statusLabel}
+                      </Badge>
+                    )}
                   </div>
                 );
               })
