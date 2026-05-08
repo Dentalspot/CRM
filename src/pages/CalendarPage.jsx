@@ -16,7 +16,7 @@ import { ToastAction } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, ChevronLeft, ChevronRight, RefreshCw, Search, X, Loader2 } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, RefreshCw, Search, X, Loader2, Plus } from 'lucide-react';
 import { format, startOfWeek, addDays, subWeeks, addWeeks } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -447,41 +447,14 @@ const CalendarPage = () => {
               </Button>
             </div>
 
-            <div className="relative w-full lg:w-[250px]">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="Buscar paciente..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-8 bg-white"
-                onFocus={() => { if (searchTerm.length >= 2) setShowSearchResults(true); }}
-              />
-              {searchTerm && (
-                <button onClick={handleClearSearch} className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-              )}
-              {showSearchResults && (
-                <Card className="absolute top-full left-0 right-0 mt-1 shadow-lg max-h-60 overflow-auto z-50 border-gray-200">
-                  <CardContent className="p-1">
-                    {isSearching ? (
-                      <div className="flex items-center justify-center p-4 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin mr-2" /><span className="text-sm">Buscando...</span></div>
-                    ) : searchResults.length > 0 ? (
-                      <ul className="space-y-0.5">
-                        {searchResults.map((patient) => (
-                          <li key={patient.id}>
-                            <button onClick={() => handlePatientSelect(patient.id)} className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 rounded-md transition-colors flex flex-col gap-0.5">
-                              <span className="font-medium text-slate-700">{patient.full_name}</span>
-                              <span className="text-xs text-muted-foreground truncate">{patient.email}</span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="p-3 text-center text-sm text-muted-foreground">No se encontraron pacientes</div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <Button
+              size="sm"
+              onClick={handleNewAppointment}
+              className="w-full lg:w-auto h-9 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              <Plus className="h-4 w-4" />
+              Agendar Cita
+            </Button>
           </div>
         </motion.div>
 
