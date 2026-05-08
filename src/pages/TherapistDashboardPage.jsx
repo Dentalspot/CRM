@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import ProfileAvatar from '@/components/shared/ProfileAvatar';
 // import OnboardingChecklist from '@/features/therapist/components/OnboardingChecklist'; // pausado: sistema de puntos/wallet
 import PendingClinicInvitations from '@/features/dashboard/components/PendingClinicInvitations';
@@ -324,8 +325,13 @@ const TherapistDashboardPage = () => {
   // Si el nuevo estado es 'completed' o 'cancelled', la cita se filtra del
   // widget (la query original excluye esos dos estados) — refrescamos al
   // remover localmente para no esperar un refetch.
+  // El toast incluye botón "Deshacer" que revierte el cambio (UPDATE con
+  // el estado original) mientras el toast siga visible.
   const handleAppointmentStatusChange = useCallback(async (appointmentId, newStatus) => {
-    const previous = upcomingAppointments;
+    const snapshot = upcomingAppointments;
+    const target = snapshot.find((a) => a.id === appointmentId);
+    const previousStatus = target?.status;
+
     // Optimistic update
     setUpcomingAppointments((prev) =>
       (newStatus === 'completed' || newStatus === 'cancelled')
@@ -340,7 +346,7 @@ const TherapistDashboardPage = () => {
 
     if (error) {
       // Rollback
-      setUpcomingAppointments(previous);
+      setUpcomingAppointments(snapshot);
       toast({
         variant: 'destructive',
         title: 'No se pudo actualizar',
@@ -349,7 +355,38 @@ const TherapistDashboardPage = () => {
       return;
     }
 
-    toast({ title: 'Estado actualizado' });
+    // Acción "Deshacer" — restaura el estado anterior en DB y en UI.
+    // Si el rollback falla, mostramos error pero ya no podemos revertir
+    // el revert (raro), así que dejamos el toast destructivo.
+    const handleUndo = async () => {
+      if (!previousStatus) return;
+      setUpcomingAppointments(snapshot);
+      const { error: undoError } = await supabase
+        .from('appointments')
+        .update({ status: previousStatus })
+        .eq('id', appointmentId);
+      if (undoError) {
+        toast({
+          variant: 'destructive',
+          title: 'No se pudo deshacer',
+          description: undoError.message || 'Intenta de nuevo.',
+        });
+        return;
+      }
+      toast({ title: 'Cambio revertido' });
+    };
+
+    toast({
+      title: 'Estado actualizado',
+      // 8s da margen razonable para hacer clic en "Deshacer" sin
+      // dejar el toast colgado mucho rato si el usuario lo ignora.
+      duration: 8000,
+      action: previousStatus ? (
+        <ToastAction altText="Deshacer cambio de estado" onClick={handleUndo}>
+          Deshacer
+        </ToastAction>
+      ) : undefined,
+    });
   }, [upcomingAppointments, toast]);
 
   if (!user || !profile) {
