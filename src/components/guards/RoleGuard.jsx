@@ -23,6 +23,11 @@ const ONBOARDING_EXEMPT_PATHS = [
   '/dashboard/membresia',
 ];
 
+// Approval gate (pre-launch): roles que requieren aprobación admin antes
+// de acceder al dashboard. patient y assistant NO requieren — el paciente
+// se autoregistra para su propia ficha, el assistant viene por invitación.
+const ROLES_REQUIRING_APPROVAL = ['therapist', 'clinic'];
+
 const RoleGuard = ({ children, allowedRoles = [] }) => {
   const { user, profile, loading } = useAuth();
   const { effectiveRole, userOrgRoles = [], loading: orgLoading } = useCurrentOrganization();
@@ -39,6 +44,20 @@ const RoleGuard = ({ children, allowedRoles = [] }) => {
 
   if (!user) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+
+  // Approval gate (pre-launch): si el user es pro y NO está aprobado por
+  // un admin, redirigir a /auth/pending-approval. Excepción: si ya está
+  // en esa página, dejarlo (evita loop).
+  const approvalStatus = profile?.approval_status;
+  const profileRoleRaw = profile?.role || user.user_metadata?.role;
+  const requiresApproval =
+    profileRoleRaw &&
+    ROLES_REQUIRING_APPROVAL.includes(profileRoleRaw) &&
+    approvalStatus &&
+    approvalStatus !== 'approved';
+  if (requiresApproval && location.pathname !== '/auth/pending-approval') {
+    return <Navigate to="/auth/pending-approval" replace />;
   }
 
   // Permitir acceso si CUALQUIERA de los roles del usuario matchea:

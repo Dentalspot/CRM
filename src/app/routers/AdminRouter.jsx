@@ -14,6 +14,7 @@ import AdminShell from '@/features/admin/shell/AdminShell';
 // DASHBOARD
 // ============================================
 const SuperAdminDashboard = lazy(() => import('@/pages/SuperAdminDashboard.jsx'));
+const SignupApprovalsPage = lazy(() => import('@/pages/admin/SignupApprovalsPage.jsx'));
 
 // ============================================
 // BLOG MODULE (blog@dentalspot.cl)
@@ -237,6 +238,20 @@ const AdminRouter = () => {
           ============================================ */}
           <Route index element={<SuperAdminDashboard />} />
           <Route path="dashboard" element={<SuperAdminDashboard />} />
+
+          {/* ============================================
+              SIGNUP APPROVALS (gate pre-launch)
+              Requiere permission module='all' action='write' (mismo check
+              que tienen los RPCs approve_signup / reject_signup).
+          ============================================ */}
+          <Route
+            path="signup-approvals"
+            element={
+              <PermissionGuard module="all" action="write">
+                <SignupApprovalsPage />
+              </PermissionGuard>
+            }
+          />
 
           {/* ============================================
               BLOG MODULE → blog@dentalspot.cl

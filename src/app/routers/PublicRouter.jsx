@@ -19,6 +19,7 @@ const LegalPage = lazy(() => import('@/pages/LegalPage'));
 const FonoaudiologosSearchPage = lazy(() => import('@/pages/FonoaudiologosSearchPage'));
 const LeadCapturePage = lazy(() => import('@/pages/LeadCapturePage'));
 const ConfirmEmailPage = lazy(() => import('@/features/auth/pages/ConfirmEmailPage'));
+const PendingApprovalPage = lazy(() => import('@/pages/PendingApprovalPage'));
 const PublicConsultaPage = lazy(() => import('@/features/symptom-flow/pages/PublicConsultaPage'));
 
 const PageLoader = () => (
@@ -35,6 +36,9 @@ const PublicRouter = () => {
         <Route path="/auth">
           <Route path="confirm-email" element={<ConfirmEmailPage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />
+          {/* Pending approval — destino del RoleGuard para pros no aprobados.
+              IMPORTANTE: debe ir ANTES de :action (catch-all). */}
+          <Route path="pending-approval" element={<PendingApprovalPage />} />
           <Route path=":action" element={<AuthPage />} />
         </Route>
 
