@@ -74,40 +74,15 @@ const resolveOrganizationId = async (therapistId, providedOrgId) => {
   }
 };
 
-/**
- * Fix B: crear row en patient_care_team al crear/vincular paciente.
- * Sin esto, el paciente no ve a su dentista en su dashboard ("Equipo Tratante").
- *
- * @param {string} patientId - id de la fila en `patients`
- * @param {string} dentistId - id del therapist (profile)
- * @param {string|null} organizationId
- */
-const ensurePrimaryCareTeam = async (patientId, dentistId, organizationId) => {
-  if (!patientId || !dentistId || !organizationId) {
-    logger.warn('[patientAccountService] ensurePrimaryCareTeam skipped: missing data', {
-      patientId, dentistId, organizationId,
-    });
-    return;
-  }
-  try {
-    // Idempotente: si ya existe (paciente+dentista activos), no falla por idx_pct_unique_dentist_active
-    const { error } = await supabase
-      .from('patient_care_team')
-      .insert({
-        patient_id: patientId,
-        dentist_id: dentistId,
-        organization_id: organizationId,
-        role: 'primary',
-        is_active: true,
-        assigned_by: dentistId,
-      });
-    if (error && !String(error.message).includes('duplicate')) {
-      logger.warn('[patientAccountService] ensurePrimaryCareTeam error:', error.message);
-    }
-  } catch (err) {
-    logger.warn('[patientAccountService] ensurePrimaryCareTeam exception:', err?.message);
-  }
-};
+// B12 cleanup (2026-05-13): la helper `ensurePrimaryCareTeam` fue removida.
+// El trigger DB `trg_sync_patient_care_team_insert` ya crea automáticamente
+// el row en patient_care_team al insertar un paciente (con bypass de RLS via
+// SECURITY DEFINER). La implementación JS era redundante y generaba un error
+// rojo cosmético en consola cuando la policy RLS del dentista no permitía
+// insertar (fix de policy en migration 20260513000001 dejó la JS aún más
+// innecesaria). Verificación: 0/25 pacientes activos en prod sin care_team.
+// Si en el futuro hace falta agregar dentistas adicionales como tratantes,
+// crear un service nuevo específico — NO resucitar el helper en este flow.
 
 /**
  * Crea SOLO el row en `patients` (sin auth user) cuando el dentista no
@@ -168,10 +143,7 @@ export const createPatientWithoutAccount = async ({
 
     if (patientError) throw patientError;
 
-    // Crear row en patient_care_team
-    if (newPatient?.id) {
-      await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
-    }
+    // patient_care_team row la crea el trigger DB trg_sync_patient_care_team_insert.
 
     return {
       success: true,
@@ -246,10 +218,8 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
         .maybeSingle();
 
       if (existingPatient) {
-        // Ya existe como paciente de este terapeuta
-        // Fix B: asegurar care_team aunque el paciente ya estuviera (idempotente)
-        await ensurePrimaryCareTeam(existingPatient.id, therapistId, organizationId);
-
+        // Ya existe como paciente de este terapeuta — el trigger DB ya creó
+        // su patient_care_team en su momento. No requiere acción adicional.
         return {
           success: true,
           isNew: false,
@@ -277,8 +247,7 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
 
       if (patientError) throw patientError;
 
-      // Fix B: crear row en patient_care_team
-      await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
+      // patient_care_team row la crea el trigger DB trg_sync_patient_care_team_insert.
 
       return {
         success: true,
@@ -442,8 +411,7 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
       );
     }
 
-    // Fix B: crear row en patient_care_team
-    await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
+    // patient_care_team row la crea el trigger DB trg_sync_patient_care_team_insert.
 
     // =========================================
     // 6. ENVIAR EMAIL DE BIENVENIDA CON PASSWORD
