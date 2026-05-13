@@ -43,12 +43,49 @@ export const usePayments = (budgetId) => {
  * payload: { budget_id, patient_id, therapist_id, amount, payment_method, payment_date, concept?, notes? }
  */
 export const createPayment = async (payload) => {
+  // B5 fix: resolver organization_id si no vino en el payload.
+  // Las policies pp_admin_select, pp_assistant_select y pp_dentist_select (esta
+  // última cuando el usuario no es el therapist creador) requieren organization_id
+  // poblado para visibility. Sin esto, el team de la clínica queda ciego a los
+  // pagos creados por el dentista — el INSERT pasa por payments_insert_authorized
+  // (que no exige org_id) pero el SELECT posterior no.
+  // Cascada:
+  //   1) budget.clinic_id → clinic.organization_id (caso normal)
+  //   2) clinics.therapist_id = therapist_id → clinic.organization_id (legacy budgets pre-B4 sin clinic_id)
+  let resolvedOrgId = payload.organization_id || null;
+  if (!resolvedOrgId && payload.budget_id) {
+    try {
+      const { data } = await supabase
+        .from('treatment_budgets')
+        .select('clinics:clinic_id(organization_id)')
+        .eq('id', payload.budget_id)
+        .maybeSingle();
+      resolvedOrgId = data?.clinics?.organization_id || null;
+    } catch (e) {
+      logger.warn('[createPayment] no pude resolver organization_id desde budget:', e);
+    }
+  }
+  if (!resolvedOrgId && payload.therapist_id) {
+    try {
+      const { data } = await supabase
+        .from('clinics')
+        .select('organization_id')
+        .eq('therapist_id', payload.therapist_id)
+        .limit(1)
+        .maybeSingle();
+      resolvedOrgId = data?.organization_id || null;
+    } catch (e) {
+      logger.warn('[createPayment] no pude resolver organization_id desde therapist:', e);
+    }
+  }
+
   const { data, error } = await supabase
     .from('patient_payments')
     .insert({
       budget_id: payload.budget_id,
       patient_id: payload.patient_id,
       therapist_id: payload.therapist_id,
+      organization_id: resolvedOrgId,
       amount: Math.round(Number(payload.amount)),
       currency: 'CLP',
       payment_method: payload.payment_method,

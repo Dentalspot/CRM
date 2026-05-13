@@ -273,10 +273,9 @@ const AccountSecuritySettings = () => {
             <div className="flex gap-3">
               <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-amber-800">¿Primera vez ingresando?</p>
+                <p className="text-sm font-medium text-amber-800">Por tu seguridad, cambia tu contraseña.</p>
                 <p className="text-sm text-amber-700 mt-0.5">
-                  Tu contraseña temporal son los primeros 6 dígitos de tu RUT.
-                  <span className="block text-xs text-amber-600 mt-1">Ej: RUT 12.345.678-9 → contraseña: 123456</span>
+                  Si entraste con la contraseña temporal que tu dentista te envió por email, te recomendamos cambiarla ahora.
                 </p>
               </div>
             </div>

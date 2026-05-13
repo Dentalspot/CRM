@@ -50,13 +50,48 @@ export const useBudgets = (patientId) => {
 export const createBudget = async (payload) => {
   const { items = [], ...header } = payload;
 
+  // B4 fix: resolver clinic_id si no vino en el payload.
+  // El tenancy de treatment_budgets se ancla en clinic_id (ver RLS budgets_team_select
+  // en migration 20260425000007). Si queda NULL, el clinic_admin/asistente/colegas
+  // del therapist no ven el presupuesto (solo el dentista dueño vía budgets_therapist_all).
+  // Cascada de resolución:
+  //   1) team_members → clínica donde el therapist es miembro activo (caso invitado)
+  //   2) clinics.therapist_id → clínica propia del dentista (caso dentista solo)
+  let resolvedClinicId = header.clinic_id || null;
+  if (!resolvedClinicId && header.therapist_id) {
+    try {
+      const { data: tm } = await supabase
+        .from('team_members')
+        .select('clinic_id')
+        .eq('user_id', header.therapist_id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (tm?.clinic_id) {
+        resolvedClinicId = tm.clinic_id;
+      } else {
+        const { data: ownClinic } = await supabase
+          .from('clinics')
+          .select('id')
+          .eq('therapist_id', header.therapist_id)
+          .limit(1)
+          .maybeSingle();
+        if (ownClinic?.id) {
+          resolvedClinicId = ownClinic.id;
+        }
+      }
+    } catch (lookupErr) {
+      logger.warn('[createBudget] no pude resolver clinic_id automáticamente:', lookupErr);
+    }
+  }
+
   // 1) Insertar header
   const { data: budget, error: budgetError } = await supabase
     .from('treatment_budgets')
     .insert({
       patient_id: header.patient_id,
       therapist_id: header.therapist_id,
-      clinic_id: header.clinic_id || null,
+      clinic_id: resolvedClinicId,
       title: header.title,
       description: header.description || null,
       discount_percentage: header.discount_percentage || 0,
@@ -139,13 +174,16 @@ export const updateBudget = async (budgetId, payload) => {
   const { items = [], ...header } = payload;
 
   // 1) Update header
+  // B4 fix: NO actualizamos clinic_id en updates. El clinic_id es la ancla de tenancy
+  // (ver RLS budgets_team_select) y se setea en createBudget. Permitir que el form lo
+  // sobrescriba a NULL —porque el state arranca null y el form no expone setter UI—
+  // dejaba presupuestos huérfanos del team al editar.
   const { error: updErr } = await supabase
     .from('treatment_budgets')
     .update({
       title: header.title,
       description: header.description || null,
       discount_percentage: header.discount_percentage || 0,
-      clinic_id: header.clinic_id || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', budgetId);

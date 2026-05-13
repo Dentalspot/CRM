@@ -261,15 +261,44 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
       return;
     }
 
-    // Registrar aceptación legal (T&C + Política de Privacidad)
-    // El checkbox del form ya fuerza el consentimiento; aquí persistimos el registro auditable.
-    try {
-      await supabase.rpc('accept_legal_documents', {
-        p_slugs: ['terminos-condiciones', 'politica-privacidad'],
-      });
-    } catch (legalErr) {
-      // Fire-and-forget: no bloqueamos el registro si falla, pero loggeamos
-      logger.warn('[AuthForm] failed to persist legal acceptance:', legalErr?.message);
+    // B10 fix: registrar aceptación legal (T&C + Política de Privacidad) con
+    // retry y surfacing al usuario si falla. Antes era fire-and-forget — en
+    // prod descubrimos 4 de 11 profesionales sin acceptance registrado, lo que
+    // es gap de compliance Ley 21.719 (consent auditable).
+    //
+    // El checkbox del form ya recogió el consentimiento moralmente, pero sin
+    // este insert no hay evidencia auditable. Si tras 3 reintentos sigue fallando,
+    // mostramos toast warning para que el usuario lo reintente desde su perfil.
+    {
+      let legalOk = false;
+      let lastLegalErr = null;
+      for (let attempt = 0; attempt < 3 && !legalOk; attempt++) {
+        try {
+          const { error: legalRpcErr } = await supabase.rpc('accept_legal_documents', {
+            p_slugs: ['terminos-condiciones', 'politica-privacidad'],
+          });
+          if (!legalRpcErr) {
+            legalOk = true;
+            break;
+          }
+          lastLegalErr = legalRpcErr;
+        } catch (legalEx) {
+          lastLegalErr = legalEx;
+        }
+        // Backoff: 300ms, 800ms entre intentos (último intento sin espera)
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 300 * (attempt + 1) + 200 * attempt));
+        }
+      }
+      if (!legalOk) {
+        logger.warn('[AuthForm] failed to persist legal acceptance after 3 retries:', lastLegalErr?.message || lastLegalErr);
+        toast({
+          variant: 'destructive',
+          title: 'No pudimos registrar tu aceptación legal',
+          description:
+            'Tu cuenta se creó correctamente. Ingresa a Configuración → Cuenta para reintentar la aceptación de Términos y Política de Privacidad.',
+        });
+      }
     }
 
     // Handle valid invitation update

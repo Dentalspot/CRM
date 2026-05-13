@@ -301,14 +301,9 @@ export const createAndAssociatePatient = async (therapistId, patientData) => {
   return data;
 };
 
-export const generateTempPasswordFromPhone = (phone) => {
-  if (!phone || phone.length < 6) return '123456';
-  return phone.slice(-6);
-};
-
-export const validatePhoneForPassword = (phone) => {
-  return phone && phone.length >= 6;
-};
+// REMOVIDO 2026-05-12: generateTempPasswordFromPhone y validatePhoneForPassword
+// eran patrón inseguro (password = primeros 6 dígitos del teléfono). Reemplazado
+// por generateSecurePassword en patientAccountService + email send-patient-welcome.
 
 export const uploadPatientDocument = async (patientId, therapistId, file, description) => {
   // Heredar organization_id del paciente

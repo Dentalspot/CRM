@@ -31,6 +31,8 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle2 } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+import logger from '@/lib/utils/logger';
 import {
   createPatientAccount,
   createPatientWithoutAccount,
@@ -100,6 +102,34 @@ const ClinicPatientCreateModal = ({
     }
     setLoading(true);
     try {
+      // B9 fix: gate de plan también para el flow del clinic_admin.
+      // El RPC check_plan_limit cuenta pacientes activos del DENTISTA asignado
+      // (no del admin), por eso pasamos formData.therapist_id. Sin esto, un
+      // clinic_admin podía crear pacientes ilimitados saltándose la cuota del
+      // plan del dentista (spec 022 — Phase E enforcement).
+      try {
+        const { data: allowed, error: limitErr } = await supabase.rpc('check_plan_limit', {
+          p_therapist_id: formData.therapist_id,
+          p_resource_type: 'patient',
+        });
+        if (limitErr) {
+          // Fail-safe OPEN: si el RPC falla, dejamos crear (continuidad operacional).
+          logger.warn('[ClinicPatientCreateModal] check_plan_limit error, allowing:', limitErr);
+        } else if (allowed === false) {
+          toast({
+            variant: 'destructive',
+            title: 'Plan del dentista alcanzó el límite',
+            description:
+              'No se pueden crear más pacientes para este dentista en su plan actual. Pídele al dentista que upgradee su plan o asígnalo a otro.',
+          });
+          setLoading(false);
+          return;
+        }
+      } catch (gateErr) {
+        // Misma política fail-safe OPEN que useActivePlanLimits.
+        logger.warn('[ClinicPatientCreateModal] check_plan_limit exception, allowing:', gateErr);
+      }
+
       const hasEmail = !!formData.email?.trim();
       const hasRut = !!formData.rut?.trim();
 
@@ -247,8 +277,7 @@ const ClinicPatientCreateModal = ({
               placeholder="12.345.678-9"
             />
             <p className="text-xs text-muted-foreground">
-              Si ingresas email y RUT, se crea cuenta automáticamente con los
-              primeros 6 dígitos del RUT como contraseña.
+              Si ingresas email y RUT, generaremos una contraseña segura y la enviaremos al paciente por email.
             </p>
           </div>
 

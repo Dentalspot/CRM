@@ -44,7 +44,7 @@ El cupón te da el plan gratis por 3 meses. No te va a pedir tarjeta. Después d
 _[screenshot real de aplicar cupón]_
 
 ### Paso 3 — Crear tu primer paciente
-Desde el dashboard, **"Agregar Paciente"**. Llená nombre, email, RUT, y listo — el paciente recibe un mail para activar su cuenta (la contraseña temporal son los primeros 6 dígitos del RUT).
+Desde el dashboard, **"Agregar Paciente"**. Llená nombre, email, RUT, y listo — le generamos una contraseña segura y se la enviamos al paciente por email para que active su cuenta. Le pediremos que la cambie al primer ingreso.
 
 _[screenshot real del form paciente]_
 

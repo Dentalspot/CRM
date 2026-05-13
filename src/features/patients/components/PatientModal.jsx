@@ -162,14 +162,18 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
 
         let result;
         if (hasEmail && hasRut) {
-          // Flow completo: crea auth account con password basada en RUT
+          // Flow completo: crea auth account con password aleatoria que se envía por email
           result = await createPatientAccount({
             therapistId: user.id,
             organizationId: currentOrganizationId,
             email: formData.email,
             fullName: formData.full_name,
             rut: formData.rut,
-            phone: formData.phone
+            phone: formData.phone,
+            // B6 fix: propagar lugar de atención y tipo. Antes se recogían en el
+            // form pero el service los silenciaba en el destructure.
+            clinicId: formData.clinic_id || null,
+            attentionType: formData.attention_type || null,
           });
         } else {
           // Flow "sin cuenta": solo crea row en patients sin auth user.
@@ -182,6 +186,9 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
             phone: formData.phone,
             email: formData.email || null,
             rut: formData.rut || null,
+            // B6 fix: idem rama "sin cuenta".
+            clinicId: formData.clinic_id || null,
+            attentionType: formData.attention_type || null,
           });
         }
 
@@ -230,29 +237,51 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
               <p className="text-sm text-gray-600">{formData.email}</p>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-1">
-              <p className="text-sm font-medium text-blue-800">Contraseña temporal</p>
-              <p className="text-sm text-blue-700">
-                Primeros 6 dígitos del RUT del paciente
-              </p>
-            </div>
+            {/* Solo mostrar bloque de contraseña si efectivamente creamos cuenta */}
+            {creationResult.isNew && creationResult.welcomeEmailSent && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-1">
+                <p className="text-sm font-medium text-blue-800">Contraseña temporal enviada</p>
+                <p className="text-sm text-blue-700">
+                  Le enviamos al paciente un email con una contraseña temporal segura. Al primer
+                  ingreso le pediremos que la cambie.
+                </p>
+              </div>
+            )}
 
-            {creationResult.isNew ? (
+            {/* Fallback: si el welcome email falló, mostrar la pass al dentista para entrega manual */}
+            {creationResult.isNew && creationResult.welcomeEmailSent === false && creationResult.tempPasswordForManualDelivery && (
+              <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-amber-900">
+                  No pudimos enviar el email automáticamente
+                </p>
+                <p className="text-sm text-amber-800">
+                  Por favor entrégale al paciente esta contraseña temporal:
+                </p>
+                <code className="block bg-white border border-amber-300 rounded px-3 py-2 font-mono text-base text-amber-900 select-all">
+                  {creationResult.tempPasswordForManualDelivery}
+                </code>
+                <p className="text-xs text-amber-700">
+                  Le pediremos que la cambie al primer ingreso.
+                </p>
+              </div>
+            )}
+
+            {creationResult.isNew && creationResult.welcomeEmailSent ? (
               <div className="flex items-start gap-2 text-sm text-gray-600">
                 <UserPlus className="h-4 w-4 mt-0.5 text-green-600 flex-shrink-0" />
-                <span>Se envió un email de confirmación al paciente para activar su cuenta.</span>
+                <span>El paciente ya puede ingresar con su email y la contraseña que recibió por correo.</span>
               </div>
             ) : creationResult.alreadyLinked ? (
               <div className="flex items-start gap-2 text-sm text-gray-600">
                 <Link className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
                 <span>El paciente ya tenía cuenta registrada y fue vinculado a tu lista.</span>
               </div>
-            ) : (
+            ) : !creationResult.isNew ? (
               <div className="flex items-start gap-2 text-sm text-gray-600">
                 <Link className="h-4 w-4 mt-0.5 text-blue-600 flex-shrink-0" />
                 <span>El paciente fue vinculado correctamente a tu lista.</span>
               </div>
-            )}
+            ) : null}
           </div>
 
           <DialogFooter>
@@ -276,7 +305,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
           <DialogDescription>
             {isEditing
               ? 'Actualiza los datos del paciente. El email no se puede modificar.'
-              : 'Ingresa los datos del paciente. Se creará automáticamente una cuenta con una contraseña temporal basada en su RUT.'}
+              : 'Ingresa los datos del paciente. Si incluyes email y RUT, le crearemos una cuenta con una contraseña segura y se la enviaremos por email.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -348,7 +377,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
               {errors.rut && <p className="text-sm text-destructive">{errors.rut}</p>}
               {!isEditing && !errors.rut && (
                 <p className="text-xs text-muted-foreground">
-                  Los primeros 6 dígitos del RUT serán la contraseña temporal del paciente
+                  Generaremos una contraseña segura y se la enviaremos al paciente por email.
                 </p>
               )}
             </div>

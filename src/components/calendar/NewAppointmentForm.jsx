@@ -20,8 +20,6 @@ import logger from "@/lib/utils/logger";
 import {
   searchPatientsForAgenda,
   createAndAssociatePatient,
-  generateTempPasswordFromPhone,
-  validatePhoneForPassword
 } from '@/lib/patientApi';
 
 const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) => {
@@ -49,10 +47,8 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
 
   const debouncedSearch = useDebounce(patientSearchTerm, 300);
 
-  const isPhoneValid = validatePhoneForPassword(newPatient.phone);
-  const phoneHint = newPatient.phone && isPhoneValid
-    ? `Contraseña: ${generateTempPasswordFromPhone(newPatient.phone)}`
-    : null;
+  // Password ya no se deriva del teléfono — se genera aleatoria server-side
+  // y se envía al paciente vía email (send-patient-welcome edge function).
 
   // Load services
   useEffect(() => {
@@ -322,7 +318,6 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
                   value={newPatient.phone}
                   onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
                 />
-                {phoneHint && <p className="text-xs text-muted-foreground ml-1">{phoneHint}</p>}
               </div>
               <div className="flex gap-2 justify-end">
                 <Button size="sm" variant="ghost" onClick={() => setShowNewPatientForm(false)}>Cancelar</Button>

@@ -12,25 +12,25 @@ const supabaseIsolated = createClient(
 );
 
 /**
- * Genera contraseña temporal: primeros 6 dígitos del RUT
- * @param {string} rut - RUT con o sin formato
- * @returns {string|null}
+ * Genera contraseña aleatoria segura de 12 caracteres.
+ * Excluye caracteres ambiguos (0/O, 1/l/I) para evitar confusión al copiar/dictar.
+ *
+ * Reemplaza el patrón legacy de "primeros 6 dígitos del RUT" (P0 seguridad
+ * Ley 21.719 art. 2g — datos sensibles requieren protección reforzada).
+ * Se entrega al paciente vía email transaccional `send-patient-welcome`.
+ *
+ * @returns {string} password de 12 chars alfanuméricos sin ambiguos.
  */
-export const generateTempPassword = (rut) => {
-  if (!rut) return null;
-  const cleanRut = rut.replace(/[.\-\s]/g, '');
-  return cleanRut.substring(0, 6);
-};
-
-/**
- * Valida que el RUT tenga al menos 6 dígitos
- * @param {string} rut 
- * @returns {boolean}
- */
-export const validateRutForPassword = (rut) => {
-  if (!rut) return false;
-  const cleanRut = rut.replace(/[.\-\s]/g, '');
-  return cleanRut.length >= 6 && /^\d{6}/.test(cleanRut);
+export const generateSecurePassword = () => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const len = 12;
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  let out = '';
+  for (let i = 0; i < len; i++) {
+    out += alphabet[arr[i] % alphabet.length];
+  }
+  return out;
 };
 
 /**
@@ -129,6 +129,8 @@ export const createPatientWithoutAccount = async ({
   phone,
   email,
   rut,
+  clinicId = null,
+  attentionType = null,
 }) => {
   try {
     if (!therapistId) throw new Error('ID de terapeuta es requerido');
@@ -143,12 +145,18 @@ export const createPatientWithoutAccount = async ({
     // porque su RLS exige id = auth.uid(). Cuando el paciente acepte la
     // invitación y registre cuenta, profile_id se vincula y el frontend hace
     // fallback al profile real.
+    // B6 fix: persistir clinic_id y attention_type cuando el caller los proveyó.
+    // Antes el caller (PatientModal) los recogía en el form pero el service los
+    // silenciaba al destructure. attention_type tiene DB default 'consulta_privada'
+    // — solo lo overrideamos si vino explícito para no romper ese default.
     const { data: newPatient, error: patientError } = await supabase
       .from('patients')
       .insert({
         profile_id: null,
         therapist_id: therapistId,
         organization_id: organizationId || null,
+        clinic_id: clinicId || null,
+        ...(attentionType ? { attention_type: attentionType } : {}),
         status: 'active',
         full_name: fullName.trim(),
         phone: phone.trim(),
@@ -195,7 +203,7 @@ export const createPatientWithoutAccount = async ({
  * @param {string} params.phone - Teléfono (opcional)
  * @returns {Promise<Object>}
  */
-export const createPatientAccount = async ({ therapistId, organizationId, email, fullName, rut, phone }) => {
+export const createPatientAccount = async ({ therapistId, organizationId, email, fullName, rut, phone, clinicId = null, attentionType = null }) => {
   try {
     // =========================================
     // 1. VALIDACIONES
@@ -253,12 +261,15 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
       }
 
       // Existe usuario pero no es paciente de este terapeuta - vincularlo
+      // B6 fix: persistir clinic_id / attention_type cuando el caller los proveyó.
       const { data: newPatient, error: patientError } = await supabase
         .from('patients')
         .insert({
           profile_id: existingProfile.id,
           therapist_id: therapistId,
           organization_id: organizationId || null,
+          clinic_id: clinicId || null,
+          ...(attentionType ? { attention_type: attentionType } : {}),
           status: 'active'
         })
         .select()
@@ -282,13 +293,10 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
     // 3. CREAR NUEVO USUARIO (No existe)
     // =========================================
 
-    // Validar RUT para generar contraseña
-    if (!rut || !validateRutForPassword(rut)) {
-      throw new Error("RUT inválido. Debe tener al menos 6 dígitos para generar la contraseña temporal");
-    }
-
-    const tempPassword = generateTempPassword(rut);
-    const cleanRut = rut.replace(/[.\-\s]/g, '');
+    // Password aleatoria segura. Se entrega al paciente por email
+    // (send-patient-welcome) post signUp. NO mas password=RUT (P0 Ley 21.719).
+    const tempPassword = generateSecurePassword();
+    const cleanRut = rut ? rut.replace(/[.\-\s]/g, '') : null;
 
     // Use isolated client so therapist session is NOT affected
     const { data: authData, error: authError } = await supabaseIsolated.auth.signUp({
@@ -373,12 +381,15 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
     let patientError = null;
 
     for (let attempt = 0; attempt < 3; attempt++) {
+      // B6 fix: persistir clinic_id / attention_type cuando el caller los proveyó.
       const { data, error } = await supabase
         .from('patients')
         .insert({
           profile_id: patientUserId,
           therapist_id: therapistId,
           organization_id: organizationId || null,
+          clinic_id: clinicId || null,
+          ...(attentionType ? { attention_type: attentionType } : {}),
           status: 'active'
         })
         .select()
@@ -408,17 +419,70 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    if (patientError) {
-      logger.error('Error creating patient record after retries:', patientError);
+    // B8 fix: si el INSERT a patients falló después de los retries, NO podemos
+    // retornar success=true. Antes el bug era:
+    //   1) auth.users y profiles quedaban creados (huérfanos)
+    //   2) welcome email se enviaba igual → paciente recibía credenciales válidas
+    //      pero al loguear no aparecía vinculado al dentista
+    //   3) la función retornaba success=true con patientId=undefined (UI lie)
+    // Ahora: log con todo para forensics manual y throw → el caller ve error real.
+    // El auth.users huérfano queda en DB (requiere edge function admin con service
+    // role para borrarlo — pendiente como followup separado).
+    if (patientError || !newPatient?.id) {
+      logger.error('[createPatientAccount] patient INSERT failed after retries — orphan auth user created:', {
+        patientUserId,
+        therapistId,
+        organizationId,
+        email: email.toLowerCase().trim(),
+        patientError: patientError?.message || 'no patient row returned',
+      });
+      throw new Error(
+        patientError?.message ||
+        'No se pudo crear el registro del paciente. El usuario quedó parcialmente creado en autenticación — contacta a soporte para limpieza.'
+      );
     }
 
     // Fix B: crear row en patient_care_team
-    if (newPatient?.id) {
-      await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
+    await ensurePrimaryCareTeam(newPatient.id, therapistId, organizationId);
+
+    // =========================================
+    // 6. ENVIAR EMAIL DE BIENVENIDA CON PASSWORD
+    // =========================================
+    // Best-effort: si falla el email, NO abortamos el signup (la cuenta ya
+    // está creada). Logueamos warning y exponemos en el response para que
+    // el dentista pueda informar al paciente manualmente.
+    let welcomeEmailSent = true;
+    try {
+      // Resolver nombre del dentista para el email
+      let dentistName = '';
+      try {
+        const { data: dentistProfile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', therapistId)
+          .maybeSingle();
+        dentistName = dentistProfile?.full_name || '';
+      } catch (_) { /* non-fatal */ }
+
+      const { error: emailErr } = await supabase.functions.invoke('send-patient-welcome', {
+        body: {
+          email: email.toLowerCase().trim(),
+          full_name: fullName.trim(),
+          temp_password: tempPassword,
+          dentist_name: dentistName,
+        },
+      });
+      if (emailErr) {
+        logger.warn('[createPatientAccount] welcome email failed (non-blocking):', emailErr?.message || emailErr);
+        welcomeEmailSent = false;
+      }
+    } catch (err) {
+      logger.warn('[createPatientAccount] welcome email exception (non-blocking):', err?.message || err);
+      welcomeEmailSent = false;
     }
 
     // =========================================
-    // 6. RETORNO EXITOSO
+    // 7. RETORNO EXITOSO
     // =========================================
 
     return {
@@ -428,8 +492,14 @@ export const createPatientAccount = async ({ therapistId, organizationId, email,
       profileId: authData.user.id,
       email: email.toLowerCase().trim(),
       fullName: fullName.trim(),
-      tempPasswordHint: 'Primeros 6 dígitos del RUT',
-      message: `Cuenta creada para ${fullName}. Se enviará un email de confirmación.`
+      welcomeEmailSent,
+      // Fallback: si el email falla, el dentista NECESITA poder ver/copiar
+      // la password para dársela al paciente manualmente. NO se loguea ni
+      // se persiste en DB — solo se devuelve en este response.
+      tempPasswordForManualDelivery: welcomeEmailSent ? null : tempPassword,
+      message: welcomeEmailSent
+        ? `Cuenta creada para ${fullName}. Le enviamos un email con su contraseña temporal.`
+        : `Cuenta creada para ${fullName}, pero el email de bienvenida falló. Por favor entrégale manualmente: contraseña ${tempPassword}`,
     };
 
   } catch (error) {
@@ -487,6 +557,5 @@ export const getOrCreatePatientForAppointment = async ({
 export default {
   createPatientAccount,
   getOrCreatePatientForAppointment,
-  generateTempPassword,
-  validateRutForPassword
+  generateSecurePassword,
 };
