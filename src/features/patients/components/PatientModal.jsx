@@ -15,6 +15,7 @@ import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import useTherapistClinics from '@/hooks/useTherapistClinics';
 import useActivePlanLimits from '@/hooks/useActivePlanLimits';
+import { useDentistList } from '../hooks/useDentistList';
 import UpgradeModal from '@/components/modals/UpgradeModal';
 
 const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId = null }) => {
@@ -31,6 +32,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
     phone: '',
     rut: '',
     clinic_id: null,
+    therapist_id: '',
     attention_type: 'consulta_privada'
   });
 
@@ -39,6 +41,15 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
     select: 'id, name, type, organization_id',
     organizationId: currentOrganizationId,
     enabled: isOpen,
+  });
+
+  // Dentistas asignables como tratante (Gestión de Personal).
+  // Fuente de verdad: clinic_therapists activos en la org actual + fallback
+  // dentista solo si no aparece (data drift). Mismo hook usaremos en
+  // AssistantPatientDialog para consistencia.
+  const { dentists: assignableDentists, loading: loadingDentists } = useDentistList({
+    organizationId: currentOrganizationId,
+    currentUserId: user?.id,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -54,6 +65,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
           phone: patient.phone || '',
           rut: patient.rut || '',
           clinic_id: patient.clinic_id || null,
+          therapist_id: patient.therapist_id || '',
           attention_type: patient.attention_type || 'consulta_privada'
         });
       } else {
@@ -65,13 +77,29 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
           phone: '',
           rut: '',
           clinic_id: defaultClinicId || null,
+          therapist_id: user?.id || '', // arrancamos con el dentista logueado; se ajusta cuando carga la lista
           attention_type: 'consulta_privada'
         });
       }
       setErrors({});
       setCreationResult(null);
     }
-  }, [patient, isOpen, isEditing, defaultClinicId]);
+  }, [patient, isOpen, isEditing, defaultClinicId, user?.id]);
+
+  // Cuando carga la lista de dentistas asignables, asegurar que therapist_id sea
+  // uno válido (preferimos al dentista logueado si está, sino el primero).
+  // Esto cubre el caso "dentista solo" donde el dropdown muestra solo a él.
+  useEffect(() => {
+    if (isEditing || !isOpen || loadingDentists) return;
+    if (!assignableDentists || assignableDentists.length === 0) return;
+
+    const currentValid = assignableDentists.some((d) => d.id === formData.therapist_id);
+    if (currentValid) return;
+
+    const me = assignableDentists.find((d) => d.isMe);
+    const fallback = me ? me.id : assignableDentists[0].id;
+    setFormData((prev) => ({ ...prev, therapist_id: fallback }));
+  }, [assignableDentists, loadingDentists, isOpen, isEditing, formData.therapist_id]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -87,6 +115,11 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
     // Email solo se valida formato si fue ingresado (es opcional)
     if (formData.email?.trim() && !/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = 'Formato de email inválido';
+    }
+
+    // Dentista tratante obligatorio en creación (en edit no tocamos asignación acá)
+    if (!isEditing && !formData.therapist_id) {
+      newErrors.therapist_id = 'Selecciona un dentista tratante';
     }
 
     setErrors(newErrors);
@@ -160,11 +193,15 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
         const hasEmail = !!formData.email?.trim();
         const hasRut = !!formData.rut?.trim();
 
+        // Asignación obligatoria de dentista tratante: pasa el seleccionado en el
+        // dropdown (default = user.id si el dentista logueado es el tratante).
+        const assignedTherapistId = formData.therapist_id || user.id;
+
         let result;
         if (hasEmail && hasRut) {
           // Flow completo: crea auth account con password aleatoria que se envía por email
           result = await createPatientAccount({
-            therapistId: user.id,
+            therapistId: assignedTherapistId,
             organizationId: currentOrganizationId,
             email: formData.email,
             fullName: formData.full_name,
@@ -180,7 +217,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
           // El paciente puede invitarse después manualmente para que se registre.
           const { createPatientWithoutAccount } = await import('@/services/patientAccountService');
           result = await createPatientWithoutAccount({
-            therapistId: user.id,
+            therapistId: assignedTherapistId,
             organizationId: currentOrganizationId,
             fullName: formData.full_name,
             phone: formData.phone,
@@ -382,6 +419,52 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
               )}
             </div>
           </div>
+
+          {/* Dentista tratante — obligatorio. Lista viene de Gestión de Personal. */}
+          {!isEditing && (
+            <div className="space-y-2 pt-2">
+              <Label>
+                Dentista tratante <span className="text-destructive">*</span>
+              </Label>
+              {loadingDentists ? (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando dentistas...
+                </div>
+              ) : assignableDentists.length === 0 ? (
+                <p className="text-sm text-destructive italic">
+                  No hay dentistas activos en tu clínica. Agregá uno desde Gestión de Personal.
+                </p>
+              ) : (
+                <Select
+                  value={formData.therapist_id || ''}
+                  onValueChange={(v) => {
+                    setFormData((prev) => ({ ...prev, therapist_id: v }));
+                    if (errors.therapist_id) setErrors((prev) => ({ ...prev, therapist_id: null }));
+                  }}
+                  disabled={assignableDentists.length === 1}
+                >
+                  <SelectTrigger className={errors.therapist_id ? 'border-destructive' : ''}>
+                    <SelectValue placeholder="Selecciona el dentista tratante" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assignableDentists.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.full_name}{d.isMe ? ' (vos)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {errors.therapist_id && (
+                <p className="text-sm text-destructive">{errors.therapist_id}</p>
+              )}
+              {assignableDentists.length === 1 && !errors.therapist_id && (
+                <p className="text-xs text-muted-foreground">
+                  Asignado automáticamente. Para asignar a otro dentista, agregalo primero a Gestión de Personal.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Lugar de atención */}
           <div className="space-y-2 pt-2">

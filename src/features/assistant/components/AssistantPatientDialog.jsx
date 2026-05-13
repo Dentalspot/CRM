@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { createPatientAsAssistant, updatePatientAdmin } from '../api/assistantPatientApi';
+import { useDentistList } from '@/features/patients/hooks/useDentistList';
 
 const AssistantPatientDialog = ({ isOpen, onOpenChange, patient, organizationId, onSaved }) => {
   const { toast } = useToast();
@@ -20,8 +21,15 @@ const AssistantPatientDialog = ({ isOpen, onOpenChange, patient, organizationId,
     email: '',
     address: '',
     patient_type: 'privado',
+    therapist_id: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
+  });
+
+  // Dentistas asignables — fuente de verdad: Gestión de Personal.
+  const { dentists: assignableDentists, loading: loadingDentists } = useDentistList({
+    organizationId,
+    currentUserId: null, // el asistente no es dentista; no aplica isMe ni fallback
   });
 
   useEffect(() => {
@@ -33,16 +41,27 @@ const AssistantPatientDialog = ({ isOpen, onOpenChange, patient, organizationId,
         email: patient.email || '',
         address: patient.address || '',
         patient_type: patient.patient_type || 'privado',
+        therapist_id: patient.therapist_id || '',
         emergency_contact_name: patient.emergency_contact_name || '',
         emergency_contact_phone: patient.emergency_contact_phone || '',
       });
     } else {
       setForm({
         full_name: '', rut: '', phone: '', email: '', address: '',
-        patient_type: 'privado', emergency_contact_name: '', emergency_contact_phone: '',
+        patient_type: 'privado', therapist_id: '',
+        emergency_contact_name: '', emergency_contact_phone: '',
       });
     }
   }, [patient, isOpen]);
+
+  // Pre-selección automática si solo hay 1 dentista en la clínica
+  useEffect(() => {
+    if (isEditing || loadingDentists) return;
+    if (form.therapist_id) return;
+    if (assignableDentists.length === 1) {
+      setForm((f) => ({ ...f, therapist_id: assignableDentists[0].id }));
+    }
+  }, [assignableDentists, loadingDentists, isEditing, form.therapist_id]);
 
   const handleChange = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
@@ -51,6 +70,10 @@ const AssistantPatientDialog = ({ isOpen, onOpenChange, patient, organizationId,
   const handleSubmit = async () => {
     if (!form.full_name.trim()) {
       toast({ variant: 'destructive', title: 'Nombre obligatorio' });
+      return;
+    }
+    if (!isEditing && !form.therapist_id) {
+      toast({ variant: 'destructive', title: 'Dentista tratante obligatorio', description: 'Selecciona el dentista que atenderá al paciente.' });
       return;
     }
 
@@ -67,6 +90,7 @@ const AssistantPatientDialog = ({ isOpen, onOpenChange, patient, organizationId,
         }
         await createPatientAsAssistant({
           organizationId,
+          therapistId: form.therapist_id,
           fullName: form.full_name,
           rut: form.rut,
           phone: form.phone,
@@ -139,6 +163,44 @@ const AssistantPatientDialog = ({ isOpen, onOpenChange, patient, organizationId,
               <Label>Tel. emergencia</Label>
               <Input value={form.emergency_contact_phone} onChange={e => handleChange('emergency_contact_phone', e.target.value)} placeholder="+569..." />
             </div>
+
+            {/* Dentista tratante — obligatorio. Lista viene de Gestión de Personal. */}
+            {!isEditing && (
+              <div className="space-y-2 col-span-2">
+                <Label>Dentista tratante *</Label>
+                {loadingDentists ? (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando dentistas...
+                  </div>
+                ) : assignableDentists.length === 0 ? (
+                  <p className="text-sm text-destructive italic">
+                    No hay dentistas activos en la clínica. Pídele al admin que invite a uno desde Gestión de Personal.
+                  </p>
+                ) : (
+                  <Select
+                    value={form.therapist_id || ''}
+                    onValueChange={(v) => handleChange('therapist_id', v)}
+                    disabled={assignableDentists.length === 1}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el dentista tratante" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assignableDentists.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {assignableDentists.length === 1 && (
+                  <p className="text-xs text-muted-foreground">
+                    Asignado automáticamente (único dentista activo en la clínica).
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

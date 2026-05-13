@@ -10,12 +10,17 @@ const ALLOWED_UPDATE_FIELDS = [
 ];
 
 /**
- * Crea un paciente administrativamente (sin therapist_id, sin care_team, sin clinical_record).
- * Solo datos de contacto + organization_id.
+ * Crea un paciente administrativamente. A partir del MVP "dentista tratante
+ * obligatorio" (2026-05-13) ahora SÍ asigna `therapist_id` — el asistente
+ * debe elegir explícitamente el dentista tratante en el dropdown. El trigger
+ * `trg_sync_patient_care_team_insert` se encarga del care_team automáticamente.
  */
-export const createPatientAsAssistant = async ({ organizationId, fullName, rut, phone, email, patientType }) => {
+export const createPatientAsAssistant = async ({ organizationId, therapistId, fullName, rut, phone, email, patientType }) => {
   if (!organizationId) {
     throw new Error('Se requiere organización para crear un paciente.');
+  }
+  if (!therapistId) {
+    throw new Error('Debes asignar un dentista tratante al paciente.');
   }
   if (!fullName?.trim()) {
     throw new Error('El nombre del paciente es obligatorio.');
@@ -39,6 +44,7 @@ export const createPatientAsAssistant = async ({ organizationId, fullName, rut, 
     .from('patients')
     .insert({
       organization_id: organizationId,
+      therapist_id: therapistId,
       full_name: fullName.trim(),
       rut: rut?.trim() || null,
       phone: phone?.trim() || null,

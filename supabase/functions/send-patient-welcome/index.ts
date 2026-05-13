@@ -136,19 +136,38 @@ serve(async (req) => {
     const ok = resendRes.ok
 
     // Auditoria best-effort en email_notifications. No bloquea la response.
-    await supabase.from('email_notifications').insert({
-      notification_type: 'system_update',
-      subject: tpl.subject,
-      body_html: tpl.html,
-      body_text: tpl.text,
-      recipient_email: email,
-      status: ok ? 'sent' : 'failed',
-      sent_at: ok ? new Date().toISOString() : null,
-      failed_at: ok ? null : new Date().toISOString(),
-      error_message: ok ? null : JSON.stringify(resendBody),
-      resend_id: resendBody?.id ?? null,
-      metadata: { event: 'patient_welcome', dentist_name },
-    }).catch(() => { /* ignore audit failure */ })
+    // Fix 2026-05-13: el query builder v2 no es una Promise nativa — usar try/catch
+    // en vez de .catch() (que no existe como método del builder y rompía con
+    // "supabase.from(...).insert(...).catch is not a function" → 500).
+    // Nota: la tabla exige user_id NOT NULL, así que primero buscamos el profile_id
+    // del paciente por email. Si no existe (signUp todavía no propagó el profile
+    // via trigger), saltamos el log — la entrega del email ya ocurrió igual.
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', String(email).toLowerCase().trim())
+        .maybeSingle()
+
+      if (profile?.id) {
+        await supabase.from('email_notifications').insert({
+          user_id: profile.id,
+          notification_type: 'system_update',
+          subject: tpl.subject,
+          body_html: tpl.html,
+          body_text: tpl.text,
+          recipient_email: email,
+          status: ok ? 'sent' : 'failed',
+          sent_at: ok ? new Date().toISOString() : null,
+          failed_at: ok ? null : new Date().toISOString(),
+          error_message: ok ? null : JSON.stringify(resendBody),
+          resend_id: resendBody?.id ?? null,
+          metadata: { event: 'patient_welcome', dentist_name },
+        })
+      }
+    } catch (_auditErr) {
+      // Ignore audit failure — el email a Resend ya se envió.
+    }
 
     if (!ok) return errorResponse(`Resend failed: ${JSON.stringify(resendBody)}`, 502, req)
     return jsonResponse({ ok: true, message_id: resendBody?.id }, 200, req)
