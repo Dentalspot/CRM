@@ -11,6 +11,18 @@ const ORG_ROLE_TO_FRONTEND = {
   assistant: 'assistant',
 };
 
+// B11a: roles primarios que requieren onboarding de clínica completo
+// (existir como member de al menos una org). Los demás (patient, admin,
+// superadmin, lab) no se bloquean.
+const ROLES_REQUIRING_CLINIC_ONBOARDING = ['therapist', 'clinic'];
+
+// Rutas donde NO aplicamos el gate (el wizard mismo, settings, etc.)
+const ONBOARDING_EXEMPT_PATHS = [
+  '/dashboard/profile',
+  '/dashboard/membership',
+  '/dashboard/membresia',
+];
+
 const RoleGuard = ({ children, allowedRoles = [] }) => {
   const { user, profile, loading } = useAuth();
   const { effectiveRole, userOrgRoles = [], loading: orgLoading } = useCurrentOrganization();
@@ -36,6 +48,23 @@ const RoleGuard = ({ children, allowedRoles = [] }) => {
   const profileRole = profile?.role || user.user_metadata?.role;
   const orgEffectiveRole = effectiveRole;
   const allOrgRolesMapped = userOrgRoles.map(r => ORG_ROLE_TO_FRONTEND[r] || r);
+
+  // B11a gate: usuarios pro sin organization_members deben completar wizard
+  // "Mi Clínica" antes de poder usar el resto de la app. Sin esto, las RLS
+  // de patients/appointments/etc. bloquean todo y la app queda "rota".
+  const needsClinicOnboarding =
+    profileRole &&
+    ROLES_REQUIRING_CLINIC_ONBOARDING.includes(profileRole) &&
+    userOrgRoles.length === 0;
+
+  const isExemptPath = ONBOARDING_EXEMPT_PATHS.some((p) => location.pathname.startsWith(p));
+
+  if (needsClinicOnboarding && !isExemptPath) {
+    // Therapist va a "Mis Lugares de Atención" (crea clinic propia → trigger crea org_members).
+    // Clinic admin va a "Datos de la Clínica" (mismo destino lógico, otro tab).
+    const wizardTab = profileRole === 'clinic' ? 'clinic-info' : 'my-clinics';
+    return <Navigate to={`/dashboard/profile?tab=${wizardTab}&onboarding=required`} replace />;
+  }
 
   if (allowedRoles.length === 0) return children;
 

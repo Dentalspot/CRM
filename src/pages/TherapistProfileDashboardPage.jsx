@@ -20,6 +20,7 @@ import {
   Gift
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { Card, CardContent } from '@/components/ui/card';
 import ProfileAvatar from '@/components/shared/ProfileAvatar';
 import { Badge } from '@/components/ui/badge';
@@ -72,6 +73,7 @@ const Chunk = ({ children }) => (
 
 export default function TherapistProfileDashboardPage() {
   const { user, profile, loading, isTherapist, isClinic } = useAuth();
+  const { userOrgRoles = [] } = useCurrentOrganization();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   // Default active tab logic
@@ -232,8 +234,35 @@ export default function TherapistProfileDashboardPage() {
       ? [...baseTabs, ...professionalTabs, ...accountTabs]
       : [...baseTabs, ...accountTabs];
 
+  // B11a banner: si llegamos acá redirigidos por RoleGuard (pro sin clínica),
+  // mostrar mensaje destacado. Auto-desaparece cuando el user completa el
+  // wizard (insert en clinics dispara trigger que crea org_members, lo cual
+  // hace userOrgRoles.length > 0 sin necesidad de refresh).
+  const showOnboardingBanner =
+    searchParams.get('onboarding') === 'required' && userOrgRoles.length === 0;
+
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {showOnboardingBanner && (
+        <div className="mb-6 rounded-xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <Building2 className="h-6 w-6 text-amber-700" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-amber-900 mb-1">
+                Completá los datos de tu clínica para usar DentalSpot
+              </h3>
+              <p className="text-sm text-amber-800 leading-relaxed">
+                {isClinic
+                  ? 'Antes de poder gestionar pacientes y agenda, registrá los datos de tu clínica abajo. Es un paso único — después tu equipo puede empezar a operar.'
+                  : 'Para crear pacientes, agendar citas y registrar pagos necesitamos saber dónde atendés. Agregá tu primer lugar de atención abajo (puede ser tu consulta privada o una clínica donde trabajás).'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Profile Header */}
       <Card className="mb-8 overflow-hidden bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-none shadow-md">
         <CardContent className="p-6 sm:p-8">
