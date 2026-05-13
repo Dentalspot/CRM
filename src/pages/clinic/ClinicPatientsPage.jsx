@@ -68,6 +68,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import logger from '@/lib/utils/logger';
 import ClinicPatientCreateModal from './ClinicPatientCreateModal';
+import { useDentistList } from '@/features/patients/hooks/useDentistList';
 
 const ClinicPatientsPage = () => {
   const { user } = useAuth();
@@ -75,13 +76,20 @@ const ClinicPatientsPage = () => {
 
   const [clinic, setClinic] = useState(null);
   const [patients, setPatients] = useState([]);
-  const [dentists, setDentists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDentist, setSelectedDentist] = useState('all');
   const [createOpen, setCreateOpen] = useState(false);
+
+  // Hook compartido — misma fuente de verdad que PatientModal y
+  // AssistantPatientDialog. Lista dentistas activos de la org via
+  // clinic_therapists + fallback dentista solo si data drift.
+  const { dentists } = useDentistList({
+    organizationId: clinic?.organization_id,
+    currentUserId: user?.id,
+  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,20 +110,10 @@ const ClinicPatientsPage = () => {
       }
       setClinic(myClinic);
 
-      // 2. Dentistas activos (para filter + mostrar asignación)
-      const { data: ctData, error: ctErr } = await supabase
-        .from('clinic_therapists')
-        .select(`
-          therapist_id,
-          profiles:therapist_id (id, full_name, email)
-        `)
-        .eq('clinic_id', myClinic.id)
-        .eq('is_active', true);
+      // Dentistas activos los carga el hook useDentistList — fuente única
+      // compartida con PatientModal/AssistantPatientDialog/ClinicPatientCreateModal.
 
-      if (ctErr) throw ctErr;
-      setDentists((ctData || []).map(ct => ct.profiles).filter(Boolean));
-
-      // 3. Pacientes de la org (RLS pat_admin_select enforces)
+      // Pacientes de la org (RLS pat_admin_select enforces)
       // Hacemos 3 queries y mergeamos en JS — evita problemas de FK ambigua en embeds
       const { data: patRows, error: patErr } = await supabase
         .from('patients')
