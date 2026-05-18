@@ -66,7 +66,12 @@ const MyClinicsSection = () => {
         .insert({
           therapist_id: user.id,
           name: 'Mi consulta personal',
-          type: 'consulta_personal',
+          // type debe ser uno de los valores del CHECK clinics_type_check
+          // ('consulta_privada','colegio','clinica','hospital','otro').
+          // Una consulta personal ES conceptualmente una consulta privada;
+          // lo que la distingue (minimalista, sin datos empresa, no pública)
+          // vive en is_public=false + ausencia de rut_empresa/address.
+          type: 'consulta_privada',
           modality: 'presencial',
           is_public: false, // no aparece en el directorio público
         })
