@@ -9,7 +9,33 @@ import { Loader2, Search, AlertTriangle, Building2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-const ClinicSearchStep = ({ onCreateNew, onJoinExisting, initialRut = '', initialName = '' }) => {
+// Bloque reutilizable: atajo para dentistas sin lugar fijo (freelance,
+// honorarios, arriendan box). Crea una "consulta personal" sin fricción.
+const PersonalPracticeOption = ({ onCreatePersonal }) => {
+  if (!onCreatePersonal) return null;
+  return (
+    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+      <p className="text-sm font-medium text-gray-800">
+        ¿No tenés un lugar de trabajo fijo?
+      </p>
+      <p className="text-xs text-gray-500 mt-0.5 mb-3">
+        Si trabajás de forma independiente, a honorarios o arrendás un box,
+        creá tu consulta personal. Podés gestionar pacientes y agenda igual,
+        sin datos de empresa.
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full border-gray-300"
+        onClick={onCreatePersonal}
+      >
+        Trabajo de forma independiente → crear consulta personal
+      </Button>
+    </div>
+  );
+};
+
+const ClinicSearchStep = ({ onCreateNew, onCreatePersonal, onJoinExisting, initialRut = '', initialName = '' }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [rut, setRut] = useState(initialRut);
@@ -132,6 +158,7 @@ const ClinicSearchStep = ({ onCreateNew, onJoinExisting, initialRut = '', initia
             Buscar de nuevo
           </Button>
         </div>
+        <PersonalPracticeOption onCreatePersonal={onCreatePersonal} />
       </div>
     );
   }
@@ -185,6 +212,10 @@ const ClinicSearchStep = ({ onCreateNew, onJoinExisting, initialRut = '', initia
           <Button variant="outline" onClick={() => onCreateNew({ rutEmpresa: rut, name })}>
             Crear directamente
           </Button>
+        </div>
+
+        <div className="pt-2 border-t border-gray-100">
+          <PersonalPracticeOption onCreatePersonal={onCreatePersonal} />
         </div>
       </CardContent>
     </Card>

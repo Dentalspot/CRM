@@ -53,6 +53,47 @@ const MyClinicsSection = () => {
     setShowSearchStep(true);
   };
 
+  // Feature: dentista freelance/honorarios sin lugar fijo. Crea una "consulta
+  // personal" minimalista (solo nombre) directamente — sin pasar por el form
+  // completo de clínica. El trigger DB auto_create_organization_for_clinic
+  // (B11) se encarga de crear la organization + roles clinic_admin/dentist,
+  // así las RLS de pacientes/agenda/pagos funcionan igual que con una clínica.
+  const handleCreatePersonalPractice = async () => {
+    setIsSaving(true);
+    try {
+      const { data: newClinic, error } = await supabase
+        .from('clinics')
+        .insert({
+          therapist_id: user.id,
+          name: 'Mi consulta personal',
+          type: 'consulta_personal',
+          modality: 'presencial',
+          is_public: false, // no aparece en el directorio público
+        })
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+
+      // El trigger B11 ya creó org + clinic_admin + dentist. Refrescamos.
+      toast({
+        title: '✅ Consulta personal creada',
+        description: 'Ya podés gestionar pacientes y agenda. Podés editar el nombre y agregar más datos cuando quieras.',
+      });
+      setShowSearchStep(false);
+      await fetchClinics();
+    } catch (err) {
+      logger.error('[MyClinicsSection] error creando consulta personal:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'No se pudo crear la consulta personal.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleCreateNewFromSearch = (prefill = {}) => {
     const newClinic = {
       id: `new-${Date.now()}`,
@@ -327,6 +368,7 @@ const MyClinicsSection = () => {
           {showSearchStep && (
             <ClinicSearchStep
               onCreateNew={handleCreateNewFromSearch}
+              onCreatePersonal={handleCreatePersonalPractice}
               onJoinExisting={(clinicId) => {
                 toast({ title: '✅ Te has unido a la clínica' });
                 setShowSearchStep(false);
