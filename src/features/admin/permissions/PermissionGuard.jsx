@@ -49,8 +49,12 @@ const PermissionGuard = ({ children, requiredPermissions, module, action, requir
   if (isSuperAdmin) {
     hasAccess = true;
   } else if (module && action) {
-    const canKey = action === 'write' ? 'can_write' : 'can_read';
-    hasAccess = permissions?.[module]?.[canKey] === true;
+    // Usar hasPermission del contexto en vez de acceso directo a
+    // permissions[module]: el helper respeta el wildcard module='all'
+    // (un admin con 'all' debe pasar cualquier check de módulo). El acceso
+    // directo previo ignoraba 'all' y daba "Acceso Denegado" a admins
+    // legítimos en todas las rutas gated por module+action.
+    hasAccess = hasPermission(module, action === 'write' ? 'write' : 'read');
   } else if (typeof requiredPermissions === 'string') {
     hasAccess = hasPermission(requiredPermissions);
   } else if (Array.isArray(requiredPermissions)) {
