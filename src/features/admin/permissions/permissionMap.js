@@ -140,6 +140,13 @@ export const permissionMap = {
     routes: ['/admin/billing/subscriptions', '/admin/billing/payments'],
     group: 'billing',
   },
+  signup_approvals: {
+    label: 'Aprobaciones',
+    description: 'Aprobar o rechazar registros de dentistas y clínicas nuevos.',
+    icon: Shield,
+    routes: ['/admin/signup-approvals'],
+    group: 'billing',
+  },
   coupons: {
     label: 'Cupones',
     description: 'Cupones de descuento para membresías.',
