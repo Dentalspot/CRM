@@ -42,7 +42,7 @@ import {
   AlertCircle,
   Mail,
   Phone,
-  IdCard,
+  CreditCard,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -241,7 +241,7 @@ const SignupApprovalsPage = () => {
                       <TableCell>
                         {u.rut ? (
                           <div className="text-sm text-gray-700 flex items-center gap-1.5">
-                            <IdCard className="h-3.5 w-3.5" /> {u.rut}
+                            <CreditCard className="h-3.5 w-3.5" /> {u.rut}
                           </div>
                         ) : (
                           <span className="text-xs text-amber-700">Sin RUT</span>
