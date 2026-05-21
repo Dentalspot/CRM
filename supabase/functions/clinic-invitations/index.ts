@@ -287,7 +287,7 @@ Deno.serve(async (req) => {
           .single();
 
         if (!clinicForOrg?.organization_id) {
-          throw new Error("Clínica sin organización asociada (contactá soporte).");
+          throw new Error("Clínica sin organización asociada (contacta a soporte).");
         }
 
         const { data: existingMembership } = await supabase
@@ -329,7 +329,7 @@ Deno.serve(async (req) => {
         const { data: clinic } = await supabase.from("clinics").select("organization_id, name").eq("id", invite.clinic_id).single();
 
         if (!clinic?.organization_id) {
-          throw new Error("Clínica sin organización asociada (contactá soporte). La migración foundational no se aplicó correctamente.");
+          throw new Error("Clínica sin organización asociada (contacta a soporte). La migración foundational no se aplicó correctamente.");
         }
 
         // Check existing membership (para reactivación o idempotencia)

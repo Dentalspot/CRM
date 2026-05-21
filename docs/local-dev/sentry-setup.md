@@ -25,7 +25,7 @@ Sentry ya está integrado en código (`src/lib/sentry.js` + `main.jsx` + `ErrorB
 2. Crear nueva variable:
    - Name: `VITE_SENTRY_DSN`
    - Value: el DSN copiado del paso 1
-   - Environments: marcar **Production** (y Preview si querés staging tracking)
+   - Environments: marcar **Production** (y Preview si quieres staging tracking)
 3. Opcional pero recomendado:
    - Name: `VITE_SENTRY_ENVIRONMENT`  
      Value: `production`
@@ -55,7 +55,7 @@ Si NO aparece:
 
 ## Setup local (dev) — opcional
 
-Si querés que Sentry capture errores en `npm run dev` también:
+Si quieres que Sentry capture errores en `npm run dev` también:
 
 1. Crear `.env.local` en la raíz del repo (gitignored, NO commitear):
    ```
@@ -64,7 +64,7 @@ Si querés que Sentry capture errores en `npm run dev` también:
    ```
 2. Reiniciar `npm run dev`
 
-**Recomendación**: dejarlo DESHABILITADO en dev local para no llenar la cuota con bugs tuyos mientras desarrollás. Solo activarlo en producción + staging.
+**Recomendación**: dejarlo DESHABILITADO en dev local para no llenar la cuota con bugs tuyos mientras desarrollas. Solo activarlo en producción + staging.
 
 ---
 
@@ -74,7 +74,7 @@ Automático:
 - Errores que llegan a `ErrorBoundary` (render crashes)
 - Unhandled promise rejections (ej. un `await supabase...` que falla silencioso)
 
-Manual (opcional, si querés reportar algo específico):
+Manual (opcional, si quieres reportar algo específico):
 ```js
 import { captureException } from '@/lib/sentry';
 
@@ -97,7 +97,7 @@ Ruido ignorado:
 - `Failed to fetch` / `NetworkError` (transient network, no accionable)
 - `Non-Error promise rejection captured`
 
-Si ves algún patrón de noise nuevo en producción, agregalo a `ignoreErrors` en `src/lib/sentry.js`.
+Si ves algún patrón de noise nuevo en producción, agrégalo a `ignoreErrors` en `src/lib/sentry.js`.
 
 ---
 
@@ -117,7 +117,7 @@ Con free tier 5K errors/mes, si hay un error repetido (ej. un componente renderi
 Sentry Deno SDK existe pero es más engorroso. Para MVP:
 - Los edge functions críticos (`create-mp-checkout`, `mercadopago-webhook`) ya logean a `console.error`
 - Esos logs se ven en Supabase Dashboard → Edge Functions → Logs
-- Si querés integrar Sentry en edge functions, es spec separado (~2-3h)
+- Si quieres integrar Sentry en edge functions, es spec separado (~2-3h)
 
 ---
 

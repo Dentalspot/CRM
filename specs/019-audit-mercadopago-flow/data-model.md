@@ -484,7 +484,7 @@ F-001, F-002, F-003, F-005, F-014 → **NO templates individuales**. Agrupados e
 - Estimated size: **M** (1 migration + 1 edge function edit + 0 frontend)
 - Dependencies: ninguna (standalone)
 - Rollback plan: `DROP TABLE webhook_events_log` + revert edge function edit. Zero impact en flow existente.
-- Priority rationale: **prerequisite para debugging del meta-spec**. Sin audit trail, fixing F-002/F-003 es "fix blind" — no podés verificar post-fix que no haya duplicates/silent-errors residuales.
+- Priority rationale: **prerequisite para debugging del meta-spec**. Sin audit trail, fixing F-002/F-003 es "fix blind" — no puedes verificar post-fix que no haya duplicates/silent-errors residuales.
 
 **Copy-paste para `/speckit-specify`**:
 

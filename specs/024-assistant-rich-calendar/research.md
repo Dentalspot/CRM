@@ -264,14 +264,14 @@ Cuando está "Bloquear hora" activo:
 
 ## R-12: ¿Cómo manejar el caso "asistente sin org activa"?
 
-**Decision**: Pantalla de guard en `AssistantCalendarPage` — si `useCurrentOrganization()` devuelve null o `currentOrganizationId` es falsy, renderizar pantalla tipo "No tenés clínica asignada" con CTA "Cerrar sesión" (aligned con followup bug #3 del smoke test spec 023).
+**Decision**: Pantalla de guard en `AssistantCalendarPage` — si `useCurrentOrganization()` devuelve null o `currentOrganizationId` es falsy, renderizar pantalla tipo "No tienes clínica asignada" con CTA "Cerrar sesión" (aligned con followup bug #3 del smoke test spec 023).
 
 **Rationale**:
 - Ya sucede hoy en `AssistantAgendaPage` con mensaje "Selecciona una organización" (mal copy, identificado como followup en spec 023).
 - Esta spec no arregla el followup del copy — mantenemos el patrón existente por ahora y el fix del copy es spec aparte.
 - Alternativa: forzar logout. Decisión: **no forzar logout** porque el user podría haber sido legitimamente revocado y necesita ver el mensaje para entender.
 
-**Gate**: fallback copy actualizado a "Esta cuenta no tiene acceso activo a ninguna clínica. Si esto es un error, contactá al administrador." — mínimo cambio que mejora UX sin escopearse en otro spec.
+**Gate**: fallback copy actualizado a "Esta cuenta no tiene acceso activo a ninguna clínica. Si esto es un error, contacta al administrador." — mínimo cambio que mejora UX sin escopearse en otro spec.
 
 ---
 

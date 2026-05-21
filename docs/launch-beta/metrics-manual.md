@@ -2,7 +2,7 @@
 
 Queries SQL para copy-paste en Supabase SQL Editor. **Cadencia sugerida**: diario los primeros 7 días, luego semanal.
 
-**Regla de oro**: si una query tarda >5 segundos o devuelve un error raro, dejá de invitar dentistas hasta entender por qué.
+**Regla de oro**: si una query tarda >5 segundos o devuelve un error raro, deja de invitar dentistas hasta entender por qué.
 
 ---
 
@@ -197,7 +197,7 @@ WHERE ts.applied_coupon_code = 'BETA-3M-2026'
 ORDER BY time_to_milestone ASC;
 ```
 
-**Acción**: a los listados, mandar email/WhatsApp "tu período beta termina el [fecha]. Si querés continuar, suscribite al plan real [link]". 7 días de anticipación mínimo.
+**Acción**: a los listados, mandar email/WhatsApp "tu período beta termina el [fecha]. Si quieres continuar, suscríbete al plan real [link]". 7 días de anticipación mínimo.
 
 Si ninguno responde "quiero seguir", al mes 3 ejecutar `docs/launch-beta/ops-commands.sql §1`.
 
@@ -306,7 +306,7 @@ WHERE code = 'BETA-3M-2026';
 
 ## Criterios go/no-go semanal
 
-Cada lunes, revisá los números arriba y preguntá:
+Cada lunes, revisa los números arriba y pregunta:
 
 | Pregunta | Verde | Amarillo | Rojo |
 |---|---|---|---|

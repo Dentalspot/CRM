@@ -22,7 +22,7 @@
 **Impacto beta**:
 - Dentistas beta reciben Individual forever (no 3 meses)
 - Pérdida de revenue potencial si el dentista quería continuar pagando
-- Funcionalmente "ok para el beta" si aceptás el trade-off: el beta es gratis y no hay costo de cómputo
+- Funcionalmente "ok para el beta" si aceptas el trade-off: el beta es gratis y no hay costo de cómputo
 
 ---
 
@@ -143,7 +143,7 @@ No chequea `current_period_end > NOW()`. Cualquier sub active con período venci
   ```
 - Mandar email/WhatsApp a cada dentista avisando "tu período terminó, suscribite al precio real o seguiremos la conversación"
 
-**Trade-off**: si 1 dentista desaparece y vos te olvidás de correr el UPDATE, tiene Individual forever. Low-impact para N=10.
+**Trade-off**: si 1 dentista desaparece y tú te olvidas de correr el UPDATE, tiene Individual forever. Low-impact para N=10.
 
 ### Opción B — Fix completo pre-launch (2-4h)
 Migración que:
@@ -174,11 +174,11 @@ Para el beta lean con 5-10 dentistas trusted, **se eligió la Opción A**.
 
 **Contrato operacional**:
 - Lanzamos beta con el bug conocido
-- Al mes 3 (~2026-07-22 para los primeros signups), vos corrés manualmente el UPDATE documentado en `docs/launch-beta/ops-commands.sql §1`
+- Al mes 3 (~2026-07-22 para los primeros signups), tú corres manualmente el UPDATE documentado en `docs/launch-beta/ops-commands.sql §1`
 - `metrics-manual.md` incluye query weekly para detectar subs próximas a expirar (early warning)
 - Opción B (fix definitivo) se difiere a spec separado post-launch cuando el beta gradúe a >10 users
 
-**Limitación aceptada explícita**: si un dentista beta desaparece y vos te olvidás del UPDATE, queda con Individual forever. Riesgo bajo para N≤10 trusted.
+**Limitación aceptada explícita**: si un dentista beta desaparece y tú te olvidas del UPDATE, queda con Individual forever. Riesgo bajo para N≤10 trusted.
 
 **Trigger para escalar a Opción B**: cuando decidas abrir signups sin cupón BETA o cuando el beta pase de 10 dentistas activos. En ese momento, el bug pasa a ser P0 no ignorable.
 

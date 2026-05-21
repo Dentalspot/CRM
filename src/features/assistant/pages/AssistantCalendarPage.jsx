@@ -40,7 +40,7 @@ const AssistantCalendarPage = () => {
           <h2 className="text-xl font-semibold mb-2">Sin acceso a clínica</h2>
           <p className="text-muted-foreground max-w-md mb-6">
             Esta cuenta no tiene acceso activo a ninguna clínica.
-            Si esto es un error, contactá al administrador de la clínica.
+            Si esto es un error, contacta al administrador de la clínica.
           </p>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />

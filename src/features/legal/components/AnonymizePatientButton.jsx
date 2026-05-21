@@ -133,7 +133,7 @@ const AnonymizePatientButton = ({
           </div>
           <div>
             <Label htmlFor="anonymize-confirm" className="text-xs">
-              Para confirmar, escribí <code className="bg-muted px-1 rounded text-[10px]">{requiredConfirm}</code>
+              Para confirmar, escribe <code className="bg-muted px-1 rounded text-[10px]">{requiredConfirm}</code>
             </Label>
             <input
               id="anonymize-confirm"

@@ -64,7 +64,7 @@ Este documento tiene dos finalidades simultáneas:
     durante el período de transición).
 
 Te pedimos que lo leas con atención antes de firmar. Si algo no queda claro,
-tenés derecho a preguntar a tu dentista o a solicitar tiempo para consultar
+tienes derecho a preguntar a tu dentista o a solicitar tiempo para consultar
 con otra persona de confianza.
 
 
@@ -72,7 +72,7 @@ con otra persona de confianza.
 SECCIÓN A — CONSENTIMIENTO PARA EL TRATAMIENTO ODONTOLÓGICO (Ley 20.584)
 ========================================================================
 
-Al firmar este documento confirmás que:
+Al firmar este documento confirmas que:
 
 1. Fuiste informado/a por el profesional sobre tu diagnóstico, el tratamiento
    propuesto, los procedimientos que involucra, su duración estimada, los
@@ -80,10 +80,10 @@ Al firmar este documento confirmás que:
    pero relevantes) y las alternativas terapéuticas disponibles, incluyendo
    la opción de no tratarse.
 
-2. Tuviste la oportunidad de hacer todas las preguntas que considerás
+2. Tuviste la oportunidad de hacer todas las preguntas que consideras
    necesarias, y que estas fueron respondidas en lenguaje comprensible.
 
-3. Entendés que tenés derecho a:
+3. Entiendes que tienes derecho a:
    - Rehusar el tratamiento en cualquier momento.
    - Solicitar una segunda opinión profesional antes de continuar.
    - Revocar este consentimiento cuando quieras (ver Sección H).
@@ -98,7 +98,7 @@ Al firmar este documento confirmás que:
 SECCIÓN B — AUTORIZACIÓN PARA REGISTRO DIGITAL DE TU FICHA CLÍNICA
 ========================================================================
 
-Autorizás que tu información clínica — que incluye:
+Autorizas que tu información clínica — que incluye:
 
 - Datos de identificación (nombre, RUT, contacto)
 - Historia clínica odontológica (diagnósticos, tratamientos, evoluciones)
@@ -138,7 +138,7 @@ FINALIDADES DEL TRATAMIENTO:
 Tus datos son tratados para:
 - Ejecutar la atención odontológica contratada.
 - Mantener tu ficha clínica como exige la regulación sanitaria.
-- Permitir comunicación entre vos y tu profesional (recordatorios, notas).
+- Permitir comunicación entre tú y tu profesional (recordatorios, notas).
 - Cumplir obligaciones legales tributarias y sanitarias.
 
 BASES LEGALES DEL TRATAMIENTO (Ley 21.719 art. 12):
@@ -157,10 +157,10 @@ autorizados sin tu consentimiento adicional expreso.
 SECCIÓN D — TUS DERECHOS (ARCO + Portabilidad)
 ========================================================================
 
-Conforme a la Ley 21.719, podés ejercer en cualquier momento los siguientes
+Conforme a la Ley 21.719, puedes ejercer en cualquier momento los siguientes
 derechos sobre tus datos:
 
-1. ACCESO: pedir copia de la información que tenemos sobre vos.
+1. ACCESO: pedir copia de la información que tenemos sobre ti.
 2. RECTIFICACIÓN: corregir datos inexactos o incompletos.
 3. CANCELACIÓN / SUPRESIÓN: solicitar la eliminación de tus datos cuando ya
    no sean necesarios para la finalidad original. Aplican límites legales
@@ -173,11 +173,11 @@ derechos sobre tus datos:
    se resuelve una disputa.
 
 CÓMO EJERCER ESTOS DERECHOS:
-- Contactá a tu profesional o clínica tratante (canal principal).
-- O escribí directamente a DentalSpot al email soporte@dentalspot.cl
-  indicando tu nombre, RUT y el derecho que querés ejercer.
+- Contacta a tu profesional o clínica tratante (canal principal).
+- O escribe directamente a DentalSpot al email soporte@dentalspot.cl
+  indicando tu nombre, RUT y el derecho que quieres ejercer.
 - Te responderemos en un plazo máximo de 20 días hábiles.
-- Si no quedás conforme con la respuesta, podés reclamar ante la Agencia
+- Si no quedas conforme con la respuesta, puedes reclamar ante la Agencia
   Nacional de Protección de Datos Personales (cuando esté operativa) o
   iniciar acciones judiciales.
 
@@ -191,7 +191,7 @@ SECCIÓN E — RETENCIÓN DE DATOS
 - Post-fin de la atención: los datos clínicos se conservan por al menos
   5 años, plazo exigido por normativa sanitaria chilena para la custodia
   de fichas clínicas.
-- Pasado ese plazo, podés solicitar su eliminación total. Alternativamente,
+- Pasado ese plazo, puedes solicitar su eliminación total. Alternativamente,
   se procederá a la anonimización (disociación irreversible de tu identidad)
   para fines estadísticos agregados.
 - Datos de facturación se conservan por el plazo exigido por normativa
@@ -215,14 +215,14 @@ territorio chileno. DentalSpot:
 - Responde contractualmente por cualquier incidente de seguridad en el
   proveedor.
 
-Al firmar este documento aceptás esta transferencia internacional.
+Al firmar este documento aceptas esta transferencia internacional.
 
 
 ========================================================================
 SECCIÓN G — GRABACIÓN DE AUDIO CON IA (OPCIONAL — CHECKBOX SEPARADO)
 ========================================================================
 
-ESTA SECCIÓN ES OPT-IN. La podés aceptar o rechazar de forma independiente
+ESTA SECCIÓN ES OPT-IN. La puedes aceptar o rechazar de forma independiente
 al resto del consentimiento. No afecta tu atención odontológica.
 
 QUÉ ES: DentalSpot ofrece una funcionalidad llamada "Notiz" que graba el
@@ -241,7 +241,7 @@ QUÉ NO INCLUYE:
 - Acceso del audio por personas distintas a tu profesional tratante.
 
 CÓMO REVOCAR:
-Podés pedirle a tu profesional que no grabe una consulta específica, o
+Puedes pedirle a tu profesional que no grabe una consulta específica, o
 revocar el consentimiento general en cualquier momento. Las grabaciones
 previas se eliminarán dentro de 30 días de tu solicitud.
 
@@ -250,18 +250,18 @@ previas se eliminarán dentro de 30 días de tu solicitud.
 SECCIÓN H — REVOCACIÓN DEL CONSENTIMIENTO
 ========================================================================
 
-Podés revocar este consentimiento en cualquier momento, total o parcialmente,
+Puedes revocar este consentimiento en cualquier momento, total o parcialmente,
 sin necesidad de justificar. La revocación tiene efecto desde el momento de
 tu solicitud y no afecta la legalidad del tratamiento realizado previamente.
 
 Consecuencias:
-- Si revocás el consentimiento para el tratamiento odontológico: el
+- Si revocas el consentimiento para el tratamiento odontológico: el
   profesional no podrá continuar la atención.
-- Si revocás el consentimiento para el tratamiento de datos: se aplicarán
+- Si revocas el consentimiento para el tratamiento de datos: se aplicarán
   los plazos de retención de la Sección E. Datos con obligación legal de
   retención serán mantenidos hasta el plazo mínimo legal y luego eliminados.
 
-Para revocar, contactá a tu profesional o escribí a soporte@dentalspot.cl.
+Para revocar, contacta a tu profesional o escribe a soporte@dentalspot.cl.
 
 
 ========================================================================

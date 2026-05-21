@@ -14,14 +14,14 @@ Test manual post-implementation. Objetivo: validar los 4 user stories del spec c
 - [ ] Migration `20260423000002_invite_assistant_flow.sql` aplicada
 - [ ] Edge function `clinic-invitations` deployada con código nuevo
 - [ ] Frontend build desplegado (o `npm run dev` local)
-- [ ] Email confirmation desactivada en Supabase (para testing rápido) O tenés acceso a inbox de Gmail/email real
+- [ ] Email confirmation desactivada en Supabase (para testing rápido) O tienes acceso a inbox de Gmail/email real
 - [ ] `RESEND_API_KEY` seteada en Supabase Edge Functions secrets
 
 **Preparar cuentas de test**:
 
 1. `dentalspot.cl+clinica-test@gmail.com` → clínica admin existente
 2. `dentalspot.cl+asistente-test@gmail.com` → email a invitar (cuenta NUEVA)
-3. Otra cuenta con paciente existente si querés probar el flow "existing_patient"
+3. Otra cuenta con paciente existente si quieres probar el flow "existing_patient"
 
 ---
 
@@ -190,7 +190,7 @@ WHERE om.user_id = (
 2. Navegar directamente a `/dashboard/patients/<patient_id>` (URL de ficha clínica).
 3. **Esperado**: una de estas:
    - Redirect a lista de pacientes con toast "Sin permiso"
-   - Página en blanco / empty state con mensaje "No tenés acceso a fichas clínicas"
+   - Página en blanco / empty state con mensaje "No tienes acceso a fichas clínicas"
    - Redirect a `/dashboard/assistant`
 4. Verificar en DevTools Network:
    - [ ] Request a `clinical_records` / `treatments` / `odontograms` retorna `[]` o 403 (RLS bloquea)
@@ -198,7 +198,7 @@ WHERE om.user_id = (
 ### 3.4 NO puede tocar billing
 
 1. Navegar a `/dashboard/membership` directamente.
-2. **Esperado**: "No tenés permiso para ver esta sección" o redirect.
+2. **Esperado**: "No tienes permiso para ver esta sección" o redirect.
 
 ### 3.5 NO puede invitar a otros asistentes
 
@@ -232,7 +232,7 @@ WHERE om.user_id = (
 ### 4.2 Revocar
 
 1. Click "Revocar acceso" al asistente.
-2. Diálogo de confirmación: "¿Seguro que querés revocar el acceso?"
+2. Diálogo de confirmación: "¿Seguro que quieres revocar el acceso?"
 3. Click "Confirmar".
 4. **Esperado**:
    - [ ] Toast "Acceso revocado"

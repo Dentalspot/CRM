@@ -272,7 +272,7 @@ X crea cita con therapist_id=dentista X.
 
 - **Asistente sin clínica asociada**: si el `organization_members` del
   asistente se revocó entre el login y la carga de la agenda, debe mostrar
-  pantalla clara "No tenés acceso a esta clínica" (cubierto por spec 023
+  pantalla clara "No tienes acceso a esta clínica" (cubierto por spec 023
   followup).
 - **Conflictos de slot al crear**: dos acciones rápidas de drag-to-create
   sobre el mismo slot → segunda acción debe rechazarse por UNIQUE constraint
@@ -288,7 +288,7 @@ X crea cita con therapist_id=dentista X.
   `clinics.timezone` y renderizar horarios consistentes (no hacer math con
   UTC que cruce DST).
 - **Slot pasado**: drag-to-create sobre fecha/hora anterior a ahora → warning
-  "Esta fecha ya pasó, ¿querés registrar una cita histórica?" con opción
+  "Esta fecha ya pasó, ¿quieres registrar una cita histórica?" con opción
   confirmar o cancelar (permite registrar citas completadas retroactivamente
   para corregir data).
 - **Paciente no pertenece a la org**: el autocomplete solo muestra pacientes

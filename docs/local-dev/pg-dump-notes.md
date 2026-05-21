@@ -1,12 +1,12 @@
 # Regenerar `supabase/schema.sql` — notas de dev ops
 
-**TL;DR**: Supabase CLI usa Docker para `db dump`. Si no tenés Docker, instalás `postgresql@17` via Homebrew y usás pg_dump directo con el script que el CLI genera en `--dry-run`.
+**TL;DR**: Supabase CLI usa Docker para `db dump`. Si no tienes Docker, instalas `postgresql@17` via Homebrew y usas pg_dump directo con el script que el CLI genera en `--dry-run`.
 
 **Cuándo regenerar**: después de aplicar migraciones nuevas, para que `schema.sql` refleje el estado DB actual. No es fuente de verdad para apply (eso son las migraciones), pero sirve como snapshot legible + onboarding + debugging offline.
 
 ---
 
-## Receta rápida (ya tenés postgresql@17 instalado)
+## Receta rápida (ya tienes postgresql@17 instalado)
 
 ```bash
 # 1. Capturar el script del CLI con credentials frescas
@@ -51,11 +51,11 @@ supabase db dump --linked --dry-run 2>&1 | grep "server version" || true
 brew install postgresql@17  # o la versión que matchee
 ```
 
-**Por qué keg-only**: postgresql@17 se instala en `/usr/local/opt/postgresql@17/bin/` sin modificar el PATH. Tu pg 14 default sigue funcionando. Para usarlo sin path absoluto: `brew link --force postgresql@17` (**no recomendado** si ya usás pg 14 para otra cosa).
+**Por qué keg-only**: postgresql@17 se instala en `/usr/local/opt/postgresql@17/bin/` sin modificar el PATH. Tu pg 14 default sigue funcionando. Para usarlo sin path absoluto: `brew link --force postgresql@17` (**no recomendado** si ya usas pg 14 para otra cosa).
 
 ### Por qué no usar Supabase CLI directo
 
-`supabase db dump --linked` internamente ejecuta pg_dump dentro de un contenedor Docker. Si no tenés Docker instalado/corriendo, falla con:
+`supabase db dump --linked` internamente ejecuta pg_dump dentro de un contenedor Docker. Si no tienes Docker instalado/corriendo, falla con:
 ```
 failed to inspect docker image: Cannot connect to the Docker daemon
 ```
@@ -100,9 +100,9 @@ brew install postgresql@17  # o la versión que pida
 ```
 
 ### `Cannot connect to the Docker daemon`
-**Causa**: Supabase CLI quiere Docker y no lo tenés.
+**Causa**: Supabase CLI quiere Docker y no lo tienes.
 
-**Fix**: usar el workaround `--dry-run` + local pg_dump (receta arriba). NO instaleís Docker Desktop solo para esto — son ~500MB y no suma nada si ya tenés pg_dump local.
+**Fix**: usar el workaround `--dry-run` + local pg_dump (receta arriba). NO instales Docker Desktop solo para esto — son ~500MB y no suma nada si ya tienes pg_dump local.
 
 ### `pg_dump: error: aborting because of server version mismatch`
 Mismo que el primero — verificar que `/usr/local/opt/postgresql@17/bin/pg_dump` está siendo usado, no el default del PATH.
@@ -133,7 +133,7 @@ supabase projects list  # el proyecto con "●" está linked
 | `supabase/schema_storage.sql` | Snapshot de `storage` schema | referencia |
 | `supabase/seed_dentalspot_admins.sql` | Seed de admins | apply manual post-deploy fresh env |
 
-**Regla**: si querés aplicar algo a la DB, usá las migraciones. Los snapshots son lectura.
+**Regla**: si quieres aplicar algo a la DB, usa las migraciones. Los snapshots son lectura.
 
 ---
 

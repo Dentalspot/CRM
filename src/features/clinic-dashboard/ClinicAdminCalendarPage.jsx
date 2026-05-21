@@ -44,7 +44,7 @@ const ClinicAdminCalendarPage = () => {
           <h2 className="text-xl font-semibold mb-2">Sin clínica activa</h2>
           <p className="text-muted-foreground max-w-md mb-6">
             Esta cuenta no tiene acceso activo a ninguna clínica.
-            Si esto es un error, contactá a soporte.
+            Si esto es un error, contacta a soporte.
           </p>
           <Button variant="outline" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />

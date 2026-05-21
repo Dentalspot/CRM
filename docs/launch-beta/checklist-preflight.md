@@ -2,7 +2,7 @@
 
 **Regla**: no mandar invitaciones hasta que 100% de los items estén en verde. Cada item incluye cómo verificarlo.
 
-**Formato**: pegá las queries SQL en Supabase SQL Editor → si el resultado matchea lo esperado, marcá el check.
+**Formato**: pega las queries SQL en Supabase SQL Editor → si el resultado matchea lo esperado, marca el check.
 
 ---
 
@@ -80,7 +80,7 @@ WHERE proname = 'check_plan_limit'
 
 **Setup**: crear un dentista test o usar uno existente con plan forzado a Free:
 ```sql
--- Reemplazá <UUID> por el therapist_id real
+-- Reemplaza <UUID> por el therapist_id real
 UPDATE therapist_subscriptions
 SET plan_name='free', status='active'
 WHERE therapist_id = '<UUID>';
@@ -141,7 +141,7 @@ LIMIT 5;
 
 ---
 
-## 4. MercadoPago (solo si querés testear path pago real)
+## 4. MercadoPago (solo si quieres testear path pago real)
 
 > **Nota**: para el beta con cupón 100%, MP no se toca. Estos checks son opcionales pero recomendados para cubrir el caso de dentistas que quieran pagar sin cupón.
 

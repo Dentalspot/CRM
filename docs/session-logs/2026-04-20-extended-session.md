@@ -536,7 +536,7 @@ Contexto activo:
 
 Primer paso mañana (5 min):
 1. Revisar rama 019-audit-mercadopago-flow (commit local c8689fd)
-2. Merge a main + push (o defer si querés releer primero)
+2. Merge a main + push (o defer si quieres releer primero)
 3. Opcional: commitear docs/legal-outreach/ como "docs: add legal outreach
    pre-armado pre-Fase A pivot marketplace"
 

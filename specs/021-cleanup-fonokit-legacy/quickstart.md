@@ -346,7 +346,7 @@ supabase functions deploy clinic-invitations prepare-training-data generate-ad-c
 
 ### D2. Smoke test — clinic-invitations (Test más importante, P1)
 
-**Opción A — Si tenés el dev server de DentalSpot corriendo**:
+**Opción A — Si tienes el dev server de DentalSpot corriendo**:
 1. Login como admin de clínica
 2. Navegar a `/clinic/invitations` (o la página equivalente)
 3. Invitar email test (usar tu propio email o un alias)

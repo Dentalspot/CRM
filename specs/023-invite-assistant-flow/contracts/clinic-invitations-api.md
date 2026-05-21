@@ -170,7 +170,7 @@ Content-Type: `application/json`
 
 **Response error**:
 - 400 `{success: false, message: "Invitación inválida o expirada"}`
-- 400 `{success: false, message: "Clínica sin organización asociada (contactá soporte)"}`
+- 400 `{success: false, message: "Clínica sin organización asociada (contacta a soporte)"}`
 
 ---
 

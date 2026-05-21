@@ -27,8 +27,8 @@ WHERE ts.applied_coupon_code = 'BETA-3M-2026'
   AND ts.status = 'active'
 ORDER BY ts.created_at ASC;
 
--- Si el resultado es razonable (los dentistas listados son los que vos
--- contactaste y NO quieren renovar pagando), ejecutá el UPDATE:
+-- Si el resultado es razonable (los dentistas listados son los que tú
+-- contactaste y NO quieren renovar pagando), ejecuta el UPDATE:
 
 -- UPDATE therapist_subscriptions
 -- SET status = 'expired',
@@ -37,16 +37,16 @@ ORDER BY ts.created_at ASC;
 --   AND current_period_end < NOW() - INTERVAL '90 days'
 --   AND status = 'active';
 
--- IMPORTANT: Antes del UPDATE, mandá email/WhatsApp a cada dentista
+-- IMPORTANT: Antes del UPDATE, manda email/WhatsApp a cada dentista
 -- listado en el preview con 7 días de anticipación: "tu período beta
--- termina el [fecha]. Si querés continuar, suscribite al plan real [link]".
--- Los que renueven (aplican sin cupón, pagan) NO los expirés.
+-- termina el [fecha]. Si quieres continuar, suscríbete al plan real [link]".
+-- Los que renueven (aplican sin cupón, pagan) NO los expires.
 
 -- ========================================================================
 -- §2 — Extender período beta de un dentista específico (manual bump)
 -- ========================================================================
--- Uso: si querés darle 1 mes extra a un beta user (buena feedback, caso
--- especial, etc). Reemplazá <UUID> por el therapist_id real.
+-- Uso: si quieres darle 1 mes extra a un beta user (buena feedback, caso
+-- especial, etc). Reemplaza <UUID> por el therapist_id real.
 
 -- UPDATE therapist_subscriptions
 -- SET current_period_end = current_period_end + INTERVAL '30 days',
@@ -72,7 +72,7 @@ ORDER BY ts.created_at ASC;
 --   AND status = 'active';
 
 -- ========================================================================
--- §4 — Unblock: re-activar sub expirada (si user pagó y querés restore)
+-- §4 — Unblock: re-activar sub expirada (si user pagó y quieres restore)
 -- ========================================================================
 
 -- UPDATE therapist_subscriptions
