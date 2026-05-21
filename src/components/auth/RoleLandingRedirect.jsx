@@ -158,7 +158,7 @@ const RoleLandingRedirect = () => {
             <p className="text-xs text-slate-400">
               ¿Tambien eres dentista?{' '}
               <Link to="/auth/register" className="text-primary hover:underline">
-                Registrate en DentalSpot
+                Regístrate en DentalSpot
               </Link>
             </p>
           </div>

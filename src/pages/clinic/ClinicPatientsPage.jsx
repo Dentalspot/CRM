@@ -194,7 +194,7 @@ const ClinicPatientsPage = () => {
     return (
       <div className="p-8 text-center">
         <h2 className="text-2xl font-bold text-gray-800">No se encontró una clínica asociada</h2>
-        <p className="text-gray-500 mt-2">Primero tenés que registrar tu clínica.</p>
+        <p className="text-gray-500 mt-2">Primero tienes que registrar tu clínica.</p>
       </div>
     );
   }

@@ -48,7 +48,7 @@ export const PLAN_PRICING = {
   [PLAN_NAMES.FREE]: {
     id: 'free',
     name: 'Free',
-    subtitle: 'Empezá sin fricción',
+    subtitle: 'Empieza sin fricción',
     priceCLP: 0,
     priceUSD: 0,
     priceCLPYearly: 0,

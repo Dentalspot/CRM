@@ -73,7 +73,7 @@ const AnonymizePatientButton = ({
       toast({
         variant: 'destructive',
         title: 'No se pudo anonimizar',
-        description: err.message || 'Verificá tus permisos o contactá a soporte.',
+        description: err.message || 'Verifica tus permisos o contacta a soporte.',
       });
     } finally {
       setSubmitting(false);

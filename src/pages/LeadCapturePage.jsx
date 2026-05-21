@@ -279,7 +279,7 @@ export default function LeadCapturePage() {
     <>
       <Helmet>
         <title>DentalSpot — La plataforma #1 para dentistas en Chile</title>
-        <meta name="description" content="Agenda, ficha clinica, IA y marketplace en un solo lugar. Registrate gratis y recibe pacientes nuevos." />
+        <meta name="description" content="Agenda, ficha clinica, IA y marketplace en un solo lugar. Regístrate gratis y recibe pacientes nuevos." />
       </Helmet>
 
       <div className="min-h-screen">

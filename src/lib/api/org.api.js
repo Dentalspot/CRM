@@ -272,7 +272,7 @@ export async function createOrgAppointment(payload) {
   }
   if (!data) {
     // RLS rechazó silenciosamente (política WITH CHECK falló)
-    throw new Error('No se pudo crear la cita. Verificá que tenés permisos sobre esta clínica.');
+    throw new Error('No se pudo crear la cita. Verifica que tienes permisos sobre esta clínica.');
   }
   return data;
 }
@@ -301,7 +301,7 @@ export async function updateOrgAppointment(id, changes) {
     throw error;
   }
   if (!data) {
-    throw new Error('No se pudo actualizar la cita. Verificá permisos o que la cita existe.');
+    throw new Error('No se pudo actualizar la cita. Verifica permisos o que la cita existe.');
   }
   return data;
 }
@@ -340,7 +340,7 @@ export async function createOrgBlockedTime(payload) {
     throw error;
   }
   if (!data) {
-    throw new Error('No se pudo crear el bloqueo. Verificá permisos.');
+    throw new Error('No se pudo crear el bloqueo. Verifica permisos.');
   }
   return data;
 }

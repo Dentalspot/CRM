@@ -251,7 +251,7 @@ export default function TherapistProfileDashboardPage() {
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-amber-900 mb-1">
-                Completá los datos de tu clínica para usar DentalSpot
+                Completa los datos de tu clínica para usar DentalSpot
               </h3>
               <p className="text-sm text-amber-800 leading-relaxed">
                 {isClinic

@@ -311,7 +311,7 @@ const AssistantAppointmentModal = ({
       toast({
         variant: 'destructive',
         title: isEditMode ? 'Error al actualizar cita' : 'Error al crear cita',
-        description: err.message || 'Verificá los datos e intentá de nuevo.',
+        description: err.message || 'Verifica los datos e intenta de nuevo.',
       });
     } finally {
       setIsSubmitting(false);
@@ -337,8 +337,8 @@ const AssistantAppointmentModal = ({
           <DialogTitle>{isEditMode ? 'Editar cita' : 'Nueva cita'}</DialogTitle>
           <DialogDescription>
             {isEditMode
-              ? 'Modificá los datos de la cita existente.'
-              : 'Completá los datos para agendar una nueva cita.'}
+              ? 'Modifica los datos de la cita existente.'
+              : 'Completa los datos para agendar una nueva cita.'}
           </DialogDescription>
         </DialogHeader>
 

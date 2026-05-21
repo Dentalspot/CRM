@@ -38,10 +38,10 @@ export default function RolePicker({ isLogin }) {
             <span className="text-teal-500">SPOT</span>
           </a>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            {isLogin ? '¿Cómo querés ingresar?' : '¿Qué tipo de cuenta querés crear?'}
+            {isLogin ? '¿Cómo quieres ingresar?' : '¿Qué tipo de cuenta quieres crear?'}
           </h1>
           <p className="text-sm text-gray-600">
-            Elegí el tipo que mejor te describe
+            Elige el tipo que mejor te describe
           </p>
         </div>
 
@@ -78,14 +78,14 @@ export default function RolePicker({ isLogin }) {
         <div className="text-center text-sm text-gray-600">
           {isLogin ? (
             <>
-              ¿No tenés cuenta?{' '}
+              ¿No tienes cuenta?{' '}
               <a href="/auth/register" className="font-semibold text-teal-600 hover:text-teal-700 underline">
-                Registrate gratis
+                Regístrate gratis
               </a>
             </>
           ) : (
             <>
-              ¿Ya tenés cuenta?{' '}
+              ¿Ya tienes cuenta?{' '}
               <a href="/auth/login" className="font-semibold text-teal-600 hover:text-teal-700 underline">
                 Iniciar sesión
               </a>

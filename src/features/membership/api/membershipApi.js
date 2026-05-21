@@ -56,7 +56,7 @@ export const getCurrentSubscription = async (userId) => {
     // Solo subs ACTIVE cuentan como "plan actual". Subs pending son intentos
     // de checkout no completados y no deben dar acceso a features pagas
     // (bug detectado en QA: pending mostraba como Plan Pro y otorgaba límites
-    // sin pago). Si querés mostrar "tienes un pago pendiente" en la UI,
+    // sin pago). Si quieres mostrar "tienes un pago pendiente" en la UI,
     // haz una query separada para .eq('status', 'pending').
     const { data, error } = await supabase
       .from('therapist_subscriptions')

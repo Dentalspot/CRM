@@ -394,7 +394,7 @@ const PatientFilePage = () => {
                 <p className="font-semibold text-gray-700 mb-1">Derechos del titular (Ley 21.719)</p>
                 <p>
                   Si el paciente ejerce su derecho de supresión bajo Ley 21.719 art. 13,
-                  podés anonimizar todos sus datos personales conservando la integridad
+                  puedes anonimizar todos sus datos personales conservando la integridad
                   estadística de citas y tratamientos pasados. La acción queda registrada
                   en auditoría.
                 </p>
