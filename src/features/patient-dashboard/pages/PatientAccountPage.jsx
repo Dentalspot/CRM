@@ -36,7 +36,7 @@ const PatientAccountPage = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Mi Cuenta</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Gestioná tu seguridad y los datos personales que tenemos sobre vos.
+            Gestiona tu seguridad y los datos personales que tenemos sobre ti.
           </p>
         </div>
 

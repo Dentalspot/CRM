@@ -449,7 +449,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
                   <SelectContent>
                     {assignableDentists.map((d) => (
                       <SelectItem key={d.id} value={d.id}>
-                        {d.full_name}{d.isMe ? ' (vos)' : ''}
+                        {d.full_name}{d.isMe ? ' (tú)' : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>

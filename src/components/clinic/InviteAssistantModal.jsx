@@ -99,7 +99,7 @@ const InviteAssistantModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
         toast({
           variant: 'destructive',
           title: 'No se pudo crear la invitación',
-          description: data?.message || 'Error desconocido. Intentá de nuevo.',
+          description: data?.message || 'Error desconocido. Intenta de nuevo.',
         });
         setLoading(false);
         return;
@@ -120,7 +120,7 @@ const InviteAssistantModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
         toast({
           variant: 'destructive',
           title: 'Email no se pudo enviar',
-          description: 'La invitación está creada pero no pudimos mandar el email. Copiá el link abajo y envialo manualmente.',
+          description: 'La invitación está creada pero no pudimos mandar el email. Copia el link abajo y envíalo manualmente.',
         });
       }
     } catch (err) {
@@ -128,7 +128,7 @@ const InviteAssistantModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
       toast({
         variant: 'destructive',
         title: 'Error al enviar invitación',
-        description: err.message || 'Ocurrió un problema. Intentá nuevamente.',
+        description: err.message || 'Ocurrió un problema. Intenta nuevamente.',
       });
     } finally {
       setLoading(false);
@@ -153,7 +153,7 @@ const InviteAssistantModal = ({ isOpen, onClose, clinicId, onSuccess }) => {
               <div className="flex-1">
                 <p className="text-sm font-semibold text-amber-800">Invitación creada, email no se pudo enviar</p>
                 <p className="text-xs text-amber-700 mt-1">
-                  Copiá el link y enviálo por WhatsApp o email al invitado. El link expira en 7 días.
+                  Copia el link y envíalo por WhatsApp o email al invitado. El link expira en 7 días.
                 </p>
               </div>
             </div>
