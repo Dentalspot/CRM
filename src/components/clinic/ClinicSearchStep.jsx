@@ -16,11 +16,11 @@ const PersonalPracticeOption = ({ onCreatePersonal }) => {
   return (
     <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
       <p className="text-sm font-medium text-gray-800">
-        ¿No tenés un lugar de trabajo fijo?
+        ¿No tienes un lugar de trabajo fijo?
       </p>
       <p className="text-xs text-gray-500 mt-0.5 mb-3">
-        Si trabajás de forma independiente, a honorarios o arrendás un box,
-        creá tu consulta personal. Podés gestionar pacientes y agenda igual,
+        Si trabajas de forma independiente, a honorarios o arriendas un box,
+        crea tu consulta personal. Puedes gestionar pacientes y agenda igual,
         sin datos de empresa.
       </p>
       <Button

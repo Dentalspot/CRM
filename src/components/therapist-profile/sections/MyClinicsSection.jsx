@@ -83,7 +83,7 @@ const MyClinicsSection = () => {
       // El trigger B11 ya creó org + clinic_admin + dentist. Refrescamos.
       toast({
         title: '✅ Consulta personal creada',
-        description: 'Ya podés gestionar pacientes y agenda. Podés editar el nombre y agregar más datos cuando quieras.',
+        description: 'Ya puedes gestionar pacientes y agenda. Puedes editar el nombre y agregar más datos cuando quieras.',
       });
       setShowSearchStep(false);
       await fetchClinics();

@@ -79,7 +79,7 @@ const PendingApprovalPage = () => {
                   <ul className="list-disc list-inside space-y-1 text-amber-800">
                     <li>Un administrador revisa tu cuenta (suele tomar menos de 24h)</li>
                     <li>Te llegará un email cuando esté aprobada</li>
-                    <li>Después podés ingresar normalmente</li>
+                    <li>Después puedes ingresar normalmente</li>
                   </ul>
                 </div>
               </div>
@@ -96,7 +96,7 @@ const PendingApprovalPage = () => {
 
           {isRejected && (
             <p className="mt-4 text-sm text-gray-500 text-center">
-              Si creés que es un error, escribinos a{' '}
+              Si crees que es un error, escríbenos a{' '}
               <a href="mailto:soporte@dentalspot.cl" className="text-teal-600 hover:underline">
                 soporte@dentalspot.cl
               </a>

@@ -432,7 +432,7 @@ const PatientModal = ({ patient, isOpen, onOpenChange, onSave, defaultClinicId =
                 </div>
               ) : assignableDentists.length === 0 ? (
                 <p className="text-sm text-destructive italic">
-                  No hay dentistas activos en tu clínica. Agregá uno desde Gestión de Personal.
+                  No hay dentistas activos en tu clínica. Agrega uno desde Gestión de Personal.
                 </p>
               ) : (
                 <Select

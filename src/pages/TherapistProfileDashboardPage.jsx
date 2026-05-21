@@ -255,8 +255,8 @@ export default function TherapistProfileDashboardPage() {
               </h3>
               <p className="text-sm text-amber-800 leading-relaxed">
                 {isClinic
-                  ? 'Antes de poder gestionar pacientes y agenda, registrá los datos de tu clínica abajo. Es un paso único — después tu equipo puede empezar a operar.'
-                  : 'Para crear pacientes, agendar citas y registrar pagos necesitamos saber dónde atendés. Agregá tu primer lugar de atención abajo (puede ser tu consulta privada o una clínica donde trabajás).'}
+                  ? 'Antes de poder gestionar pacientes y agenda, registra los datos de tu clínica abajo. Es un paso único — después tu equipo puede empezar a operar.'
+                  : 'Para crear pacientes, agendar citas y registrar pagos necesitamos saber dónde atiendes. Agrega tu primer lugar de atención abajo (puede ser tu consulta privada o una clínica donde trabajas).'}
               </p>
             </div>
           </div>

@@ -69,7 +69,7 @@ function template(full_name: string, role: string) {
 
       <p style="margin: 24px 0 12px 0;">Hola <strong>${safeName}</strong>,</p>
       <p style="margin: 0 0 16px 0;">
-        Nuestro equipo revisó y aprobó tu solicitud de registro. Ya podés ingresar al sistema
+        Nuestro equipo revisó y aprobó tu solicitud de registro. Ya puedes ingresar al sistema
         y empezar a gestionar ${isDentist ? 'tus pacientes, agenda y consulta' : 'tu clínica, equipo y pacientes'}.
       </p>
 
@@ -77,11 +77,11 @@ function template(full_name: string, role: string) {
         <p style="margin: 0 0 8px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #166534; font-weight: 600;">Próximos pasos</p>
         <ol style="margin: 0; padding-left: 18px; color: #14532d;">
           ${isDentist
-            ? `<li style="margin-bottom: 6px;">Completá los datos de tu lugar de atención en "Mi Perfil"</li>
-               <li style="margin-bottom: 6px;">Configurá tu agenda y horarios</li>
-               <li>Empezá a registrar pacientes</li>`
-            : `<li style="margin-bottom: 6px;">Completá los datos de tu clínica en "Mi Perfil"</li>
-               <li style="margin-bottom: 6px;">Invitá a los dentistas de tu equipo desde "Gestión de Personal"</li>
+            ? `<li style="margin-bottom: 6px;">Completa los datos de tu lugar de atención en "Mi Perfil"</li>
+               <li style="margin-bottom: 6px;">Configura tu agenda y horarios</li>
+               <li>Empieza a registrar pacientes</li>`
+            : `<li style="margin-bottom: 6px;">Completa los datos de tu clínica en "Mi Perfil"</li>
+               <li style="margin-bottom: 6px;">Invita a los dentistas de tu equipo desde "Gestión de Personal"</li>
                <li>Tu equipo puede empezar a operar</li>`
           }
         </ol>
@@ -93,7 +93,7 @@ function template(full_name: string, role: string) {
         </a>
       </p>
 
-      <p style="color: #6b7280; font-size: 14px;">¿Dudas? Escribinos a <a href="mailto:soporte@dentalspot.cl" style="color: #0d9488;">soporte@dentalspot.cl</a>.</p>
+      <p style="color: #6b7280; font-size: 14px;">¿Dudas? Escríbenos a <a href="mailto:soporte@dentalspot.cl" style="color: #0d9488;">soporte@dentalspot.cl</a>.</p>
 
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
       <p style="font-size: 11px; color: #9ca3af;">
@@ -102,9 +102,9 @@ function template(full_name: string, role: string) {
     </div>
   `.trim()
 
-  const text = `Hola ${safeName},\n\n¡Tu cuenta en DentalSpot fue aprobada!\n\nYa podés ingresar al sistema: ${APP_URL}/auth/login\n\n${isDentist
-    ? 'Pasos sugeridos:\n1. Completá tu lugar de atención en "Mi Perfil"\n2. Configurá tu agenda\n3. Empezá a registrar pacientes'
-    : 'Pasos sugeridos:\n1. Completá los datos de tu clínica\n2. Invitá a los dentistas de tu equipo\n3. Tu equipo puede operar'
+  const text = `Hola ${safeName},\n\n¡Tu cuenta en DentalSpot fue aprobada!\n\nYa puedes ingresar al sistema: ${APP_URL}/auth/login\n\n${isDentist
+    ? 'Pasos sugeridos:\n1. Completa tu lugar de atención en "Mi Perfil"\n2. Configura tu agenda\n3. Empieza a registrar pacientes'
+    : 'Pasos sugeridos:\n1. Completa los datos de tu clínica\n2. Invita a los dentistas de tu equipo\n3. Tu equipo puede operar'
   }\n\n¿Dudas? soporte@dentalspot.cl`
 
   return { subject, html, text }

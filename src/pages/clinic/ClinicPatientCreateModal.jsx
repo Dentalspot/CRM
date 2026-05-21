@@ -120,7 +120,7 @@ const ClinicPatientCreateModal = ({
             variant: 'destructive',
             title: 'Plan del dentista alcanzó el límite',
             description:
-              'No se pueden crear más pacientes para este dentista en su plan actual. Pídele al dentista que upgradee su plan o asígnalo a otro.',
+              'No se pueden crear más pacientes para este dentista en su plan actual. Pídele al dentista que actualice su plan o asígnalo a otro.',
           });
           setLoading(false);
           return;

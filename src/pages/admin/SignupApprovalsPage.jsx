@@ -180,7 +180,7 @@ const SignupApprovalsPage = () => {
               Aprobaciones de Signup
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Revisá y aprobá las solicitudes de registro de profesionales antes de que accedan al sistema.
+              Revisa y aprueba las solicitudes de registro de profesionales antes de que accedan al sistema.
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={fetchPendings} disabled={refreshing}>
@@ -197,7 +197,7 @@ const SignupApprovalsPage = () => {
                 Sin solicitudes pendientes
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Cuando un dentista o clínica se registre, aparecerá acá para tu revisión.
+                Cuando un dentista o clínica se registre, aparecerá aquí para tu revisión.
               </p>
             </CardContent>
           </Card>
