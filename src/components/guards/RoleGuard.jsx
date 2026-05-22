@@ -3,6 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { Loader2 } from 'lucide-react';
+import AccessDeniedInline from './AccessDeniedInline';
 
 // Mapeo de roles de organization_members a USER_ROLES del frontend
 const ORG_ROLE_TO_FRONTEND = {
@@ -93,15 +94,18 @@ const RoleGuard = ({ children, allowedRoles = [] }) => {
     allOrgRolesMapped.some(r => allowedRoles.includes(r));
 
   if (!hasAccess) {
-    // Evitar loop: si ya estamos en /dashboard, no redirigir de vuelta a /dashboard
-    if (location.pathname === '/dashboard') {
-      return (
-        <div className="flex h-screen w-full items-center justify-center text-sm text-muted-foreground">
-          <p>No tienes acceso a esta sección.</p>
-        </div>
-      );
-    }
-    return <Navigate to="/dashboard" replace />;
+    // User está logueado pero su rol no matchea. Antes hacíamos
+    // Navigate('/dashboard') lo que: (a) podía causar loops si la ruta de
+    // origen ya era /dashboard, (b) podía rebotar al RoleLandingRedirect
+    // y mandar al user a un dashboard que tampoco le corresponde,
+    // (c) algunas combinaciones terminaban "rebotando" al /auth/login
+    // dando la sensación de que la sesión se rompió.
+    //
+    // Comportamiento nuevo: mostrar AccessDeniedInline (mismo componente
+    // que usa PermissionGuard en admin). El user mantiene sesión activa,
+    // ve mensaje claro, y decide adónde ir (CTA "Volver al inicio"
+    // apunta a /dashboard que ejecuta RoleLandingRedirect correctamente).
+    return <AccessDeniedInline />;
   }
 
   return children;

@@ -236,10 +236,15 @@ const DashboardRouter = () => {
           <Route path="my-agenda" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientAgendaPage /></RoleGuard>} />
 
           {/* ======================= ASSISTANT ROUTES ======================= */}
+          {/* Usan RoleGuard (no AuthGuard) para que un user logueado pero NO
+              assistant vea AccessDeniedInline en vez de poder cargar la página
+              y depender solo de RLS para bloquear los datos. RoleGuard chequea
+              effectiveOrgRole + userOrgRoles, no solo profile.role (asistentes
+              tienen profile.role='patient' + organization_members.role='assistant'). */}
           <Route path="assistant">
-            <Route index element={<AuthGuard><AssistantDashboard /></AuthGuard>} />
-            <Route path="agenda" element={<AuthGuard><AssistantCalendarPage /></AuthGuard>} />
-            <Route path="patients" element={<AuthGuard><AssistantPatientsPage /></AuthGuard>} />
+            <Route index element={<RoleGuard allowedRoles={[USER_ROLES.ASSISTANT]}><AssistantDashboard /></RoleGuard>} />
+            <Route path="agenda" element={<RoleGuard allowedRoles={[USER_ROLES.ASSISTANT]}><AssistantCalendarPage /></RoleGuard>} />
+            <Route path="patients" element={<RoleGuard allowedRoles={[USER_ROLES.ASSISTANT]}><AssistantPatientsPage /></RoleGuard>} />
           </Route>
 
           {/* ======================= CLINIC ROUTES ======================= */}
