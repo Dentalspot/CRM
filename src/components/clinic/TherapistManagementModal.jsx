@@ -22,6 +22,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Search, Check, AlertCircle } from 'lucide-react';
 import logger from '@/lib/utils/logger';
 import { supabase } from '@/lib/supabaseClient';
+import SpecialtyMultiSelect from './SpecialtyMultiSelect';
 
 const TherapistManagementModal = ({ 
   isOpen, 
@@ -38,7 +39,14 @@ const TherapistManagementModal = ({
   // Form state
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(true); // Active by default
-  const [role, setRole] = useState('therapist'); 
+  const [role, setRole] = useState('therapist');
+
+  // Especialidades del dentista (ids de la tabla `specialties`).
+  // initialSpecialtyIds: snapshot al abrir el modal — necesario para
+  // calcular el diff (INSERT/DELETE) al guardar.
+  const [specialtyIds, setSpecialtyIds] = useState([]);
+  const [initialSpecialtyIds, setInitialSpecialtyIds] = useState([]);
+  const [loadingSpecialties, setLoadingSpecialties] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -46,12 +54,32 @@ const TherapistManagementModal = ({
         // Edit mode
         setEmail(therapistToEdit.profiles?.email || '');
         setStatus(therapistToEdit.is_active);
-        setRole('therapist'); 
+        setRole('therapist');
         setFoundUser({
           id: therapistToEdit.therapist_id,
           full_name: therapistToEdit.profiles?.full_name,
           email: therapistToEdit.profiles?.email
         });
+
+        // Cargar especialidades actuales del dentista para edit mode
+        const loadSpecialties = async () => {
+          setLoadingSpecialties(true);
+          try {
+            const { data, error } = await supabase
+              .from('therapist_specialties')
+              .select('specialty_id')
+              .eq('therapist_id', therapistToEdit.therapist_id);
+            if (error) throw error;
+            const ids = (data || []).map(r => r.specialty_id);
+            setSpecialtyIds(ids);
+            setInitialSpecialtyIds(ids);
+          } catch (err) {
+            logger.error('[TherapistManagementModal] cargar especialidades:', err.message);
+          } finally {
+            setLoadingSpecialties(false);
+          }
+        };
+        loadSpecialties();
       } else {
         // Create mode
         resetForm();
@@ -64,6 +92,8 @@ const TherapistManagementModal = ({
     setStatus(true);
     setRole('therapist');
     setFoundUser(null);
+    setSpecialtyIds([]);
+    setInitialSpecialtyIds([]);
   };
 
   const handleSearchUser = async () => {
@@ -134,6 +164,32 @@ const TherapistManagementModal = ({
           .eq('id', therapistToEdit.id);
 
         if (error) throw error;
+
+        // Sync especialidades: diff entre initialSpecialtyIds y specialtyIds
+        // Solo en edit mode (en create no hay therapist_id todavía válido).
+        const toAdd = specialtyIds.filter(id => !initialSpecialtyIds.includes(id));
+        const toRemove = initialSpecialtyIds.filter(id => !specialtyIds.includes(id));
+
+        if (toRemove.length > 0) {
+          const { error: delErr } = await supabase
+            .from('therapist_specialties')
+            .delete()
+            .eq('therapist_id', therapistToEdit.therapist_id)
+            .in('specialty_id', toRemove);
+          if (delErr) throw delErr;
+        }
+
+        if (toAdd.length > 0) {
+          const rows = toAdd.map(specialty_id => ({
+            therapist_id: therapistToEdit.therapist_id,
+            specialty_id,
+            is_public: true,
+          }));
+          const { error: insErr } = await supabase
+            .from('therapist_specialties')
+            .insert(rows);
+          if (insErr) throw insErr;
+        }
 
         toast({
           title: "Actualizado",
@@ -277,7 +333,26 @@ const TherapistManagementModal = ({
                 disabled={loading}
               />
             </div>
-            
+
+            {/* Especialidades (solo en edit mode — necesita therapist_id válido).
+                Multi-select con chips. Al guardar se sincronizan via diff
+                INSERT/DELETE sobre therapist_specialties. Cero especialidades
+                = se considera "Odontología general" en displays públicos. */}
+            {therapistToEdit && (
+              <div className="space-y-2">
+                <Label>Especialidades</Label>
+                <SpecialtyMultiSelect
+                  value={specialtyIds}
+                  onChange={setSpecialtyIds}
+                  disabled={loading || loadingSpecialties}
+                  placeholder="Sin especialidades (odontología general)"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Clasificá al dentista por especialidad. Si no asignás ninguna, aparece como dentista general. Usado para que los pacientes encuentren al especialista correcto.
+                </p>
+              </div>
+            )}
+
             {!therapistToEdit && !foundUser && (
               <div className="flex items-start p-3 bg-blue-50 text-blue-800 rounded-md text-xs">
                 <AlertCircle className="h-4 w-4 mr-2 mt-0.5 shrink-0" />

@@ -79,6 +79,10 @@ const ClinicTherapistsManagementPage = () => {
   const [inactiveTherapists, setInactiveTherapists] = useState([]);
   const [inactiveAssistants, setInactiveAssistants] = useState([]);
   const [invitations, setInvitations] = useState([]); // all clinic_invitations rows (filtered by role en render)
+  // Map { therapist_id: [{ id, name, slug }] } — especialidades agrupadas por
+  // dentista. Se llena con una query batch tras cargar therapists (activos +
+  // inactivos), para mostrar badges en la tabla.
+  const [specialtiesByTherapist, setSpecialtiesByTherapist] = useState({});
 
   // Filtering
   const [searchTerm, setSearchTerm] = useState('');
@@ -166,6 +170,39 @@ const ClinicTherapistsManagementPage = () => {
         setInactiveTherapists([]);
       } else {
         setInactiveTherapists(ctInactiveData || []);
+      }
+
+      // 2c. Cargar especialidades de TODOS los therapists (activos + inactivos)
+      // en una sola query batch. RLS ts_clinic_admin_manage permite al admin
+      // leer estas rows si el dentista es member activo de su org.
+      const allTherapistIds = [
+        ...(ctData || []).map(r => r.therapist_id),
+        ...(ctInactiveData || []).map(r => r.therapist_id),
+      ].filter(Boolean);
+
+      if (allTherapistIds.length > 0) {
+        const { data: tsData, error: tsError } = await supabase
+          .from('therapist_specialties')
+          .select(`
+            therapist_id,
+            specialty_id,
+            specialties (id, name, slug)
+          `)
+          .in('therapist_id', allTherapistIds);
+
+        if (tsError) {
+          logger.warn('Error fetching specialties (non-fatal):', tsError);
+          setSpecialtiesByTherapist({});
+        } else {
+          const map = {};
+          for (const row of (tsData || [])) {
+            if (!map[row.therapist_id]) map[row.therapist_id] = [];
+            if (row.specialties) map[row.therapist_id].push(row.specialties);
+          }
+          setSpecialtiesByTherapist(map);
+        }
+      } else {
+        setSpecialtiesByTherapist({});
       }
 
       // 3. Fetch Active Assistants (spec 023 — via organization_members)
@@ -399,6 +436,8 @@ const ClinicTherapistsManagementPage = () => {
   const renderActiveRow = (row, kind) => {
     const profile = row.profiles;
     const avatarUrl = profile?.therapist_branding?.avatar_url;
+    const therapistId = kind === 'therapist' ? row.therapist_id : row.user_id;
+    const specialties = kind === 'therapist' ? (specialtiesByTherapist[therapistId] || []) : [];
     return (
       <TableRow key={row.id}>
         <TableCell className="font-medium">
@@ -413,6 +452,31 @@ const ClinicTherapistsManagementPage = () => {
             <div>
               <div className="text-sm font-semibold">{profile?.full_name || 'Sin Nombre'}</div>
               <div className="text-xs text-muted-foreground md:hidden">{profile?.email}</div>
+              {kind === 'therapist' && (
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {specialties.length === 0 ? (
+                    <span className="text-[10px] text-muted-foreground italic">Odontología general</span>
+                  ) : (
+                    specialties.slice(0, 3).map(s => (
+                      <span
+                        key={s.id}
+                        className="inline-block bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        title={s.name}
+                      >
+                        {s.name}
+                      </span>
+                    ))
+                  )}
+                  {specialties.length > 3 && (
+                    <span
+                      className="inline-block bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                      title={specialties.slice(3).map(s => s.name).join(', ')}
+                    >
+                      +{specialties.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </TableCell>
