@@ -182,6 +182,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             items: [
               { name: 'Pacientes de la clínica', icon: Users, path: '/dashboard/clinic/patients' },
               { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
+              { name: 'Gestión de Clínicas', icon: Building2, path: '/dashboard/clinic/locations' },
               { name: 'Reportes de la clínica', icon: BarChart, path: '/dashboard/clinic/reports' },
             ],
           }] : []),
@@ -240,6 +241,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               { name: 'Agendas', icon: Calendar, path: '/dashboard/clinic/agendas' },
               { name: 'Pacientes', icon: Users, path: '/dashboard/clinic/patients' },
               { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
+              { name: 'Gestión de Clínicas', icon: Building2, path: '/dashboard/clinic/locations' },
               { name: 'Reportes', icon: BarChart, path: '/dashboard/clinic/reports' },
               { name: 'Ingresos', icon: TrendingUp, path: '/dashboard/income-reports' },
               { name: 'Membresía', icon: DollarSign, path: '/dashboard/membership' },

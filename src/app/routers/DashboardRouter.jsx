@@ -101,6 +101,7 @@ const ClinicReportsPage = lazy(() => import('@/pages/clinic/ClinicReportsPage.js
 // El archivo legacy permanece en filesystem hasta Polish task T011.
 const ClinicAdminCalendarPage = lazy(() => import('@/features/clinic-dashboard/ClinicAdminCalendarPage.jsx'));
 const ClinicPatientsPage = lazy(() => import('@/pages/clinic/ClinicPatientsPage.jsx'));
+const ClinicLocationsPage = lazy(() => import('@/pages/clinic/ClinicLocationsPage.jsx'));
 
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage.jsx'));
 
@@ -254,6 +255,7 @@ const DashboardRouter = () => {
             <Route path="reports" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicReportsPage /></RoleGuard>} />
             <Route path="agendas" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicAdminCalendarPage /></RoleGuard>} />
             <Route path="patients" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicPatientsPage /></RoleGuard>} />
+            <Route path="locations" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicLocationsPage /></RoleGuard>} />
           </Route>
 
           {/* Shared Marketplace */}
