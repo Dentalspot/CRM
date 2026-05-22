@@ -3,8 +3,9 @@
  *
  * Inicialización de Sentry para capturar errores en prod/staging.
  *
- * Activa solo si `VITE_SENTRY_DSN` está seteado en env vars (Vercel).
- * Si no hay DSN (ej. dev local sin ganas de ruido), queda no-op.
+ * Activa solo si `VITE_SENTRY_DSN` está seteado en env vars (en prod
+ * viene de GitHub Secrets vía workflow `.github/workflows/deploy.yml`,
+ * en dev local desde `.env.local`). Si no hay DSN queda no-op.
  *
  * Setup instructions: docs/local-dev/sentry-setup.md
  */

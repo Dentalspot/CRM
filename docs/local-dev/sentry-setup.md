@@ -19,37 +19,42 @@ Sentry ya está integrado en código (`src/lib/sentry.js` + `main.jsx` + `ErrorB
 
 ---
 
-## Paso 2 — Setear DSN en Vercel (producción)
+## Paso 2 — Setear DSN en GitHub Secrets (producción)
 
-1. Ir al dashboard de Vercel → proyecto DentalSpot → **Settings → Environment Variables**
-2. Crear nueva variable:
+El deploy de producción es **GitHub Actions → FTP a Hostinger** (workflow `.github/workflows/deploy.yml`). Las env vars de build se inyectan desde **GitHub repository secrets**, no desde Hostinger ni Vercel.
+
+1. Ir a https://github.com/daniklagges/DENTALSPOT/settings/secrets/actions
+2. Click **New repository secret**
+3. Crear:
    - Name: `VITE_SENTRY_DSN`
-   - Value: el DSN copiado del paso 1
-   - Environments: marcar **Production** (y Preview si quieres staging tracking)
-3. Opcional pero recomendado:
-   - Name: `VITE_SENTRY_ENVIRONMENT`  
-     Value: `production`
-   - Name: `VITE_SENTRY_RELEASE`  
-     Value: commit SHA (se puede automatizar en `vercel.json` con `${VERCEL_GIT_COMMIT_SHA}`)
-4. **Redeploy** el proyecto (Deployments → latest → Redeploy). Sin redeploy, Vercel no inyecta la env nueva.
+   - Secret: el DSN copiado del paso 1 (sin comillas)
+4. Click **Add secret**
+
+`VITE_SENTRY_ENVIRONMENT=production` y `VITE_SENTRY_RELEASE=<commit SHA>` ya están hardcodeados en el workflow (no requieren secret).
+
+5. Trigger el deploy:
+   - Opción A: cualquier push a `main` lo ejecuta automáticamente
+   - Opción B: GitHub → Actions → "Deploy to Hostinger" → Run workflow manualmente
+6. Esperar que termine el workflow (~2 min). Al final hace FTP upload a `public_html/`.
 
 ---
 
 ## Paso 3 — Verificar que funciona
 
-1. Abrir la app en producción (`dentalspot.cl` o la URL de Vercel)
+1. Abrir `https://dentalspot.cl` en producción
 2. Abrir DevTools → Console
-3. Ejecutar manualmente:
+3. Buscar en console: `[Sentry] Inicializado — env="production" release="<sha>"`
+   - Si ves eso → DSN llegó al build ✅
+   - Si ves `[Sentry] VITE_SENTRY_DSN no configurado` → el secret no se inyectó. Verificar paso 2
+4. Disparar un error manual para probar end-to-end:
    ```js
    throw new Error('Sentry smoke test — ' + new Date().toISOString())
    ```
-4. Ir a Sentry dashboard → Issues → debería aparecer el error en <1min
+5. Ir a Sentry dashboard → Issues → debería aparecer el error en <1min
 
-Si NO aparece:
-- Verificar DSN en Vercel (no dentro de comillas)
-- Verificar que hiciste redeploy
-- En DevTools Console buscar mensaje `[Sentry] Inicializado...` al cargar la página
-- Si ves `[Sentry] VITE_SENTRY_DSN no configurado`, la env no llegó al build
+Si NO aparece en Sentry pero sí ves "Inicializado":
+- Revisar que el DSN sea válido (no truncado)
+- Verificar que el proyecto Sentry no esté pausado por quota
 
 ---
 
@@ -125,7 +130,8 @@ Sentry Deno SDK existe pero es más engorroso. Para MVP:
 
 - [ ] Cuenta Sentry creada
 - [ ] DSN copiado
-- [ ] `VITE_SENTRY_DSN` seteado en Vercel
-- [ ] Redeploy ejecutado
+- [ ] `VITE_SENTRY_DSN` agregado a GitHub Secrets del repo
+- [ ] Workflow `Deploy to Hostinger` ejecutado (push a main o run manual)
+- [ ] Console muestra `[Sentry] Inicializado — env="production" release="<sha>"`
 - [ ] Smoke test ejecutado, error visible en dashboard
 - [ ] (opcional) Alert rule configurado: notificar email si ≥5 errors/hora
