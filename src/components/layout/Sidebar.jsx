@@ -126,9 +126,20 @@ const SidebarItem = ({ item, isSubItem = false, onClick, onAction }) => {
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
-  const { effectiveRole: effectiveOrgRole, currentOrgRoles = [] } = useCurrentOrganization();
+  const { effectiveRole: effectiveOrgRole, currentOrgRoles = [], userOrgRoles = [] } = useCurrentOrganization();
 
-  const userRole = effectiveOrgRole || profile?.role || user?.role || 'patient';
+  // Fallback inteligente cuando effectiveOrgRole es null (loading, sin org
+  // seleccionada, 404, edge case de currentOrganizationId stale). Para
+  // asistentes profile.role='patient' (asistencia es rol de organización,
+  // no de perfil) → sin esta capa el sidebar mostraría items de paciente.
+  // Derivamos del set GLOBAL de roles (userOrgRoles), no solo de la org actual.
+  const fallbackFromOrgRoles =
+    userOrgRoles.includes('dentist') ? USER_ROLES.THERAPIST :
+    userOrgRoles.includes('clinic_admin') ? USER_ROLES.CLINIC :
+    userOrgRoles.includes('assistant') ? USER_ROLES.ASSISTANT :
+    null;
+
+  const userRole = effectiveOrgRole || fallbackFromOrgRoles || profile?.role || user?.role || 'patient';
 
   // Detecta dual role: dentista que también es admin de la clínica ACTUALMENTE seleccionada.
   // Sensible al organization_id activo: solo se ve "Mi Clínica" en orgs donde es dueño.
