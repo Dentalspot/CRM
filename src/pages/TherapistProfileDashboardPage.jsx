@@ -234,12 +234,18 @@ export default function TherapistProfileDashboardPage() {
       ? [...baseTabs, ...professionalTabs, ...accountTabs]
       : [...baseTabs, ...accountTabs];
 
-  // B11a banner: si llegamos acá redirigidos por RoleGuard (pro sin clínica),
-  // mostrar mensaje destacado. Auto-desaparece cuando el user completa el
-  // wizard (insert en clinics dispara trigger que crea org_members, lo cual
-  // hace userOrgRoles.length > 0 sin necesidad de refresh).
+  // B11a banner (followup #4 spec 023): mostrar siempre que el user pro
+  // (therapist/clinic) NO haya completado wizard de clínica, sin importar
+  // si vino con ?onboarding=required en URL (antes solo aparecía vía
+  // redirect de RoleGuard, no si el user navegaba directo al profile
+  // desde el sidebar — falsa sensación de estado completo).
+  //
+  // Auto-desaparece cuando el user completa el wizard (insert en clinics
+  // dispara trigger auto_create_organization_for_clinic que crea
+  // organization_members.clinic_admin, lo cual hace userOrgRoles.length > 0
+  // sin necesidad de refresh).
   const showOnboardingBanner =
-    searchParams.get('onboarding') === 'required' && userOrgRoles.length === 0;
+    (isTherapist || isClinic) && userOrgRoles.length === 0;
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
