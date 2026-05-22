@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Save, Loader2, Trash2 } from 'lucide-react';
+import { PlusCircle, Save, Loader2, Trash2, Building2, ExternalLink } from 'lucide-react';
 import ClinicCard from '@/components/therapist-profile/ClinicCard';
 import ClinicSearchStep from '@/components/clinic/ClinicSearchStep';
 import { cleanRutEmpresa } from '@/services/clinicDetectionService';
@@ -18,11 +20,18 @@ const MAX_CLINICS = 10;
 const MyClinicsSection = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { userOrgRoles = [] } = useCurrentOrganization();
   const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [clinicToDelete, setClinicToDelete] = useState(null);
   const [showSearchStep, setShowSearchStep] = useState(false);
+
+  // Paso 2 spec "Gestión de Clínicas" — el dentista que ES admin de su org
+  // (dual role) ve un banner que lo dirige al nuevo lugar centralizado.
+  // Acá sigue pudiendo gestionar (no rompemos flow existente), pero le
+  // mostramos dónde está la fuente oficial para boxes + sucursales múltiples.
+  const isAdmin = userOrgRoles.includes('clinic_admin');
 
   const fetchClinics = useCallback(async () => {
     if (!user) return;
@@ -365,6 +374,42 @@ const MyClinicsSection = () => {
         <CardDescription className="mt-2 text-md text-gray-600 leading-relaxed">Registra los lugares donde atiendes y tus horarios de disponibilidad.</CardDescription>
       </CardHeader>
       <CardContent className="p-6 bg-white">
+
+      {/* Paso 2 — Banner CTA a "Gestión de Clínicas" para admins.
+          No bloquea el flow actual (algunos users prefieren editar acá);
+          solo informa que existe el nuevo lugar centralizado para boxes y
+          sucursales múltiples. Se oculta para dentistas que NO son admin
+          (esos solo ven sus horarios y no tienen acceso al nuevo lugar). */}
+      {isAdmin && (
+        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-start gap-3 flex-1">
+              <Building2 className="h-5 w-5 text-blue-700 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-semibold text-blue-900 mb-0.5">
+                  ¿Buscás gestionar boxes o sucursales múltiples?
+                </p>
+                <p className="text-blue-800">
+                  La sección <strong>Gestión de Clínicas</strong> (menú lateral) es el lugar centralizado
+                  para configurar boxes/salas físicas y administrar sucursales. Acá podés seguir editando
+                  datos básicos y tus horarios de disponibilidad.
+                </p>
+              </div>
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="bg-white border-blue-300 text-blue-700 hover:bg-blue-100 flex-shrink-0"
+            >
+              <Link to="/dashboard/clinic/locations">
+                <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                Ir a Gestión de Clínicas
+              </Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
          <div className="flex justify-center items-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
