@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/layout/Sidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import RevokedMembershipBanner from '@/components/dashboard/RevokedMembershipBanner';
 import LegalAcceptanceGate from '@/features/legal/components/LegalAcceptanceGate';
 import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -115,6 +116,11 @@ const DashboardLayout = () => {
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <DashboardHeader onMenuToggle={handleMenuToggle} />
+
+          {/* Banner persistente para usuarios con membresía revocada
+              recientemente (≤ 30 días). Aparece arriba del main, dismissible
+              por sesión. Si no hay revocación, no renderiza nada. */}
+          <RevokedMembershipBanner />
 
           <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-muted/5">
             <Outlet />
