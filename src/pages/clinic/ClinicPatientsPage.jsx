@@ -11,6 +11,9 @@
  *   asignado, última cita, acciones (agendar cita — stub por ahora).
  * - Búsqueda por nombre/email
  * - Filtro por dentista asignado
+ * - Multi-select + bulk reassign de dentista tratante. UPDATE batch sobre
+ *   patients.therapist_id (RLS pat_admin_update + trigger
+ *   trg_sync_patient_care_team_update sincroniza patient_care_team auto).
  *
  * NO incluye (Ley 20.584 art. 12 — RLS lo bloquea automáticamente):
  * - Ficha clínica detallada (historial, tratamientos, evoluciones)
@@ -38,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -63,6 +67,8 @@ import {
   RefreshCw,
   Plus,
   Shield,
+  UserCog,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -82,6 +88,11 @@ const ClinicPatientsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDentist, setSelectedDentist] = useState('all');
   const [createOpen, setCreateOpen] = useState(false);
+
+  // Bulk reassign state
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkDentistId, setBulkDentistId] = useState('');
+  const [bulkApplying, setBulkApplying] = useState(false);
 
   // Hook compartido — misma fuente de verdad que PatientModal y
   // AssistantPatientDialog. Lista dentistas activos de la org via
@@ -182,6 +193,95 @@ const ClinicPatientsPage = () => {
     });
   }, [patients, searchTerm, selectedDentist]);
 
+  // ============================================================
+  // Bulk reassign helpers
+  // ============================================================
+  const toggleSelect = useCallback((id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const isAllVisibleSelected = useMemo(() => {
+    if (filteredPatients.length === 0) return false;
+    return filteredPatients.every(p => selectedIds.has(p.id));
+  }, [filteredPatients, selectedIds]);
+
+  const toggleSelectAllVisible = useCallback(() => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (isAllVisibleSelected) {
+        // Deselect all visible
+        filteredPatients.forEach(p => next.delete(p.id));
+      } else {
+        // Select all visible (no piso seleccionados de filtros previos)
+        filteredPatients.forEach(p => next.add(p.id));
+      }
+      return next;
+    });
+  }, [filteredPatients, isAllVisibleSelected]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+    setBulkDentistId('');
+  }, []);
+
+  const handleBulkReassign = useCallback(async () => {
+    if (!bulkDentistId || selectedIds.size === 0 || !clinic?.organization_id) return;
+
+    setBulkApplying(true);
+    const ids = Array.from(selectedIds);
+    try {
+      // UI Honesty: pedimos los ids actualizados para verificar que RLS no
+      // descartó silenciosamente algún update.
+      const { data, error } = await supabase
+        .from('patients')
+        .update({ therapist_id: bulkDentistId })
+        .in('id', ids)
+        .eq('organization_id', clinic.organization_id)
+        .select('id');
+
+      if (error) throw error;
+
+      const updated = data?.length || 0;
+      if (updated === 0) {
+        toast({
+          variant: 'destructive',
+          title: 'No se actualizó ningún paciente',
+          description: 'Es posible que ya no formen parte de la clínica. Refresca y vuelve a intentar.',
+        });
+        return;
+      }
+
+      const dentistName = dentists.find(d => d.id === bulkDentistId)?.full_name
+        || dentists.find(d => d.id === bulkDentistId)?.email
+        || 'dentista seleccionado';
+
+      toast({
+        title: 'Pacientes reasignados',
+        description: `${updated} paciente${updated !== 1 ? 's' : ''} → ${dentistName}.`,
+      });
+
+      clearSelection();
+      await fetchData();
+    } catch (err) {
+      logger.error('Bulk reassign error:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error al reasignar',
+        description: err.message || 'Intentalo de nuevo.',
+      });
+    } finally {
+      setBulkApplying(false);
+    }
+  }, [bulkDentistId, selectedIds, clinic, dentists, toast, clearSelection, fetchData]);
+
   if (loading && !refreshing) {
     return (
       <div className="flex h-[calc(100vh-100px)] w-full items-center justify-center">
@@ -243,7 +343,7 @@ const ClinicPatientsPage = () => {
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2">
           <Shield className="h-4 w-4 text-amber-700 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">
-            Vista admin-level. Podés gestionar contacto y citas, pero las fichas clínicas detalladas son accesibles solo por el dentista tratante (Ley 20.584 art. 12).
+            Vista admin-level. Puedes gestionar contacto y citas, pero las fichas clínicas detalladas son accesibles solo por el dentista tratante (Ley 20.584 art. 12).
           </p>
         </div>
 
@@ -280,6 +380,67 @@ const ClinicPatientsPage = () => {
           </CardContent>
         </Card>
 
+        {/* Barra de acción bulk (visible solo con selección activa) */}
+        {selectedIds.size > 0 && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="py-3">
+              <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  <UserCog className="h-4 w-4 text-primary" />
+                  <span className="font-medium">
+                    {selectedIds.size} paciente{selectedIds.size !== 1 ? 's' : ''} seleccionado{selectedIds.size !== 1 ? 's' : ''}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearSelection}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <X className="h-3 w-3 mr-1" /> Limpiar
+                  </Button>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                  <Select value={bulkDentistId} onValueChange={setBulkDentistId}>
+                    <SelectTrigger className="w-full sm:w-64">
+                      <SelectValue placeholder="Asignar dentista tratante..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dentists.length === 0 ? (
+                        <SelectItem value="__empty__" disabled>
+                          Sin dentistas activos
+                        </SelectItem>
+                      ) : (
+                        dentists.map(d => (
+                          <SelectItem key={d.id} value={d.id}>
+                            {d.full_name || d.email}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={handleBulkReassign}
+                    disabled={!bulkDentistId || bulkApplying || dentists.length === 0}
+                    className="bg-primary"
+                  >
+                    {bulkApplying ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Aplicando...
+                      </>
+                    ) : (
+                      <>
+                        <UserCog className="h-4 w-4 mr-2" />
+                        Aplicar
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabla */}
         <Card>
           <CardContent className="p-0">
@@ -287,6 +448,14 @@ const ClinicPatientsPage = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={isAllVisibleSelected}
+                        onCheckedChange={toggleSelectAllVisible}
+                        disabled={filteredPatients.length === 0}
+                        aria-label="Seleccionar todos los pacientes visibles"
+                      />
+                    </TableHead>
                     <TableHead>Paciente</TableHead>
                     <TableHead className="hidden md:table-cell">Contacto</TableHead>
                     <TableHead className="hidden lg:table-cell">Dentista asignado</TableHead>
@@ -298,7 +467,7 @@ const ClinicPatientsPage = () => {
                 <TableBody>
                   {filteredPatients.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                         {patients.length === 0
                           ? 'Aún no hay pacientes en la clínica.'
                           : 'No se encontraron pacientes con los filtros aplicados.'}
@@ -306,7 +475,17 @@ const ClinicPatientsPage = () => {
                     </TableRow>
                   ) : (
                     filteredPatients.map(p => (
-                      <TableRow key={p.id}>
+                      <TableRow
+                        key={p.id}
+                        data-state={selectedIds.has(p.id) ? 'selected' : undefined}
+                      >
+                        <TableCell className="w-10">
+                          <Checkbox
+                            checked={selectedIds.has(p.id)}
+                            onCheckedChange={() => toggleSelect(p.id)}
+                            aria-label={`Seleccionar ${p.full_name || 'paciente'}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
                             <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center">
