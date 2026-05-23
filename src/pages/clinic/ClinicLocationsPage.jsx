@@ -34,9 +34,23 @@ import {
   RefreshCw,
   Settings,
   AlertCircle,
+  Plus,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import logger from '@/lib/utils/logger';
 import ClinicBoxesModal from '@/components/clinic/ClinicBoxesModal';
+import ClinicLocationFormModal from '@/components/clinic/ClinicLocationFormModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const ClinicLocationsPage = () => {
   const { user } = useAuth();
@@ -48,14 +62,19 @@ const ClinicLocationsPage = () => {
   const [clinics, setClinics] = useState([]);
   const [boxCountsByClinic, setBoxCountsByClinic] = useState({});
   const [therapistCountsByClinic, setTherapistCountsByClinic] = useState({});
-  // max_boxes del plan activo (null = unlimited). Se carga via query a
-  // user_subscriptions + subscription_plans. Si falla, queda como null
-  // (fail-safe OPEN coherente con useActivePlanLimits).
+  // max_boxes + max_clinics del plan activo (null = unlimited). Se carga
+  // via query a subscriptions + subscription_plans. Fail-safe OPEN si falla.
   const [maxBoxes, setMaxBoxes] = useState(null);
+  const [maxClinics, setMaxClinics] = useState(null);
 
   // Modal state
   const [boxesModalOpen, setBoxesModalOpen] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState(null);
+  // CRUD sucursales (cierre del círculo Gestión de Clínicas)
+  const [locationFormOpen, setLocationFormOpen] = useState(false);
+  const [locationToEdit, setLocationToEdit] = useState(null);
+  const [clinicToDelete, setClinicToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!currentOrganizationId) {
@@ -64,11 +83,11 @@ const ClinicLocationsPage = () => {
     }
     setRefreshing(true);
     try {
-      // 0) Max boxes del plan activo (best-effort, fail-open si no se puede)
+      // 0) Limits del plan activo (best-effort, fail-open si no se puede)
       try {
         const { data: subData } = await supabase
           .from('subscriptions')
-          .select('plan_id, subscription_plans(max_boxes)')
+          .select('plan_id, subscription_plans(max_boxes, max_clinics)')
           .eq('user_id', user?.id)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
@@ -76,6 +95,9 @@ const ClinicLocationsPage = () => {
           .maybeSingle();
         if (subData?.subscription_plans?.max_boxes !== undefined) {
           setMaxBoxes(subData.subscription_plans.max_boxes);
+        }
+        if (subData?.subscription_plans?.max_clinics !== undefined) {
+          setMaxClinics(subData.subscription_plans.max_clinics);
         }
       } catch (planErr) {
         logger.warn('[ClinicLocationsPage] plan lookup (non-fatal):', planErr.message);
@@ -149,6 +171,51 @@ const ClinicLocationsPage = () => {
     setBoxesModalOpen(true);
   };
 
+  const handleOpenNewLocation = () => {
+    if (maxClinics !== null && clinics.length >= maxClinics) {
+      toast({
+        variant: 'destructive',
+        title: 'Límite del plan alcanzado',
+        description: `Tu plan permite máximo ${maxClinics} sucursal${maxClinics !== 1 ? 'es' : ''}. Hacé upgrade para agregar más.`,
+      });
+      return;
+    }
+    setLocationToEdit(null);
+    setLocationFormOpen(true);
+  };
+
+  const handleEditLocation = (clinic) => {
+    setLocationToEdit(clinic);
+    setLocationFormOpen(true);
+  };
+
+  // Soft delete: marca is_active=false en vez de DELETE. Es defensivo —
+  // la clinic tiene muchas FK (boxes, appointments, patients, etc.) y
+  // un hard delete puede romper datos clínicos. Si el user quiere hard
+  // delete, lo hace desde la página de profile o se hace via support.
+  const handleConfirmDelete = async () => {
+    if (!clinicToDelete) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('clinics')
+        .update({ is_active: false })
+        .eq('id', clinicToDelete.id);
+      if (error) throw error;
+      toast({
+        title: 'Sucursal desactivada',
+        description: 'Si necesitás eliminarla definitivamente, contactá a soporte.',
+      });
+      setClinicToDelete(null);
+      await fetchData();
+    } catch (err) {
+      logger.error('[ClinicLocationsPage] delete:', err.message);
+      toast({ variant: 'destructive', title: 'Error', description: err.message });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading && !refreshing) {
     return (
       <div className="flex h-[calc(100vh-100px)] w-full items-center justify-center">
@@ -181,13 +248,19 @@ const ClinicLocationsPage = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">Gestión de Clínicas</h1>
             <p className="text-muted-foreground mt-1">
-              Sucursales y boxes de tu organización · {clinics.length} sucursal
-              {clinics.length !== 1 ? 'es' : ''}
+              Sucursales y boxes de tu organización · {clinics.length}
+              {maxClinics !== null && ` / ${maxClinics}`} sucursal{clinics.length !== 1 ? 'es' : ''}
             </p>
           </div>
-          <Button variant="outline" onClick={fetchData} disabled={refreshing} title="Refrescar">
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchData} disabled={refreshing} title="Refrescar">
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button onClick={handleOpenNewLocation} className="bg-primary">
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva sucursal
+            </Button>
+          </div>
         </div>
 
         {/* Nota legal admin */}
@@ -195,8 +268,8 @@ const ClinicLocationsPage = () => {
           <AlertCircle className="h-4 w-4 text-blue-700 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-blue-900">
             Acá gestionás <strong>sucursales</strong> y <strong>boxes</strong> de tu clínica. Para
-            crear sucursales nuevas, usá el flow de "Mi Perfil → Agenda → Mis Lugares de Atención"
-            (próximamente se unificará). Los boxes son las salas físicas donde se atiende a los pacientes.
+            configuración avanzada de una sucursal (mapa, fotos, horarios públicos), también podés
+            ir a "Mi Perfil → Agenda → Mis Lugares de Atención".
           </p>
         </div>
 
@@ -206,9 +279,13 @@ const ClinicLocationsPage = () => {
             <CardContent className="py-12 text-center">
               <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold">Aún no hay sucursales</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                Andá a tu Perfil → Agenda → Mis Lugares de Atención para registrar la primera.
+              <p className="text-sm text-muted-foreground mt-2 mb-4">
+                Agregá tu primera sucursal para empezar a gestionar boxes y citas.
               </p>
+              <Button onClick={handleOpenNewLocation}>
+                <Plus className="h-4 w-4 mr-2" />
+                Crear primera sucursal
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -267,14 +344,34 @@ const ClinicLocationsPage = () => {
                       </div>
                     </div>
 
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => handleOpenBoxes(clinic)}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Gestionar boxes
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleOpenBoxes(clinic)}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Gestionar boxes
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditLocation(clinic)}
+                        title="Editar datos"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setClinicToDelete(clinic)}
+                        title="Desactivar sucursal"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={!clinic.is_active}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -290,6 +387,46 @@ const ClinicLocationsPage = () => {
         maxBoxes={maxBoxes}
         onChanged={fetchData}
       />
+
+      <ClinicLocationFormModal
+        isOpen={locationFormOpen}
+        onClose={() => setLocationFormOpen(false)}
+        clinic={locationToEdit}
+        organizationId={currentOrganizationId}
+        onSaved={fetchData}
+      />
+
+      <AlertDialog open={!!clinicToDelete} onOpenChange={(open) => !open && setClinicToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desactivar esta sucursal?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{clinicToDelete?.name}" se marcará como inactiva. Ya no se podrán agendar
+              citas nuevas en esta sucursal, pero los datos históricos (boxes, citas pasadas,
+              pacientes) se preservan. Podés reactivarla después desde el botón "Editar".
+              <br /><br />
+              Para eliminarla definitivamente, contactá a soporte.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Desactivando...
+                </>
+              ) : (
+                'Desactivar'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
