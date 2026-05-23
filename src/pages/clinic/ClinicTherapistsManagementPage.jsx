@@ -132,6 +132,7 @@ const ClinicTherapistsManagementPage = () => {
           therapist_id,
           is_active,
           joined_at,
+          commission_percent,
           profiles:therapist_id (
             id,
             full_name,
@@ -154,6 +155,7 @@ const ClinicTherapistsManagementPage = () => {
           therapist_id,
           is_active,
           joined_at,
+          commission_percent,
           profiles:therapist_id (
             id,
             full_name,
@@ -504,7 +506,7 @@ const ClinicTherapistsManagementPage = () => {
                     setSelectedTherapist(row);
                     setIsEditModalOpen(true);
                   }}>
-                    Ver Detalles / Editar
+                    Ver / Editar Dentista
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                     // row.id = junction table id; el ID real del dentista está en row.therapist_id
@@ -515,7 +517,7 @@ const ClinicTherapistsManagementPage = () => {
                     setIsScheduleModalOpen(true);
                   }}>
                     <Clock className="mr-2 h-4 w-4" />
-                    Editar horario en clínica
+                    Ver / Editar Agenda
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>

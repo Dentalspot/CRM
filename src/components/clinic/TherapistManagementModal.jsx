@@ -48,6 +48,12 @@ const TherapistManagementModal = ({
   const [initialSpecialtyIds, setInitialSpecialtyIds] = useState([]);
   const [loadingSpecialties, setLoadingSpecialties] = useState(false);
 
+  // % de pago acordado para el dentista en esta clínica (commission_percent
+  // en clinic_therapists). Es el % que se queda el dentista por cada cita
+  // atendida en esta clínica. Default '' = sin acuerdo registrado. Se usa
+  // en reportes de Ingresos/Recaudación para dividir entre clínica y dentista.
+  const [commissionPercent, setCommissionPercent] = useState('');
+
   useEffect(() => {
     if (isOpen) {
       if (therapistToEdit) {
@@ -55,6 +61,11 @@ const TherapistManagementModal = ({
         setEmail(therapistToEdit.profiles?.email || '');
         setStatus(therapistToEdit.is_active);
         setRole('therapist');
+        setCommissionPercent(
+          therapistToEdit.commission_percent != null
+            ? String(therapistToEdit.commission_percent)
+            : ''
+        );
         setFoundUser({
           id: therapistToEdit.therapist_id,
           full_name: therapistToEdit.profiles?.full_name,
@@ -94,6 +105,7 @@ const TherapistManagementModal = ({
     setFoundUser(null);
     setSpecialtyIds([]);
     setInitialSpecialtyIds([]);
+    setCommissionPercent('');
   };
 
   const handleSearchUser = async () => {
@@ -154,11 +166,28 @@ const TherapistManagementModal = ({
 
     try {
       if (therapistToEdit) {
+        // Validar commission_percent si fue ingresado
+        let commissionToSave = null;
+        if (commissionPercent !== '' && commissionPercent != null) {
+          const num = parseFloat(commissionPercent);
+          if (isNaN(num) || num < 0 || num > 100) {
+            toast({
+              variant: 'destructive',
+              title: 'Porcentaje inválido',
+              description: 'Ingresá un valor entre 0 y 100.',
+            });
+            setLoading(false);
+            return;
+          }
+          commissionToSave = num;
+        }
+
         // UPDATE existing relationship
         const { error } = await supabase
           .from('clinic_therapists')
           .update({
             is_active: status,
+            commission_percent: commissionToSave,
             updated_at: new Date().toISOString()
           })
           .eq('id', therapistToEdit.id);
@@ -349,6 +378,38 @@ const TherapistManagementModal = ({
                 />
                 <p className="text-[10px] text-muted-foreground">
                   Clasificá al dentista por especialidad. Si no asignás ninguna, aparece como dentista general. Usado para que los pacientes encuentren al especialista correcto.
+                </p>
+              </div>
+            )}
+
+            {/* % comisión / pago acordado — solo en edit (necesita clinic_therapists row).
+                Persistido en clinic_therapists.commission_percent (numeric). Usado en
+                reportes de Ingresos/Recaudación para dividir entre clínica y dentista. */}
+            {therapistToEdit && (
+              <div className="space-y-2">
+                <Label htmlFor="commission_percent">
+                  Porcentaje de pago acordado al dentista
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="commission_percent"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Ej: 70"
+                    value={commissionPercent}
+                    onChange={(e) => setCommissionPercent(e.target.value)}
+                    disabled={loading}
+                    className="pr-8"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                    %
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Porcentaje que se queda el dentista de cada cita atendida en esta clínica. Ej: 70% significa que el dentista recibe 70 de cada 100 cobrados; la clínica retiene 30. Si dejás vacío, no se aplica división automática en los reportes.
                 </p>
               </div>
             )}
