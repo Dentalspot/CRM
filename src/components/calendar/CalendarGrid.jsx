@@ -30,7 +30,7 @@ const CalendarGrid = ({
     onSlotClick({
       date: format(day, 'yyyy-MM-dd'),
       startTime: format(dateWithTime, 'HH:mm'),
-      endTime: format(addMinutes(dateWithTime, 60), 'HH:mm'), // Default to 1h
+      endTime: format(addMinutes(dateWithTime, 30), 'HH:mm'), // Default 30 min
       resourceId: null
     });
   };
