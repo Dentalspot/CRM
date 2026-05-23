@@ -42,6 +42,7 @@ import useDebounce from '@/hooks/useDebounce';
 import { supabase } from '@/lib/supabaseClient';
 import { logClinicalAccess } from '@/lib/audit/clinicalAuditLogger';
 import logger from '@/lib/utils/logger';
+import BoxSelector from '@/components/calendar/BoxSelector';
 
 import {
   createOrgAppointment,
@@ -97,6 +98,10 @@ const AssistantAppointmentModal = ({
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
 
+  // Box (sala/sillón) opcional. Null = sin box específico. Trigger DB
+  // valida overlap + box pertenece a la clinic + box activo.
+  const [boxId, setBoxId] = useState(null);
+
   // Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingAppointment, setLoadingAppointment] = useState(false);
@@ -112,7 +117,7 @@ const AssistantAppointmentModal = ({
       supabase
         .from('appointments')
         .select(`
-          id, therapist_id, patient_id, service_id, date, start_time, end_time, status, notes,
+          id, therapist_id, patient_id, service_id, box_id, date, start_time, end_time, status, notes,
           patient:patients!appointments_patient_id_fkey(
             id, profile_id, profile:profiles!patients_profile_id_fkey(full_name, email, phone)
           )
@@ -137,6 +142,7 @@ const AssistantAppointmentModal = ({
           setOriginalStatus(data.status || 'scheduled');
           setNotes(data.notes || '');
           setSelectedServiceId(data.service_id || '');
+          setBoxId(data.box_id || null);
           if (data.patient) {
             setSelectedPatient({
               id: data.patient.id,
@@ -159,6 +165,7 @@ const AssistantAppointmentModal = ({
       setNotes('');
       setSelectedPatient(null);
       setSelectedServiceId('');
+      setBoxId(null);
       setSearchTerm('');
       setSearchResults([]);
     }
@@ -250,6 +257,7 @@ const AssistantAppointmentModal = ({
           status,
           notes: notes || null,
           service_id: selectedServiceId || null,
+          box_id: boxId || null,
           patient_id: selectedPatient.id,
         };
         const updated = await updateOrgAppointment(appointmentId, changes);
@@ -281,6 +289,7 @@ const AssistantAppointmentModal = ({
           therapist_id: therapistId,
           patient_id: selectedPatient.id,
           service_id: selectedServiceId || null,
+          box_id: boxId || null,
           date,
           start_time: `${startTime}:00`,
           end_time: `${endTime}:00`,
@@ -308,10 +317,19 @@ const AssistantAppointmentModal = ({
       }
     } catch (err) {
       logger.error('Error submitting appointment:', err);
+      // Mapeo de códigos del trigger trg_check_appointment_box
+      let desc = err.message || 'Verifica los datos e intenta de nuevo.';
+      if (desc.includes('box_double_booking')) {
+        desc = 'Ya hay una cita en ese box que se superpone con este horario.';
+      } else if (desc.includes('box_inactive')) {
+        desc = 'El box seleccionado está marcado como inactivo.';
+      } else if (desc.includes('box_wrong_clinic') || desc.includes('box_not_found')) {
+        desc = 'El box seleccionado no pertenece a esta clínica.';
+      }
       toast({
         variant: 'destructive',
         title: isEditMode ? 'Error al actualizar cita' : 'Error al crear cita',
-        description: err.message || 'Verifica los datos e intenta de nuevo.',
+        description: desc,
       });
     } finally {
       setIsSubmitting(false);
@@ -441,6 +459,13 @@ const AssistantAppointmentModal = ({
               </Select>
             )}
           </div>
+
+          {/* Box / Sala (opcional) — trigger DB valida overlap */}
+          <BoxSelector
+            clinicId={clinicId}
+            value={boxId}
+            onChange={setBoxId}
+          />
 
           {/* Estado (solo en edit) */}
           {isEditMode && (

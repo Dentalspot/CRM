@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { User, Ban, Loader2, CheckCircle2, FileText, XCircle, Trash2 } from 'lucide-react';
+import BoxSelector from '@/components/calendar/BoxSelector';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -57,6 +58,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     block_type: '',
     patient_id: '',
     service_id: '',
+    box_id: null,
     notes: '',
     status: 'scheduled',
   });
@@ -118,6 +120,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           block_type: appointmentData.block_type || '',
           patient_id: appointmentData.patient_id || '',
           service_id: appointmentData.service_id || '',
+          box_id: appointmentData.box_id || null,
           notes: appointmentData.notes || '',
           status: appointmentData.status || 'scheduled',
         });
@@ -130,6 +133,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           block_type: '',
           patient_id: slotInfo.patientId || '',
           service_id: '',
+          box_id: null,
           notes: ''
         });
       }
@@ -172,7 +176,8 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
       ...prev,
       clinic_id: val,
       block_type: selected?.type === 'colegio' ? prev.block_type : '',
-      patient_id: '' // Limpiar paciente seleccionado al cambiar clínica
+      patient_id: '', // Limpiar paciente seleccionado al cambiar clínica
+      box_id: null, // Limpiar box (puede no existir en la nueva clínica)
     }));
   };
 
@@ -286,8 +291,21 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         organization_id: currentOrganizationId,
         block_type: formData.block_type || null,
         service_id: formData.service_id || null,
+        box_id: formData.box_id || null,
         notes: formData.notes,
         duration_minutes: calculateDuration(formData.start_time, formData.end_time)
+      };
+
+      // Mapeo de errores del trigger trg_check_appointment_box
+      const mapBoxError = (errMsg) => {
+        if (errMsg.includes('box_double_booking')) {
+          return 'Ya hay una cita en ese box que se superpone con este horario.';
+        } else if (errMsg.includes('box_inactive')) {
+          return 'El box seleccionado está marcado como inactivo.';
+        } else if (errMsg.includes('box_wrong_clinic') || errMsg.includes('box_not_found')) {
+          return 'El box seleccionado no pertenece a esta clínica.';
+        }
+        return errMsg;
       };
 
       let savedApt;
@@ -296,7 +314,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         payload.duration_minutes = calculateDuration(formData.start_time, formData.end_time);
 
         const { data, error } = await supabase.from('appointments').update(payload).eq('id', slotInfo.id).select().single();
-        if (error) throw error;
+        if (error) throw new Error(mapBoxError(error.message));
         savedApt = data;
 
         // Si se marcó como completada y tiene paciente, disparar flujo post-sesión
@@ -307,7 +325,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
       } else {
         payload.status = 'scheduled';
         const { data, error } = await supabase.from('appointments').insert(payload).select().single();
-        if (error) throw error;
+        if (error) throw new Error(mapBoxError(error.message));
         savedApt = data;
       }
 
@@ -436,6 +454,13 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           </SelectContent>
         </Select>
       </div>
+
+      {/* Box / Sala (opcional) — trigger DB valida overlap */}
+      <BoxSelector
+        clinicId={formData.clinic_id || null}
+        value={formData.box_id}
+        onChange={(boxId) => setFormData({ ...formData, box_id: boxId })}
+      />
 
       {isEditing && (
         <div className="space-y-2">

@@ -12,6 +12,7 @@ import { Loader2, User, Calendar, Clock, MapPin, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logger from '@/lib/utils/logger';
 import { format, parseISO } from 'date-fns';
+import BoxSelector from '@/components/calendar/BoxSelector';
 
 const AppointmentStatusBadge = ({ status }) => {
   const statusStyles = {
@@ -43,6 +44,7 @@ const EditAppointmentForm = ({ appointment, onSuccess, onSessionCompleted, setIs
   const [formData, setFormData] = useState({
     status: appointment.status,
     notes: appointment.notes || '',
+    box_id: appointment.box_id || null,
   });
 
   const [services, setServices] = useState([]);
@@ -98,6 +100,7 @@ const EditAppointmentForm = ({ appointment, onSuccess, onSessionCompleted, setIs
       const updateData = {
         status: formData.status,
         notes: formData.notes,
+        box_id: formData.box_id,
       };
 
       const { error } = await supabase
@@ -105,7 +108,18 @@ const EditAppointmentForm = ({ appointment, onSuccess, onSessionCompleted, setIs
         .update(updateData)
         .eq('id', appointment.id);
 
-      if (error) throw error;
+      if (error) {
+        // Mapear códigos del trigger trg_check_appointment_box a mensajes amigables
+        let msg = error.message;
+        if (msg.includes('box_double_booking')) {
+          msg = 'Ya hay una cita programada en ese box que se superpone con este horario. Elegí otro box o cambiá el horario.';
+        } else if (msg.includes('box_inactive')) {
+          msg = 'El box seleccionado está marcado como inactivo.';
+        } else if (msg.includes('box_wrong_clinic') || msg.includes('box_not_found')) {
+          msg = 'El box seleccionado no pertenece a esta clínica.';
+        }
+        throw new Error(msg);
+      }
 
       toast({
         title: '¡Éxito!',
@@ -206,6 +220,15 @@ const EditAppointmentForm = ({ appointment, onSuccess, onSessionCompleted, setIs
             </span>
           </div>
         </div>
+      )}
+
+      {/* Box / Sala — selector reasignable. Trigger DB valida overlap. */}
+      {appointment.clinic_id && (
+        <BoxSelector
+          clinicId={appointment.clinic_id}
+          value={formData.box_id}
+          onChange={(boxId) => handleChange('box_id', boxId)}
+        />
       )}
 
       {/* Estado de la Cita */}
