@@ -16,6 +16,7 @@ import useDebounce from '@/hooks/useDebounce';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import useActivePlanLimits from '@/hooks/useActivePlanLimits';
 import UpgradeModal from '@/components/modals/UpgradeModal';
+import BoxSelector from '@/components/calendar/BoxSelector';
 import logger from "@/lib/utils/logger";
 import {
   searchPatientsForAgenda,
@@ -44,6 +45,9 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
   const [notes, setNotes] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceWeeks, setRecurrenceWeeks] = useState(4);
+  // Box (sala/sillón) opcional. Null = "sin box específico". Trigger DB
+  // valida que el box pertenezca a la clinic + anti double-booking.
+  const [boxId, setBoxId] = useState(null);
 
   const debouncedSearch = useDebounce(patientSearchTerm, 300);
 
@@ -204,6 +208,7 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
           clinic_id: clinicId,
           organization_id: currentOrganizationId,
           service_id: validServiceId,
+          box_id: boxId, // null si user no eligió box específico
           date: format(appointmentDate, 'yyyy-MM-dd'),
           start_time: slotInfo.startTime,
           end_time: endTime,
@@ -230,7 +235,13 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
     } catch (error) {
       logger.error("Save error:", error);
       let msg = error.message;
-      if (msg.includes('duplicate') || msg.includes('overlap') || msg.includes('double_booking')) {
+      if (msg.includes('box_double_booking')) {
+        msg = 'Ya hay una cita programada en ese box que se superpone con este horario. Elegí otro box o cambiá el horario.';
+      } else if (msg.includes('box_inactive')) {
+        msg = 'El box seleccionado está marcado como inactivo.';
+      } else if (msg.includes('box_wrong_clinic') || msg.includes('box_not_found')) {
+        msg = 'El box seleccionado no pertenece a esta clínica.';
+      } else if (msg.includes('duplicate') || msg.includes('overlap') || msg.includes('double_booking')) {
         msg = "El horario seleccionado ya está ocupado.";
       }
       toast({ variant: 'destructive', title: 'Error al agendar', description: msg });
@@ -347,6 +358,14 @@ const NewAppointmentForm = ({ slotInfo, clinics, onSuccess, setIsSubmitting }) =
           </SelectContent>
         </Select>
       </div>
+
+      {/* Box (opcional) — visible solo si la clínica tiene boxes activos.
+          El trigger DB valida que el box pertenezca a la clinic + no overlap. */}
+      <BoxSelector
+        clinicId={slotInfo.clinicId || (clinics.length > 0 ? clinics[0].id : null)}
+        value={boxId}
+        onChange={setBoxId}
+      />
 
       {/* Recurrence */}
       <div className="flex items-center space-x-2 pt-2">
