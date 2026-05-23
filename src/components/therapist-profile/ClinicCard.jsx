@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,8 +21,15 @@ const weekDays = [
   { id: 4, name: 'Jueves' }, { id: 5, name: 'Viernes' }, { id: 6, name: 'Sábado' }, { id: 0, name: 'Domingo' }
 ];
 
+// Wrapper que adapta TimePicker (value: string) al patrón legacy de los
+// callers que envían onChange esperando un event. Mantiene compatibilidad
+// con el resto del componente sin tocar handleScheduleChange.
 const TimeInput = ({ value, onChange, ...props }) => (
-  <Input type="time" value={value || ''} onChange={onChange} className="bg-background w-full" {...props} />
+  <TimePicker
+    value={value || ''}
+    onChange={(v) => onChange?.({ target: { value: v } })}
+    {...props}
+  />
 );
 
 const AvailabilityManager = ({ clinic, onUpdate }) => {

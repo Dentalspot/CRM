@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -616,21 +617,15 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-gray-500">Hora inicio</Label>
-                    <Input
-                      type="time"
-                      value={nextTime}
-                      onChange={(e) => setNextTime(e.target.value)}
-                      className="mt-1"
-                    />
+                    <div className="mt-1">
+                      <TimePicker value={nextTime} onChange={setNextTime} />
+                    </div>
                   </div>
                   <div>
                     <Label className="text-xs text-gray-500">Hora fin</Label>
-                    <Input
-                      type="time"
-                      value={nextEndTime}
-                      onChange={(e) => setNextEndTime(e.target.value)}
-                      className="mt-1"
-                    />
+                    <div className="mt-1">
+                      <TimePicker value={nextEndTime} onChange={setNextEndTime} />
+                    </div>
                   </div>
                 </div>
                 {schedulePreview && (

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -533,31 +534,12 @@ const BlockTimeModal = ({
           {/* Horas */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="start-time">Hora de Inicio</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="start-time"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+              <Label>Hora de Inicio</Label>
+              <TimePicker value={startTime} onChange={setStartTime} />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="end-time">Hora de Fin</Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="end-time"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+              <Label>Hora de Fin</Label>
+              <TimePicker value={endTime} onChange={setEndTime} />
             </div>
           </div>
 

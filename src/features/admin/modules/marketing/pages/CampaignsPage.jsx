@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { useToast } from '@/components/ui/use-toast';
 import {
   ArrowLeft, Send, Plus, RefreshCw, Mail, Clock, CheckCircle,
@@ -528,7 +529,7 @@ const CampaignsPage = () => {
                   </div>
                   <div>
                     <label className="text-xs text-gray-600 block mb-1">Hora de envio</label>
-                    <Input type="time" value={form.send_time || '09:00'} onChange={e => setForm(f => ({ ...f, send_time: e.target.value }))} />
+                    <TimePicker value={form.send_time || '09:00'} onChange={(v) => setForm(f => ({ ...f, send_time: v }))} />
                   </div>
                   <div>
                     <label className="text-xs text-gray-600 block mb-1">Repetir cada</label>

@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
@@ -188,15 +189,7 @@ const RescheduleAppointmentPage = () => {
 
               <div className="grid gap-2">
                 <Label>Nueva Hora</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                  <Input 
-                    type="time" 
-                    className="pl-9"
-                    value={newTime}
-                    onChange={(e) => setNewTime(e.target.value)}
-                  />
-                </div>
+                <TimePicker value={newTime} onChange={setNewTime} />
               </div>
 
               <div className="grid gap-2">

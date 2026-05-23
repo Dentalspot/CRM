@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -930,10 +931,9 @@ const TreatmentPlanBuilderModal = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Hora de Sesión</Label>
-                      <Input
-                        type="time"
+                      <TimePicker
                         value={assignmentConfig.preferredTime}
-                        onChange={(e) => handleAssignmentChange('preferredTime', e.target.value)}
+                        onChange={(v) => handleAssignmentChange('preferredTime', v)}
                       />
                     </div>
                     <div className="space-y-2">

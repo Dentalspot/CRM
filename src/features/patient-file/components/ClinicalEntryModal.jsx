@@ -15,6 +15,7 @@ import { es } from 'date-fns/locale';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import TimePicker from "@/components/ui/time-picker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -294,11 +295,10 @@ const ClinicalEntryModal = ({
                     initialFocus
                   />
                   <div className="p-3 border-t">
-                    <Input 
-                      type="time" 
+                    <TimePicker
                       value={format(date, 'HH:mm')}
-                      onChange={(e) => {
-                        const [hours, minutes] = e.target.value.split(':');
+                      onChange={(v) => {
+                        const [hours, minutes] = v.split(':');
                         const newDate = new Date(date);
                         newDate.setHours(parseInt(hours), parseInt(minutes));
                         setDate(newDate);

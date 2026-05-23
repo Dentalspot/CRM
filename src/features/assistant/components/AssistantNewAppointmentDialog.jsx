@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -145,11 +146,11 @@ const AssistantNewAppointmentDialog = ({ isOpen, onOpenChange, selectedDate, onC
               </div>
               <div className="space-y-2">
                 <Label>Inicio *</Label>
-                <Input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} />
+                <TimePicker value={form.start_time} onChange={(v) => setForm(f => ({ ...f, start_time: v }))} />
               </div>
               <div className="space-y-2">
                 <Label>Fin</Label>
-                <Input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} placeholder="Auto" />
+                <TimePicker value={form.end_time} onChange={(v) => setForm(f => ({ ...f, end_time: v }))} />
               </div>
             </div>
 

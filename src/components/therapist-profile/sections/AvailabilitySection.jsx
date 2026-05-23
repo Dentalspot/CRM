@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ProfileSectionCard from '@/components/therapist-profile/ProfileSectionCard';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import TimePicker from '@/components/ui/time-picker';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, XCircle, Save, Loader2 } from 'lucide-react';
@@ -152,12 +153,12 @@ const AvailabilitySection = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor={`startTime-${index}`}>Hora Inicio</Label>
-              <Input id={`startTime-${index}`} name="startTime" type="time" value={slot.startTime} onChange={(e) => handleChange(index, 'startTime', e.target.value)} />
+              <Label>Hora Inicio</Label>
+              <TimePicker value={slot.startTime} onChange={(v) => handleChange(index, 'startTime', v)} />
             </div>
             <div>
-              <Label htmlFor={`endTime-${index}`}>Hora Fin</Label>
-              <Input id={`endTime-${index}`} name="endTime" type="time" value={slot.endTime} onChange={(e) => handleChange(index, 'endTime', e.target.value)} />
+              <Label>Hora Fin</Label>
+              <TimePicker value={slot.endTime} onChange={(v) => handleChange(index, 'endTime', v)} />
             </div>
           </div>
         </div>
