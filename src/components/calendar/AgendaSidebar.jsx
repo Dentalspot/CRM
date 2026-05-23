@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getClinicColor } from './WeeklyAgendaView';
+import BoxOccupancyPanel from './BoxOccupancyPanel';
 
 // Mismos estados disponibles que en UpcomingAppointmentCard.
 const STATUS_OPTIONS = [
@@ -57,6 +58,9 @@ const AgendaSidebar = ({
   onBlockTime,
   onNewAppointment,
   onStatusChange,
+  currentWeek,
+  organizationId,
+  userId,
   className
 }) => {
   const navigate = useNavigate();
@@ -364,6 +368,19 @@ const AgendaSidebar = ({
       )}
 
       <Separator className="order-6 lg:order-5 opacity-50 hidden lg:block" />
+
+      {/* Ocupación de Box — panel para coordinar uso de recurso físico
+          entre dentistas del equipo. Si la org no tiene boxes activos,
+          el componente devuelve null (early return). */}
+      {organizationId && (
+        <div className="order-5 lg:order-5">
+          <BoxOccupancyPanel
+            organizationId={organizationId}
+            currentWeek={currentWeek}
+            userId={userId}
+          />
+        </div>
+      )}
 
       {/* 4) Quick Actions. Mobile order 4, Desktop order 6. */}
       <div className="order-4 lg:order-6 space-y-2">
