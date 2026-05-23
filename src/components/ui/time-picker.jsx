@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { Clock } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -12,23 +11,26 @@ import { cn } from '@/lib/utils';
 /**
  * @file src/components/ui/time-picker.jsx
  *
- * Time picker custom basado en 2 dropdowns shadcn (hora + minutos).
- * Reemplazo de <input type="time"> nativo que tenía highlight azul
- * de selección que se confundía con "bloqueado".
+ * Time picker basado en un único Select con slots pre-generados.
+ * Reemplazo del input type="time" nativo (que tenía highlight azul
+ * confuso de selección del segmento de minutos).
+ *
+ * Por default genera slots cada 30 minutos (alineado con el grid de
+ * la agenda WeeklyAgendaView). Si se necesitan slots más finos, pasar
+ * step=15.
  *
  * Props:
  *  - value: string formato "HH:mm" (ej: "14:30")
  *  - onChange(timeString): callback con el nuevo valor "HH:mm"
- *  - step: 15 | 30 | 60 — incremento de minutos (default 15)
+ *  - step: 15 | 30 | 60 — incremento de minutos (default 30)
  *  - minHour: 0..23 (default 0)
  *  - maxHour: 0..23 (default 23)
  *  - disabled: boolean
  *  - className
  *
  * Comportamiento:
- *  - Si value es null/empty, muestra placeholder "Hora"
- *  - Si value tiene minutos fuera del step, los redondea hacia abajo
- *    al render (no muta el value, solo display)
+ *  - Si value no coincide con un slot del step, se muestra igual
+ *    (no se descarta) — útil cuando viene de DB con minutos arbitrarios
  */
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -36,69 +38,40 @@ const pad = (n) => String(n).padStart(2, '0');
 const TimePicker = ({
   value,
   onChange,
-  step = 15,
+  step = 30,
   minHour = 0,
   maxHour = 23,
   disabled = false,
   className,
 }) => {
-  // Parse value "HH:mm" → { hour, minute }
-  const { hour, minute } = useMemo(() => {
-    if (!value || typeof value !== 'string') {
-      return { hour: '', minute: '' };
+  // Generar todos los slots HH:mm posibles entre minHour y maxHour
+  const slots = useMemo(() => {
+    const arr = [];
+    for (let h = minHour; h <= maxHour; h++) {
+      for (let m = 0; m < 60; m += step) {
+        arr.push(`${pad(h)}:${pad(m)}`);
+      }
     }
-    const [h, m] = value.split(':');
-    return { hour: h || '', minute: m ? m.slice(0, 2) : '' };
-  }, [value]);
-
-  // Generar lista de horas del rango
-  const hours = useMemo(() => {
-    const arr = [];
-    for (let h = minHour; h <= maxHour; h++) arr.push(pad(h));
     return arr;
-  }, [minHour, maxHour]);
+  }, [step, minHour, maxHour]);
 
-  // Generar lista de minutos según step
-  const minutes = useMemo(() => {
-    const arr = [];
-    for (let m = 0; m < 60; m += step) arr.push(pad(m));
-    return arr;
-  }, [step]);
-
-  const handleHourChange = (h) => {
-    const m = minute || '00';
-    onChange?.(`${h}:${m}`);
-  };
-
-  const handleMinuteChange = (m) => {
-    const h = hour || pad(minHour);
-    onChange?.(`${h}:${m}`);
-  };
+  // Si el value actual no coincide con un slot del step (ej. viene de DB
+  // con minutos arbitrarios), lo incluimos al inicio para no perderlo.
+  const slotsWithValue = useMemo(() => {
+    if (!value || slots.includes(value)) return slots;
+    return [value, ...slots];
+  }, [slots, value]);
 
   return (
-    <div className={cn('flex items-center gap-1', className)}>
-      <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-      <Select value={hour} onValueChange={handleHourChange} disabled={disabled}>
-        <SelectTrigger className="h-9 px-2 w-[68px] text-sm">
-          <SelectValue placeholder="HH" />
+    <div className={cn(className)}>
+      <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger className="h-9 text-sm">
+          <SelectValue placeholder="--:--" />
         </SelectTrigger>
         <SelectContent className="max-h-[280px]">
-          {hours.map((h) => (
-            <SelectItem key={h} value={h}>
-              {h}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <span className="text-muted-foreground font-semibold select-none">:</span>
-      <Select value={minute} onValueChange={handleMinuteChange} disabled={disabled}>
-        <SelectTrigger className="h-9 px-2 w-[68px] text-sm">
-          <SelectValue placeholder="MM" />
-        </SelectTrigger>
-        <SelectContent>
-          {minutes.map((m) => (
-            <SelectItem key={m} value={m}>
-              {m}
+          {slotsWithValue.map((s) => (
+            <SelectItem key={s} value={s}>
+              {s}
             </SelectItem>
           ))}
         </SelectContent>
