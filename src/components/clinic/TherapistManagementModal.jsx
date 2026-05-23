@@ -61,9 +61,14 @@ const TherapistManagementModal = ({
         setEmail(therapistToEdit.profiles?.email || '');
         setStatus(therapistToEdit.is_active);
         setRole('therapist');
+        // CONVENCIÓN: en DB clinic_therapists.commission_percent guarda el
+        // % que se queda LA CLÍNICA (alineado con v_income_summary que
+        // calcula commission_amount = clinic_amount). El UI muestra al
+        // user el % DEL DENTISTA porque así piensa operacionalmente
+        // ("¿cuánto le pago al dentista?"). Invertimos al cargar/guardar.
         setCommissionPercent(
           therapistToEdit.commission_percent != null
-            ? String(therapistToEdit.commission_percent)
+            ? String(100 - Number(therapistToEdit.commission_percent))
             : ''
         );
         setFoundUser({
@@ -166,11 +171,13 @@ const TherapistManagementModal = ({
 
     try {
       if (therapistToEdit) {
-        // Validar commission_percent si fue ingresado
+        // Validar commission_percent si fue ingresado. INVERSIÓN: el user
+        // ingresa el % DEL DENTISTA, pero DB guarda el % de la clínica
+        // (alineado con v_income_summary). Convertimos antes de save.
         let commissionToSave = null;
         if (commissionPercent !== '' && commissionPercent != null) {
-          const num = parseFloat(commissionPercent);
-          if (isNaN(num) || num < 0 || num > 100) {
+          const userPercent = parseFloat(commissionPercent);
+          if (isNaN(userPercent) || userPercent < 0 || userPercent > 100) {
             toast({
               variant: 'destructive',
               title: 'Porcentaje inválido',
@@ -179,7 +186,8 @@ const TherapistManagementModal = ({
             setLoading(false);
             return;
           }
-          commissionToSave = num;
+          // Invertir: si el user pone 70% (al dentista), DB guarda 30 (clínica)
+          commissionToSave = 100 - userPercent;
         }
 
         // UPDATE existing relationship
