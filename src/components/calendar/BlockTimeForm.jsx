@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
+import TimePicker from '@/components/ui/time-picker';
 
 const BlockTimeForm = ({ slotInfo, clinics = [], onSuccess, setIsSubmitting }) => {
   const { user } = useAuth();
@@ -137,23 +138,17 @@ const BlockTimeForm = ({ slotInfo, clinics = [], onSuccess, setIsSubmitting }) =
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="start_time">Hora Inicio</Label>
-          <Input
-            id="start_time"
-            name="start_time"
-            type="time"
+          <Label>Hora Inicio</Label>
+          <TimePicker
             value={blockData.start_time}
-            onChange={handleChange}
+            onChange={(v) => setBlockData((prev) => ({ ...prev, start_time: v }))}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="end_time">Hora Fin</Label>
-          <Input
-            id="end_time"
-            name="end_time"
-            type="time"
+          <Label>Hora Fin</Label>
+          <TimePicker
             value={blockData.end_time}
-            onChange={handleChange}
+            onChange={(v) => setBlockData((prev) => ({ ...prev, end_time: v }))}
           />
         </div>
       </div>

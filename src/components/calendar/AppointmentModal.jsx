@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { User, Ban, Loader2, CheckCircle2, FileText, XCircle, Trash2 } from 'lucide-react';
 import BoxSelector from '@/components/calendar/BoxSelector';
+import TimePicker from '@/components/ui/time-picker';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -377,11 +378,17 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-2">
             <Label>Inicio</Label>
-            <Input type="time" required value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} />
+            <TimePicker
+              value={formData.start_time}
+              onChange={(v) => setFormData({ ...formData, start_time: v })}
+            />
           </div>
           <div className="space-y-2">
             <Label>Fin</Label>
-            <Input type="time" required value={formData.end_time} onChange={e => setFormData({...formData, end_time: e.target.value})} />
+            <TimePicker
+              value={formData.end_time}
+              onChange={(v) => setFormData({ ...formData, end_time: v })}
+            />
           </div>
         </div>
       </div>

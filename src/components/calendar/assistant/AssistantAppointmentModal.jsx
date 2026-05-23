@@ -43,6 +43,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { logClinicalAccess } from '@/lib/audit/clinicalAuditLogger';
 import logger from '@/lib/utils/logger';
 import BoxSelector from '@/components/calendar/BoxSelector';
+import TimePicker from '@/components/ui/time-picker';
 
 import {
   createOrgAppointment,
@@ -369,11 +370,11 @@ const AssistantAppointmentModal = ({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Desde</Label>
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
+              <TimePicker value={startTime} onChange={setStartTime} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Hasta</Label>
-              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
+              <TimePicker value={endTime} onChange={setEndTime} />
             </div>
           </div>
 
