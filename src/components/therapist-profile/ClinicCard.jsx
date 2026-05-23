@@ -329,6 +329,72 @@ const ClinicCard = ({ clinic, onUpdate, onDelete, isExpandedDefault = false }) =
                   <Label htmlFor={`is_public-${clinic.id}`} className="font-normal text-gray-700 dark:text-gray-300">Mostrar este lugar en mi perfil y buscador.</Label>
                 </div>
 
+                {/* Configuración del calendario por sucursal */}
+                <div className="md:col-span-2 mt-2 pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                    ⚙️ Configuración del calendario
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Define el rango horario visible y la duración de cada slot en la agenda.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs">Hora inicio</Label>
+                      <Select
+                        value={String(clinic.calendar_start_hour ?? 8)}
+                        onValueChange={(v) => handleFieldChange('calendar_start_hour', Number(v))}
+                        disabled={!canEditClinicData}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[280px]">
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <SelectItem key={i} value={String(i)}>
+                              {String(i).padStart(2, '0')}:00
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Hora fin</Label>
+                      <Select
+                        value={String(clinic.calendar_end_hour ?? 20)}
+                        onValueChange={(v) => handleFieldChange('calendar_end_hour', Number(v))}
+                        disabled={!canEditClinicData}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[280px]">
+                          {Array.from({ length: 24 }, (_, i) => i + 1).map((h) => (
+                            <SelectItem key={h} value={String(h)}>
+                              {String(h).padStart(2, '0')}:00
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Duración del slot</Label>
+                      <Select
+                        value={String(clinic.calendar_slot_minutes ?? 30)}
+                        onValueChange={(v) => handleFieldChange('calendar_slot_minutes', Number(v))}
+                        disabled={!canEditClinicData}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 minutos</SelectItem>
+                          <SelectItem value="30">30 minutos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Estado del dueño/a:
                     - Si ya guardó como dueño (is_owner=true && !is_new) →
                       tarjeta verde con CheckCircle, copy en pasado.

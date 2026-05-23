@@ -54,13 +54,59 @@ const CalendarPage = () => {
   const [availabilityData, setAvailabilityData] = useState([]);
   // Clínicas via hook compartido (combina owned+linked + scope por org).
   const { clinics } = useTherapistClinics({
-    select: 'id, name, address, modalidad, organization_id',
+    // calendar_* nuevas columnas (spec calendar config por sucursal)
+    select: 'id, name, address, modalidad, organization_id, calendar_start_hour, calendar_end_hour, calendar_slot_minutes',
     organizationId: currentOrganizationId,
   });
   const [selectedClinic, setSelectedClinic] = useState('all');
+  // null = sin box seleccionado (clinic sin boxes o no se cargó aún).
+  // Cualquier otro valor = id del box, filtra el grid a sus citas.
+  const [selectedBoxId, setSelectedBoxId] = useState(null);
+  const [boxesForClinic, setBoxesForClinic] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [reminders, setReminders] = useState([]); 
+  const [reminders, setReminders] = useState([]);
+
+  // Auto-default: cada sucursal tiene su agenda independiente (decisión
+  // de producto — no mezclar agendas porque cada una tiene sus propios
+  // boxes y horarios). Al cargar, seleccionar la primera disponible.
+  // Si el user tiene varias, puede cambiarlas con el dropdown.
+  useEffect(() => {
+    if (clinics.length > 0 && (selectedClinic === 'all' || !clinics.find(c => c.id === selectedClinic))) {
+      setSelectedClinic(clinics[0].id);
+    }
+  }, [clinics, selectedClinic]);
+
+  // Cargar boxes de la clínica seleccionada. Auto-select el primero como
+  // default (cada box es una agenda independiente — la user no quiere
+  // mezclar agendas de boxes distintos en una sola vista).
+  useEffect(() => {
+    const loadBoxes = async () => {
+      if (selectedClinic === 'all' || !selectedClinic) {
+        setBoxesForClinic([]);
+        setSelectedBoxId(null);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('clinic_boxes')
+        .select('id, name, box_type')
+        .eq('clinic_id', selectedClinic)
+        .eq('is_active', true)
+        .order('name');
+      if (error) {
+        logger.warn('[CalendarPage] load boxes:', error.message);
+        setBoxesForClinic([]);
+        setSelectedBoxId(null);
+      } else {
+        const list = data || [];
+        setBoxesForClinic(list);
+        // Auto-default al primer box. Si la clinic no tiene boxes,
+        // null → no aplicar filtro (backward compat con citas legacy).
+        setSelectedBoxId(list.length > 0 ? list[0].id : null);
+      }
+    };
+    loadBoxes();
+  }, [selectedClinic]);
 
   const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
   const [blockModalOpen, setBlockModalOpen] = useState(false);
@@ -75,18 +121,43 @@ const CalendarPage = () => {
 
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Computed
-  const { startHour, endHour } = useMemo(() => {
-    let min = 8;
-    let max = 20;
+  // Computed: lee config del calendario desde la clinic seleccionada
+  // (calendar_start_hour, calendar_end_hour, calendar_slot_minutes).
+  // Si "Todas las clínicas" → toma el menor start_hour y mayor end_hour
+  // entre las clinics del user para mostrar el rango más amplio posible.
+  // Slot default 30 min (no se promedia entre clinics).
+  const { startHour, endHour, slotMinutes } = useMemo(() => {
     if (selectedClinic !== 'all') {
       const clinic = clinics.find(c => c.id === selectedClinic);
-      if (clinic?.business_hours) {
-        // ... (existing logic)
+      if (clinic) {
+        return {
+          startHour: clinic.calendar_start_hour ?? 8,
+          endHour: clinic.calendar_end_hour ?? 20,
+          slotMinutes: clinic.calendar_slot_minutes ?? 30,
+        };
       }
     }
-    return { startHour: min, endHour: max };
+    // "Todas las clínicas": rango unión
+    if (clinics.length > 0) {
+      const starts = clinics.map(c => c.calendar_start_hour ?? 8);
+      const ends = clinics.map(c => c.calendar_end_hour ?? 20);
+      return {
+        startHour: Math.min(...starts),
+        endHour: Math.max(...ends),
+        slotMinutes: 30, // sin promediar — usamos 30 por defecto en multi-clinic
+      };
+    }
+    return { startHour: 8, endHour: 20, slotMinutes: 30 };
   }, [clinics, selectedClinic]);
+
+  // Filtro por box: cada box tiene su agenda independiente (la user
+  // explícitamente no quiere mezclar agendas en una sola vista).
+  // Si selectedBoxId es null (clinic sin boxes), no filtrar — backward
+  // compat con citas legacy sin box_id asignado.
+  const filteredAppointments = useMemo(() => {
+    if (!selectedBoxId) return appointments;
+    return appointments.filter((apt) => apt.box_id === selectedBoxId);
+  }, [appointments, selectedBoxId]);
 
   // Search Effect
   useEffect(() => {
@@ -465,6 +536,9 @@ const CalendarPage = () => {
               clinics={clinics}
               selectedClinicId={selectedClinic}
               onClinicChange={handleClinicChange}
+              boxes={boxesForClinic}
+              selectedBoxId={selectedBoxId}
+              onBoxChange={setSelectedBoxId}
               onRefresh={handleRefresh}
               onBlockTime={handleOpenBlockModal}
               onNewAppointment={handleNewAppointment}
@@ -477,13 +551,14 @@ const CalendarPage = () => {
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-4">
             <WeeklyAgendaView
               currentWeek={currentWeek}
-              appointments={appointments}
+              appointments={filteredAppointments}
               blockedTimes={blockedTimes}
               availabilityData={availabilityData}
               clinics={clinics}
               selectedClinic={selectedClinic}
               startHour={startHour}
               endHour={endHour}
+              slotMinutes={slotMinutes}
               onSlotClick={handleSlotClick}
               onAppointmentClick={handleAppointmentClick}
               onBlockedTimeClick={handleBlockedTimeClick}

@@ -41,6 +41,7 @@ const WeeklyAgendaView = ({
   selectedClinic = 'all',
   startHour = 8,
   endHour = 20,
+  slotMinutes = 30,
   onSlotClick,
   onAppointmentClick,
   onBlockedTimeClick,
@@ -67,12 +68,14 @@ const WeeklyAgendaView = ({
 
   const timeSlots = useMemo(() => {
     const slots = [];
+    // Genera slots cada `slotMinutes` (15 o 30) entre startHour y endHour
     for (let hour = startHour; hour < endHour; hour++) {
-      slots.push(`${String(hour).padStart(2, '0')}:00`);
-      slots.push(`${String(hour).padStart(2, '0')}:30`);
+      for (let m = 0; m < 60; m += slotMinutes) {
+        slots.push(`${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      }
     }
     return slots;
-  }, [startHour, endHour]);
+  }, [startHour, endHour, slotMinutes]);
 
   const availabilityMap = useMemo(() => {
     const map = {};
@@ -104,8 +107,7 @@ const WeeklyAgendaView = ({
   };
 
   const isRangeAvailableForDrop = (dateStr, startTimeStr, durationMinutes, excludeId, isBlock = false) => {
-    const slotDuration = 30;
-    const slotsNeeded = Math.ceil(durationMinutes / slotDuration);
+    const slotsNeeded = Math.ceil(durationMinutes / slotMinutes);
     const hasAvailabilityForDate = availabilityMap[dateStr] && Object.keys(availabilityMap[dateStr]).length > 0;
 
     const [startH, startM] = startTimeStr.split(':').map(Number);
@@ -123,7 +125,7 @@ const WeeklyAgendaView = ({
       const blockingApt = getAppointmentForSlot(dateStr, currentTimeStr);
       if (blockingApt && blockingApt.id !== excludeId) return false;
 
-      currentM += slotDuration;
+      currentM += slotMinutes;
       if (currentM >= 60) {
         currentM = 0;
         currentH += 1;
@@ -162,8 +164,11 @@ const WeeklyAgendaView = ({
 
   const getNextTimeSlot = (timeStr) => {
     const [h, m] = timeStr.split(':').map(Number);
-    const newM = m + 30;
-    if (newM >= 60) return `${String(h + 1).padStart(2, '0')}:00`;
+    const newM = m + slotMinutes;
+    if (newM >= 60) {
+      const extraHours = Math.floor(newM / 60);
+      return `${String(h + extraHours).padStart(2, '0')}:${String(newM % 60).padStart(2, '0')}`;
+    }
     return `${String(h).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
   };
 
@@ -231,17 +236,19 @@ const WeeklyAgendaView = ({
 
     const dateStr = format(day, 'yyyy-MM-dd');
 
-    const hasAvailabilityForDate = availabilityMap[dateStr] && Object.keys(availabilityMap[dateStr]).length > 0;
-    if (hasAvailabilityForDate && !isSlotAvailable(dateStr, timeStr)) return;
+    // El dentista/admin puede agendar en cualquier slot vacío, incluso fuera
+    // del horario configurado en "Mis Lugares" — para urgencias o excepciones.
+    // El guard de availability solo aplica al self-booking del paciente
+    // (feature futura, no en este flow).
     if (getAppointmentForSlot(dateStr, timeStr)) return;
     if (getBlockedTimeForSlot(dateStr, timeStr)) return;
 
     const [hour, minute] = timeStr.split(':').map(Number);
     const startDate = new Date();
     startDate.setHours(hour, minute, 0, 0);
-    // Duración default 30 min por bloque. Si el dentista necesita más, lo
-    // ajusta desde el TimePicker del campo "Fin" en el modal.
-    const endDate = addMinutes(startDate, 30);
+    // Duración default = 1 slot (slotMinutes de la clinic, 15 o 30 min).
+    // Si el dentista necesita más, lo ajusta desde el TimePicker del modal.
+    const endDate = addMinutes(startDate, slotMinutes);
     const endTimeStr = format(endDate, 'HH:mm');
 
     onSlotClick?.({
@@ -367,7 +374,7 @@ const WeeklyAgendaView = ({
     const isDraggingThis = draggedApt?.id === apt.id;
 
     const duration = apt.duration_minutes || 60;
-    const heightSlots = Math.ceil(duration / 30);
+    const heightSlots = Math.ceil(duration / slotMinutes);
     // z-index 10: por encima del bg del slot pero por debajo de la columna
     // de horas sticky (z-20), así no se ven los cards bajo las horas al
     // scrollear horizontal en mobile.
@@ -501,7 +508,7 @@ const WeeklyAgendaView = ({
     const start = parseISO(block.start_time);
     const end = parseISO(block.end_time);
     const diffMins = (end - start) / 60000;
-    const heightSlots = Math.ceil(diffMins / 30);
+    const heightSlots = Math.ceil(diffMins / slotMinutes);
     const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
     const isDraggingThis = draggedBlock?.id === block.id;
 
@@ -677,7 +684,10 @@ const WeeklyAgendaView = ({
                   const appointment = getAppointmentForSlot(dateStr, timeStr);
                   const blockedTime = getBlockedTimeForSlot(dateStr, timeStr);
                   const isHalfHour = idx % 2 === 1;
-                  const isClickable = !appointment && !blockedTime && (isAvailable || !hasAvailabilityForDate);
+                  // Slot clickeable: cualquier slot vacío (sin cita ni bloqueo).
+                  // Antes excluíamos slots fuera del horario configurado, pero
+                  // dejaba al dentista/admin sin poder agendar excepciones.
+                  const isClickable = !appointment && !blockedTime;
 
                   const isDragOver = dragOverSlot?.date === dateStr && dragOverSlot?.time === timeStr;
                   const draggedItem = draggedApt || draggedBlock;

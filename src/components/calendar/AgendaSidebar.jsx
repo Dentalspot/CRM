@@ -38,7 +38,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getClinicColor } from './WeeklyAgendaView';
-import BoxOccupancyPanel from './BoxOccupancyPanel';
 
 // Mismos estados disponibles que en UpcomingAppointmentCard.
 const STATUS_OPTIONS = [
@@ -61,6 +60,9 @@ const AgendaSidebar = ({
   currentWeek,
   organizationId,
   userId,
+  boxes = [],
+  selectedBoxId = 'all',
+  onBoxChange,
   className
 }) => {
   const navigate = useNavigate();
@@ -115,9 +117,8 @@ const AgendaSidebar = ({
   return (
     <div className={cn("flex flex-col h-full gap-4", className)}>
 
-      {/* 0) Today's appointments card.
-          Mobile order 2 (Resumen primero), Desktop order 1 (preserva). */}
-      <Card className="order-2 lg:order-1 shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+      {/* 0) Today's appointments card. Desktop order 2 (después de Ubicación). */}
+      <Card className="order-2 lg:order-2 shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
         <CardHeader className="p-3 pb-1">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-700">
             <CalendarIcon className="h-4 w-4" />
@@ -215,24 +216,28 @@ const AgendaSidebar = ({
         </CardContent>
       </Card>
 
-      {/* 1) Clinic Selector with colors. Mobile order 3, Desktop order 2. */}
-      <Card className="order-3 lg:order-2 shadow-sm border-2 border-primary bg-gradient-to-br from-primary to-white">
+      {/* 1) Ubicación + Box selector. Order 1 (primero del sidebar).
+          Fondo teal sólido con texto blanco para destacar visualmente. */}
+      <Card className="order-1 lg:order-1 shadow-sm border-2 border-primary bg-primary text-white">
         <CardHeader className="p-3 pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2 text-primary">
-            <MapPin className="h-4 w-4" />
+          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-white">
+            <MapPin className="h-4 w-4 text-white" />
             Ubicación
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3 pt-0 space-y-2">
+          {/* Selector de sucursal — cada sucursal tiene su agenda independiente
+              (cada una con sus propios boxes y horarios). No hay opción
+              "Todas las clínicas" porque mezclar agendas no tiene sentido
+              operacional. Default a la primera sucursal (auto-set en CalendarPage). */}
           <Select
-            value={selectedClinicId?.toString() || 'all'}
+            value={selectedClinicId?.toString() || ''}
             onValueChange={onClinicChange}
           >
-            <SelectTrigger className="bg-white border-primary focus:ring-primary">
+            <SelectTrigger className="bg-white text-slate-900 border-white">
               <SelectValue placeholder="Seleccionar clínica" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas las clínicas</SelectItem>
               {clinics.map((clinic) => {
                 const color = getClinicColor(clinic.id, clinics);
                 return (
@@ -247,89 +252,29 @@ const AgendaSidebar = ({
             </SelectContent>
           </Select>
 
-          {/* Clinic color legend */}
-          {clinics.length > 1 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {clinics.map((clinic) => {
-                const color = getClinicColor(clinic.id, clinics);
-                if (!color) return null;
-                return (
-                  <div key={clinic.id} className="flex items-center gap-1">
-                    <div className={cn("w-2 h-2 rounded-full", color.dot)} />
-                    <span className={cn("text-[10px] font-medium", color.label)}>{clinic.name}</span>
-                  </div>
-                );
-              })}
-            </div>
+          {/* Box selector — cada box tiene su agenda independiente.
+              No hay opción "Todos los boxes" porque la user no quiere
+              mezclar agendas en una sola vista (decisión de producto).
+              Default al primer box (auto-seteado en CalendarPage). */}
+          {boxes.length > 0 && (
+            <Select value={selectedBoxId || ''} onValueChange={onBoxChange}>
+              <SelectTrigger className="bg-white text-slate-900 border-white">
+                <SelectValue placeholder="Seleccionar box" />
+              </SelectTrigger>
+              <SelectContent>
+                {boxes.map((box) => (
+                  <SelectItem key={box.id} value={box.id}>
+                    {box.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
 
           <div className="flex justify-between items-center text-sm pt-1">
-            <span className="text-slate-600">Esta semana</span>
-            <span className="font-semibold text-slate-700">{weekAppointmentsCount} citas</span>
+            <span className="text-white/80">Esta semana</span>
+            <span className="font-semibold text-white">{weekAppointmentsCount} citas</span>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* 2) Today's Summary. Mobile order 1 (PRIMERO en mobile), Desktop order 3. */}
-      <Card className="order-1 lg:order-3 shadow-none border bg-white/50">
-        <CardHeader className="p-3 pb-1">
-          <CardTitle className="text-sm font-medium flex items-center gap-2 text-slate-700">
-            <CalendarIcon className="h-4 w-4 text-primary" />
-            Resumen de Hoy
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 space-y-1">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-slate-600">Total citas</span>
-            <Badge variant="secondary" className="font-bold bg-slate-100 text-slate-700">
-              {stats.total}
-            </Badge>
-          </div>
-          {[
-            { key: 'scheduled', label: 'Programadas', icon: <Clock className="h-3 w-3 text-sky-500" />, color: 'text-sky-600', filter: a => ['scheduled', 'confirmed'].includes(a.status), count: stats.scheduled },
-            { key: 'completed', label: 'Completadas', icon: <CheckCircle2 className="h-3 w-3 text-green-500" />, color: 'text-green-600', filter: a => a.status === 'completed', count: stats.completed },
-            { key: 'canceled', label: 'Canceladas', icon: <XCircle className="h-3 w-3 text-red-400" />, color: 'text-red-500', filter: a => a.status === 'canceled' || a.status === 'cancelled', count: stats.canceled },
-            { key: 'noshow', label: 'Ausentes', icon: <UserX className="h-3 w-3 text-amber-700" />, color: 'text-amber-700', filter: a => a.status === 'no-show', count: stats.noShow },
-          ].map(({ key, label, icon, color, filter, count }) => {
-            const filtered = todayAppointments.filter(filter);
-            return (
-              <Popover key={key}>
-                <PopoverTrigger asChild>
-                  <button className="flex justify-between items-center text-sm w-full rounded-md px-1 py-1 hover:bg-gray-50 transition-colors cursor-pointer">
-                    <span className="flex items-center gap-2 text-slate-500 text-xs">
-                      {icon} {label}
-                    </span>
-                    <span className={cn("text-xs font-medium", color)}>{count}</span>
-                  </button>
-                </PopoverTrigger>
-                {filtered.length > 0 && (
-                  <PopoverContent className="w-64 p-0" align="end">
-                    <div className="p-3 border-b">
-                      <p className="text-sm font-medium">{label} — Hoy</p>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto p-2 space-y-1">
-                      {filtered
-                        .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''))
-                        .map((appt, i) => {
-                          const time = appt.start_time?.substring(0, 5) || '--:--';
-                          const name = appt.patient?.profile?.full_name || appt.patient?.full_name || 'Paciente';
-                          const service = appt.service?.service_name || null;
-                          return (
-                            <div key={appt.id || i} className="flex items-start gap-2 p-1.5 rounded hover:bg-gray-50">
-                              <span className="bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">{time}</span>
-                              <div className="min-w-0">
-                                <p className="text-xs font-medium text-gray-800 truncate">{name}</p>
-                                {service && <p className="text-[10px] text-gray-500 truncate">{service}</p>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </PopoverContent>
-                )}
-              </Popover>
-            );
-          })}
         </CardContent>
       </Card>
 
@@ -368,19 +313,6 @@ const AgendaSidebar = ({
       )}
 
       <Separator className="order-6 lg:order-5 opacity-50 hidden lg:block" />
-
-      {/* Ocupación de Box — panel para coordinar uso de recurso físico
-          entre dentistas del equipo. Si la org no tiene boxes activos,
-          el componente devuelve null (early return). */}
-      {organizationId && (
-        <div className="order-5 lg:order-5">
-          <BoxOccupancyPanel
-            organizationId={organizationId}
-            currentWeek={currentWeek}
-            userId={userId}
-          />
-        </div>
-      )}
 
       {/* 4) Quick Actions. Mobile order 4, Desktop order 6. */}
       <div className="order-4 lg:order-6 space-y-2">

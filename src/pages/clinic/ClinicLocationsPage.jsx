@@ -33,6 +33,7 @@ import {
   Loader2,
   RefreshCw,
   Settings,
+  Armchair,
   AlertCircle,
   Plus,
   Edit2,
@@ -331,7 +332,7 @@ const ClinicLocationsPage = () => {
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                       <div className="flex items-center gap-1">
-                        <Settings className="h-3.5 w-3.5" />
+                        <Armchair className="h-3.5 w-3.5" />
                         <span>
                           {boxCount} {boxCount === 1 ? 'box' : 'boxes'}
                         </span>
@@ -350,7 +351,7 @@ const ClinicLocationsPage = () => {
                         className="flex-1"
                         onClick={() => handleOpenBoxes(clinic)}
                       >
-                        <Settings className="h-4 w-4 mr-2" />
+                        <Armchair className="h-4 w-4 mr-2" />
                         Gestionar boxes
                       </Button>
                       <Button

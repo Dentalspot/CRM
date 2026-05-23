@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Settings, Loader2, Calendar } from 'lucide-react';
+import { Armchair, Loader2, Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { cn } from '@/lib/utils';
 import logger from '@/lib/utils/logger';
@@ -159,7 +159,7 @@ const BoxOccupancyPanel = ({ organizationId, currentWeek, userId }) => {
     <Card className="border-purple-100">
       <CardHeader className="pb-2 pt-3 px-4">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Settings className="h-4 w-4 text-purple-600" />
+          <Armchair className="h-4 w-4 text-purple-600" />
           Ocupación de Box
         </CardTitle>
       </CardHeader>
