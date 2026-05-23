@@ -7,7 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Save, Loader2, Trash2, Building2, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { PlusCircle, Save, Loader2, Trash2, Building2, ExternalLink, MapPin, UserCheck } from 'lucide-react';
 import ClinicCard from '@/components/therapist-profile/ClinicCard';
 import ClinicSearchStep from '@/components/clinic/ClinicSearchStep';
 import { cleanRutEmpresa } from '@/services/clinicDetectionService';
@@ -26,6 +27,9 @@ const MyClinicsSection = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [clinicToDelete, setClinicToDelete] = useState(null);
   const [showSearchStep, setShowSearchStep] = useState(false);
+  // Clinics donde soy invitado (clinic_therapists.is_active=true) pero NO
+  // soy dueño (clinics.therapist_id != user.id). Read-only en este UI.
+  const [externalClinics, setExternalClinics] = useState([]);
 
   // Paso 2 spec "Gestión de Clínicas" — el dentista que ES admin de su org
   // (dual role) ve un banner que lo dirige al nuevo lugar centralizado.
@@ -36,17 +40,55 @@ const MyClinicsSection = () => {
   const fetchClinics = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data, error } = await supabase
+
+    // Query A: clinics donde soy dueño (therapist_id = user.id)
+    const { data: ownedData, error: ownedErr } = await supabase
       .from('clinics')
       .select('*, therapist_availabilities(*)')
       .eq('therapist_id', user.id)
       .order('created_at', { ascending: true });
 
-    if (error) {
+    if (ownedErr) {
       toast({ title: "Error", description: "No se pudieron cargar las clínicas.", variant: "destructive" });
-    } else {
-      setClinics(data?.map(c => ({...c, is_new: false, type: c.type || 'consulta_privada'})) || []);
+      setLoading(false);
+      return;
     }
+
+    setClinics(ownedData?.map(c => ({...c, is_new: false, type: c.type || 'consulta_privada'})) || []);
+
+    // Query B: clinics donde soy invitado (clinic_therapists.is_active=true)
+    // pero NO dueño. Excluye las propias para evitar duplicación.
+    // RLS de clinics permite leer las clinics de cualquier org donde es member.
+    const ownedIds = (ownedData || []).map(c => c.id);
+    try {
+      const { data: invitedData, error: invitedErr } = await supabase
+        .from('clinic_therapists')
+        .select(`
+          clinic_id,
+          joined_at,
+          clinics:clinic_id (
+            id, name, address, type, is_active, organization_id, therapist_id
+          )
+        `)
+        .eq('therapist_id', user.id)
+        .eq('is_active', true);
+
+      if (invitedErr) {
+        logger.warn('[MyClinicsSection] invited clinics fetch (non-fatal):', invitedErr.message);
+        setExternalClinics([]);
+      } else {
+        // Filtrar: solo las que NO son propias (therapist_id != user.id)
+        // y que tengan datos de clinic (defensive)
+        const external = (invitedData || [])
+          .filter(row => row.clinics && !ownedIds.includes(row.clinic_id) && row.clinics.therapist_id !== user.id)
+          .map(row => ({ ...row.clinics, joined_at: row.joined_at }));
+        setExternalClinics(external);
+      }
+    } catch (err) {
+      logger.warn('[MyClinicsSection] external clinics exception:', err.message);
+      setExternalClinics([]);
+    }
+
     setLoading(false);
   }, [user, toast]);
 
@@ -446,6 +488,52 @@ const MyClinicsSection = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+
+          {/* Clínicas donde soy invitado (read-only). Antes este flow no las
+              mostraba porque la query solo traía clinics WHERE therapist_id=user.id.
+              Ahora cada dentista ve TODOS los lugares donde trabaja, sin importar
+              quién sea dueño. La edición de datos del lugar queda bloqueada por
+              RLS — el dueño es el único que puede editar. El dentista invitado
+              puede editar sus horarios personales desde el componente de
+              disponibilidad (futuro followup, no en este commit). */}
+          {externalClinics.length > 0 && (
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-primary" />
+                Clínicas donde trabajás como invitado
+              </h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Sos parte del equipo en estos lugares pero no podés editar sus datos. Para configurar tus horarios personales, contactá al admin de la clínica.
+              </p>
+              <div className="space-y-3">
+                {externalClinics.map((clinic) => (
+                  <Card key={clinic.id} className="border border-gray-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Building2 className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <h5 className="font-semibold text-sm truncate" title={clinic.name}>{clinic.name}</h5>
+                            {clinic.address && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <MapPin className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{clinic.address}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          Invitado
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
