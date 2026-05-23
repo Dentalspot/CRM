@@ -239,7 +239,9 @@ const WeeklyAgendaView = ({
     const [hour, minute] = timeStr.split(':').map(Number);
     const startDate = new Date();
     startDate.setHours(hour, minute, 0, 0);
-    const endDate = addMinutes(startDate, 60);
+    // Duración default 30 min por bloque. Si el dentista necesita más, lo
+    // ajusta desde el TimePicker del campo "Fin" en el modal.
+    const endDate = addMinutes(startDate, 30);
     const endTimeStr = format(endDate, 'HH:mm');
 
     onSlotClick?.({
