@@ -576,6 +576,7 @@ const CalendarPage = () => {
         onOpenChange={setAppointmentModalOpen}
         slotInfo={selectedSlot}
         selectedClinic={selectedClinic !== 'all' ? selectedClinic : null}
+        selectedBoxId={selectedBoxId}
         clinics={clinics}
         onAppointmentCreated={handleAppointmentActionComplete}
         onAppointmentUpdated={handleAppointmentActionComplete}

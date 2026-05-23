@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { User, Ban, Loader2, CheckCircle2, FileText, XCircle, Trash2 } from 'lucide-react';
 import BoxSelector from '@/components/calendar/BoxSelector';
 import TimePicker from '@/components/ui/time-picker';
+import PatientCombobox from '@/components/ui/patient-combobox';
 import { useNavigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -25,7 +26,7 @@ import logger from '@/lib/utils/logger';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import useTherapistClinics from '@/hooks/useTherapistClinics';
 
-const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: propSelectedClinic, onAppointmentCreated, onAppointmentUpdated, onSessionCompleted }) => {
+const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: propSelectedClinic, selectedBoxId, onAppointmentCreated, onAppointmentUpdated, onSessionCompleted }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -126,20 +127,31 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           status: appointmentData.status || 'scheduled',
         });
       } else if (!isEditing && slotInfo) {
+        // Auto-select clinic: si hay una sola clinic del user, usarla por
+        // default. Si hay múltiples, dejar que elija. slotInfo.clinicId
+        // (viene del click en grid) tiene prioridad si está seteado.
+        const defaultClinicId = slotInfo.clinicId
+          || propSelectedClinic
+          || (clinics.length === 1 ? clinics[0].id : '');
+
+        // Auto-asignar el box seleccionado en el sidebar de la agenda.
+        // La cita se crea PARA el box que el user está viendo (agenda
+        // segregada por box). No expone selector en el modal — se asume
+        // el contexto. Si selectedBoxId es null, queda sin box.
         setFormData({
           date: slotInfo.date || '',
           start_time: slotInfo.startTime || '',
           end_time: slotInfo.endTime || '',
-          clinic_id: slotInfo.clinicId || propSelectedClinic || '',
+          clinic_id: defaultClinicId,
           block_type: '',
           patient_id: slotInfo.patientId || '',
           service_id: '',
-          box_id: null,
+          box_id: selectedBoxId || null,
           notes: ''
         });
       }
     }
-  }, [isOpen, isEditing, appointmentData, slotInfo, propSelectedClinic]);
+  }, [isOpen, isEditing, appointmentData, slotInfo, propSelectedClinic, selectedBoxId, clinics]);
 
   // Filtrar pacientes según clínica seleccionada (Task 3)
   const fetchPatients = useCallback(async () => {
@@ -425,18 +437,13 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         <Label>Paciente</Label>
         <div className="flex gap-2">
           <div className="flex-1">
-            <Select value={formData.patient_id} onValueChange={v => setFormData({...formData, patient_id: v})} required>
-              <SelectTrigger>
-                <SelectValue placeholder={loadingPatients ? "Cargando..." : "Selecciona paciente"} />
-              </SelectTrigger>
-              <SelectContent>
-                {patients.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.profile?.full_name || p.full_name || 'Paciente sin nombre'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PatientCombobox
+              patients={patients}
+              value={formData.patient_id}
+              onChange={(id) => setFormData({ ...formData, patient_id: id })}
+              loading={loadingPatients}
+              placeholder="Buscar paciente por nombre, email o teléfono..."
+            />
           </div>
           <Button
             type="button"
@@ -462,12 +469,10 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         </Select>
       </div>
 
-      {/* Box / Sala (opcional) — trigger DB valida overlap */}
-      <BoxSelector
-        clinicId={formData.clinic_id || null}
-        value={formData.box_id}
-        onChange={(boxId) => setFormData({ ...formData, box_id: boxId })}
-      />
+      {/* Box: NO se expone selector — la cita se crea para el box ya
+          seleccionado en el sidebar de la agenda (decisión de producto:
+          agenda segregada por box, sin mezclar). formData.box_id ya viene
+          pre-asignado al abrir el modal desde selectedBoxId de CalendarPage. */}
 
       {isEditing && (
         <div className="space-y-2">
