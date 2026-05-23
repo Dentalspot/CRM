@@ -135,9 +135,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Sign In with Google OAuth
-  const signInWithGoogle = async () => {
+  //
+  // Acepta opcionalmente { role } para propagar el rol al signup. El role
+  // se inyecta en raw_user_meta_data del nuevo auth.users, que el trigger
+  // handle_new_user lee al crear el profile. Sin esto, los signups Google
+  // quedaban con role='patient' (fallback del trigger) aunque el user
+  // eligiera "dentista" en el form previo — bug del bandaid 3782599 ahora
+  // arreglado completo.
+  //
+  // Para login (user ya existe), el role NO se reaplica porque el trigger
+  // solo dispara en INSERT de auth.users. La sesión usa el role existente.
+  const signInWithGoogle = async ({ role } = {}) => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const oauthOptions = {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
@@ -146,7 +156,14 @@ export const AuthProvider = ({ children }) => {
             prompt: 'consent',
           },
         },
-      });
+      };
+      // Inject role en raw_user_meta_data si se proveyó.
+      // Solo relevante para signups (primera vez con Google) — para logins
+      // Supabase ignora `data` si el user ya existe.
+      if (role) {
+        oauthOptions.options.data = { role };
+      }
+      const { data, error } = await supabase.auth.signInWithOAuth(oauthOptions);
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
