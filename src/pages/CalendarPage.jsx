@@ -341,11 +341,6 @@ const CalendarPage = () => {
   };
 
   const handleAppointmentClick = (appointment) => {
-    // Log temporal con console.log directo (logger.info se silencia en prod).
-    // Eliminar una vez confirmado el fix.
-    // eslint-disable-next-line no-console
-    console.log('🔍 [CalendarPage] handleAppointmentClick — appointment:', appointment);
-
     setSelectedSlot({
       isEditing: true,
       id: appointment.id,
