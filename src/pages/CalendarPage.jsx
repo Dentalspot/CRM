@@ -544,6 +544,7 @@ const CalendarPage = () => {
               onNewAppointment={handleNewAppointment}
               onStatusChange={handleAppointmentStatusChange}
               currentWeek={currentWeek}
+              onWeekChange={setCurrentWeek}
               organizationId={currentOrganizationId}
               userId={user?.id}
             />
