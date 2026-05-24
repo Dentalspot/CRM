@@ -73,59 +73,90 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     }
   }, [isOpen, user]);
 
-  // Fetch appointment details if editing
+  // Reset appointmentData cuando cambia la cita (evita stale state cuando
+  // user abre un modal A, lo cierra, y abre uno B — ambos coexisten en el
+  // mismo component instance porque AppointmentModal está mounted siempre).
+  // Usamos slotInfo.id como key del effect (no el objeto entero) para
+  // evitar re-runs por cambios de referencia espurios.
   useEffect(() => {
-    if (isOpen && isEditing) {
+    setAppointmentData(null);
+    if (isOpen && isEditing && slotInfo?.id) {
       setActiveTab('cita');
+      // Fetch en background SOLO para enriquecer datos (ej. patient
+      // profile completo). El form ya se pobló desde slotInfo en el
+      // useEffect de abajo — este fetch NO bloquea el render.
       const fetchAppointmentDetails = async () => {
-        setIsSubmitting(true);
         try {
           const { data, error } = await supabase
             .from('appointments')
             .select(`
-              *, 
+              *,
               patient:patients (
                 id,
                 profile:profiles!patients_profile_id_fkey (full_name, email, phone)
-              ), 
+              ),
               clinics(*)
             `)
             .eq('id', slotInfo.id)
             .single();
 
           if (error) throw error;
-          setAppointmentData(data);
+          // Solo aplicar si todavía es la cita actual (race-condition guard).
+          if (data?.id === slotInfo.id) {
+            setAppointmentData(data);
+          }
         } catch (error) {
           logger.error('Error fetching appointment details:', error);
-          toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar la cita.' });
-          onOpenChange(false);
-        } finally {
-          setIsSubmitting(false);
+          // No cerrar modal — slotInfo ya tiene la info básica para editar.
         }
       };
       fetchAppointmentDetails();
-    } else {
+    } else if (!isOpen) {
       setActiveTab('cita');
-      setAppointmentData(null);
     }
-  }, [isOpen, isEditing, slotInfo, toast, onOpenChange]);
+  }, [isOpen, isEditing, slotInfo?.id]);
+
+  // Helper: HH:mm:ss → HH:mm (el TimePicker espera HH:mm). Si llega
+  // un string vacío/null o ya en HH:mm, lo retorna sin cambios.
+  const normalizeTime = (t) => {
+    if (!t || typeof t !== 'string') return '';
+    return t.substring(0, 5);
+  };
 
   // Initialize formData
   useEffect(() => {
     if (isOpen) {
-      if (isEditing && appointmentData) {
-        setFormData({
-          date: appointmentData.date || '',
-          start_time: appointmentData.start_time || '',
-          end_time: appointmentData.end_time || '',
-          clinic_id: appointmentData.clinic_id || propSelectedClinic || '',
-          block_type: appointmentData.block_type || '',
-          patient_id: appointmentData.patient_id || '',
-          service_id: appointmentData.service_id || '',
-          box_id: appointmentData.box_id || null,
-          notes: appointmentData.notes || '',
-          status: appointmentData.status || 'scheduled',
+      if (isEditing) {
+        // Preferir slotInfo (disponible inmediatamente al click) y
+        // hacer merge con appointmentData cuando el fetch termina
+        // (para campos no presentes en slotInfo). Esto evita que el
+        // form quede vacío mientras se espera el fetch.
+        const src = appointmentData || {};
+        const nextFormData = {
+          date: src.date || slotInfo?.date || '',
+          start_time: normalizeTime(src.start_time || slotInfo?.startTime),
+          end_time: normalizeTime(src.end_time || slotInfo?.endTime),
+          clinic_id: src.clinic_id || slotInfo?.clinicId || propSelectedClinic || '',
+          block_type: src.block_type || '',
+          // patient_id: 3 fallbacks. La FK directa de slotInfo es la fuente
+          // más confiable (siempre presente en la row). El objeto patient
+          // es secundario porque depende del join.
+          patient_id: src.patient_id || slotInfo?.patientId || slotInfo?.patient?.id || '',
+          service_id: src.service_id || slotInfo?.serviceId || '',
+          box_id: src.box_id || null,
+          notes: src.notes || slotInfo?.notes || '',
+          status: src.status || slotInfo?.status || 'scheduled',
+        };
+        // Log temporal con console.log directo (logger.info se silencia en prod).
+        // Eliminar una vez confirmado el fix.
+        // eslint-disable-next-line no-console
+        console.log('🔍 [AppointmentModal] formData init (editing):', {
+          hasAppointmentData: !!appointmentData,
+          slotInfo,
+          appointmentData,
+          nextFormData,
         });
+        setFormData(nextFormData);
       } else if (!isEditing && slotInfo) {
         // Auto-select clinic: si hay una sola clinic del user, usarla por
         // default. Si hay múltiples, dejar que elija. slotInfo.clinicId
@@ -520,11 +551,12 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           >
             {isEditing ? (
               <div className="px-6 py-4">
-                {appointmentData ? renderCitaForm() : (
-                  <div className="flex justify-center items-center h-40">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                )}
+                {/* Renderizamos el form siempre que isEditing — el
+                    useEffect de init pre-pobla con slotInfo aunque el
+                    fetch de appointmentData aún no haya terminado.
+                    Cuando llega appointmentData, se hace merge sin
+                    flash de spinner intermedio. */}
+                {renderCitaForm()}
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

@@ -341,6 +341,11 @@ const CalendarPage = () => {
   };
 
   const handleAppointmentClick = (appointment) => {
+    // Log temporal con console.log directo (logger.info se silencia en prod).
+    // Eliminar una vez confirmado el fix.
+    // eslint-disable-next-line no-console
+    console.log('🔍 [CalendarPage] handleAppointmentClick — appointment:', appointment);
+
     setSelectedSlot({
       isEditing: true,
       id: appointment.id,
@@ -348,6 +353,9 @@ const CalendarPage = () => {
       startTime: appointment.start_time,
       endTime: appointment.end_time,
       clinicId: appointment.clinic_id,
+      // patient_id es la FK directa (siempre presente). El objeto `patient`
+      // es el join (puede venir null si RLS u otro filtro lo bloquea).
+      patientId: appointment.patient_id,
       patient: appointment.patients || appointment.patient,
       serviceId: appointment.service_id,
       notes: appointment.notes,
