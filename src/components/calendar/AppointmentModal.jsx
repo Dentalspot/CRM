@@ -147,15 +147,6 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           notes: src.notes || slotInfo?.notes || '',
           status: src.status || slotInfo?.status || 'scheduled',
         };
-        // Log temporal con console.log directo (logger.info se silencia en prod).
-        // Eliminar una vez confirmado el fix.
-        // eslint-disable-next-line no-console
-        console.log('🔍 [AppointmentModal] formData init (editing):', {
-          hasAppointmentData: !!appointmentData,
-          slotInfo,
-          appointmentData,
-          nextFormData,
-        });
         setFormData(nextFormData);
       } else if (!isEditing && slotInfo) {
         // Auto-select clinic: si hay una sola clinic del user, usarla por
