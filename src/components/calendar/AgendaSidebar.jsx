@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getClinicColor } from './WeeklyAgendaView';
+import MiniMonthCalendar from './MiniMonthCalendar';
 
 // Mismos estados disponibles que en UpcomingAppointmentCard.
 const STATUS_OPTIONS = [
@@ -58,6 +59,7 @@ const AgendaSidebar = ({
   onNewAppointment,
   onStatusChange,
   currentWeek,
+  onWeekChange,
   organizationId,
   userId,
   boxes = [],
@@ -116,6 +118,15 @@ const AgendaSidebar = ({
 
   return (
     <div className={cn("flex flex-col h-full gap-4", className)}>
+
+      {/* 0) Mini calendario mensual. Arriba de todo (order 0) — permite
+          saltar rápidamente a cualquier semana pasada/futura sin tener
+          que paginar semana a semana en la agenda principal. */}
+      {currentWeek && onWeekChange && (
+        <div className="order-0 lg:order-0">
+          <MiniMonthCalendar currentWeek={currentWeek} onWeekChange={onWeekChange} />
+        </div>
+      )}
 
       {/* 0) Today's appointments card. Desktop order 2 (después de Ubicación). */}
       <Card className="order-2 lg:order-2 shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">

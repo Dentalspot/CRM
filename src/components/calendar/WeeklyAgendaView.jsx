@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { MapPin, Video, AlertCircle, Loader2, GripVertical } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/components/ui/use-toast';
+import { buildHolidaysMap } from '@/lib/chilean-holidays';
 
 // Palette for clinic column backgrounds (soft tints)
 const CLINIC_COLORS = [
@@ -65,6 +66,15 @@ const WeeklyAgendaView = ({
     const start = startOfWeek(currentWeek, { weekStartsOn: 1 });
     return Array.from({ length: 7 }).map((_, i) => addDays(start, i));
   }, [currentWeek]);
+
+  // Feriados chilenos del año actual (+ adyacentes para que la
+  // navegación entre años no requiera recalcular). Map yyyy-MM-dd → nombre.
+  const holidaysMap = useMemo(() => {
+    const year = currentWeek.getFullYear();
+    return buildHolidaysMap([year - 1, year, year + 1]);
+  }, [currentWeek]);
+
+  const getHolidayName = (day) => holidaysMap.get(format(day, 'yyyy-MM-dd')) || null;
 
   const timeSlots = useMemo(() => {
     const slots = [];
@@ -597,6 +607,10 @@ const WeeklyAgendaView = ({
           <div className="w-3 h-3 bg-red-50 border border-dashed border-red-300 rounded" />
           <span>Bloqueado</span>
         </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 bg-rose-50 border border-rose-200 rounded" />
+          <span className="text-rose-600">Feriado</span>
+        </div>
       </div>
 
       {/* Scrollable wrapper for mobile.
@@ -622,25 +636,49 @@ const WeeklyAgendaView = ({
             ? Object.values(availabilityMap[dateStr]).find(s => s.clinicId)?.clinicId
             : null;
           const clinicColor = getClinicColor(dayClinicId, clinics);
+          const holidayName = getHolidayName(day);
 
           return (
             <div
               key={dateStr}
+              title={holidayName ? `Feriado: ${holidayName}` : undefined}
               className={cn(
                 "p-2 text-center border-r last:border-r-0",
-                isToday(day) ? "bg-blue-50" : clinicColor ? clinicColor.bg : "bg-gray-50/50"
+                // Priority: hoy > feriado > clínica > default
+                isToday(day)
+                  ? "bg-blue-50"
+                  : holidayName
+                    ? "bg-rose-50"
+                    : clinicColor ? clinicColor.bg : "bg-gray-50/50"
               )}
             >
-              <div className="text-xs font-semibold text-gray-500 uppercase">
+              <div className={cn(
+                "text-xs font-semibold uppercase",
+                holidayName && !isToday(day) ? "text-rose-600" : "text-gray-500"
+              )}>
                 {format(day, 'EEE', { locale: es })}
               </div>
               <div className={cn(
                 "text-lg font-bold w-8 h-8 flex items-center justify-center mx-auto rounded-full mt-1",
-                isToday(day) ? "bg-blue-600 text-white" : "text-gray-900"
+                isToday(day)
+                  ? "bg-blue-600 text-white"
+                  : holidayName
+                    ? "text-rose-700"
+                    : "text-gray-900"
               )}>
                 {format(day, 'd')}
               </div>
-              {hasAvailability && clinicColor ? (
+              {/* Si es feriado, mostrar el nombre (truncado) en lugar del
+                  dot de disponibilidad. El feriado es info más relevante
+                  para planificar la semana. */}
+              {holidayName ? (
+                <div
+                  className="mt-1 text-[9px] font-medium text-rose-600 leading-tight truncate px-0.5"
+                  title={holidayName}
+                >
+                  {holidayName}
+                </div>
+              ) : hasAvailability && clinicColor ? (
                 <div className="flex items-center justify-center gap-1 mt-1">
                   <div className={cn("w-2 h-2 rounded-full", clinicColor.dot)} title={clinics.find(c => c.id === dayClinicId)?.name} />
                 </div>
@@ -675,6 +713,7 @@ const WeeklyAgendaView = ({
 
           {weekDays.map((day) => {
             const dateStr = format(day, 'yyyy-MM-dd');
+            const isDayHoliday = !!getHolidayName(day);
 
             return (
               <div key={dateStr} className="border-r last:border-r-0 relative">
@@ -706,13 +745,18 @@ const WeeklyAgendaView = ({
                       className={cn(
                         "h-8 relative transition-colors",
                         isHalfHour ? "border-t border-dashed border-gray-100" : "border-t border-gray-200",
-                        isAvailable && !appointment && !blockedTime
+                        // TODOS los slots vacíos se ven verdes (uniforme).
+                        // Antes distinguíamos "con availability config" (verde)
+                        // vs "sin config pero clickeable" (blanco), pero como
+                        // cualquier slot vacío es clickeable (el dentista puede
+                        // agendar excepciones), la distinción solo confundía.
+                        isClickable
                           ? "bg-green-50/50 hover:bg-green-100/70"
-                          : isClickable
-                            ? "bg-white hover:bg-gray-50"
-                            : "bg-gray-100/50",
-                        isToday(day) && "bg-blue-50/30",
-                        isAvailable && !appointment && !blockedTime && isToday(day) && "bg-blue-50/50 hover:bg-blue-100/70",
+                          : "bg-gray-100/50",
+                        // Hoy: tinte azul sutil que pisa el verde
+                        isToday(day) && isClickable && "bg-blue-50/50 hover:bg-blue-100/70",
+                        // Feriado: tinte rosa sutil que pisa el verde (pero no a hoy)
+                        isDayHoliday && isClickable && !isToday(day) && "bg-rose-50/50 hover:bg-rose-100/60",
                         isDragOver && canDropHere && "bg-blue-200 !important ring-2 ring-inset ring-blue-400 z-30",
                         isDragOver && !canDropHere && "bg-red-100 !important ring-2 ring-inset ring-red-400 z-30",
                         inBlockSelection && "!bg-red-100/70 ring-1 ring-inset ring-red-300"
@@ -728,7 +772,7 @@ const WeeklyAgendaView = ({
                       {!appointment && blockedTime && renderBlockedTime(blockedTime, dateStr, timeStr)}
                       {isClickable && !draggedItem && !inBlockSelection && (
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                          <span className={isAvailable ? "text-green-600 text-lg font-light" : "text-gray-400 text-lg font-light"}>+</span>
+                          <span className="text-green-600 text-lg font-light">+</span>
                         </div>
                       )}
                       {inBlockSelection && (
