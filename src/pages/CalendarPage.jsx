@@ -159,6 +159,13 @@ const CalendarPage = () => {
     return appointments.filter((apt) => apt.box_id === selectedBoxId);
   }, [appointments, selectedBoxId]);
 
+  // Filtrar blocked_times por box (misma lógica que appointments).
+  // box_id NULL en blocked = legacy global → se muestra en todos los boxes.
+  const filteredBlockedTimes = useMemo(() => {
+    if (!selectedBoxId) return blockedTimes;
+    return blockedTimes.filter((bt) => !bt.box_id || bt.box_id === selectedBoxId);
+  }, [blockedTimes, selectedBoxId]);
+
   // Search Effect
   useEffect(() => {
     const performSearch = async () => {
@@ -556,7 +563,7 @@ const CalendarPage = () => {
             <WeeklyAgendaView
               currentWeek={currentWeek}
               appointments={filteredAppointments}
-              blockedTimes={blockedTimes}
+              blockedTimes={filteredBlockedTimes}
               availabilityData={availabilityData}
               clinics={clinics}
               selectedClinic={selectedClinic}
@@ -602,6 +609,7 @@ const CalendarPage = () => {
         onOpenChange={setBlockModalOpen}
         clinics={clinics}
         selectedClinic={selectedClinic}
+        selectedBoxId={selectedBoxId}
         blockedTime={selectedBlockedTime}
         slotInfo={selectedSlot}
         onSuccess={handleBlockActionComplete}

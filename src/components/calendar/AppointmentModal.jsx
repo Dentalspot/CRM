@@ -569,6 +569,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
                     <BlockTimeForm
                       slotInfo={slotInfo}
                       clinics={clinics}
+                      selectedBoxId={selectedBoxId}
                       onSuccess={handleSuccess}
                       setIsSubmitting={setIsSubmitting}
                     />

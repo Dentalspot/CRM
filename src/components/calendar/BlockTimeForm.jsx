@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import TimePicker from '@/components/ui/time-picker';
 
-const BlockTimeForm = ({ slotInfo, clinics = [], onSuccess, setIsSubmitting }) => {
+const BlockTimeForm = ({ slotInfo, clinics = [], selectedBoxId = null, onSuccess, setIsSubmitting }) => {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -83,6 +83,7 @@ const BlockTimeForm = ({ slotInfo, clinics = [], onSuccess, setIsSubmitting }) =
       const { error } = await supabase.from('blocked_times').insert({
         therapist_id: user.id,
         clinic_id: (blockData.clinic_id && blockData.clinic_id !== 'all') ? blockData.clinic_id : null,
+        box_id: selectedBoxId,
         start_time: localStart.toISOString(),
         end_time: localEnd.toISOString(),
         reason: blockData.reason,

@@ -79,6 +79,7 @@ const BlockTimeModal = ({
   onOpenChange,
   clinics = [],
   selectedClinic = 'all',
+  selectedBoxId = null,
   slotInfo = null,
   blockedTime = null,
   onSuccess
@@ -250,6 +251,7 @@ const BlockTimeModal = ({
           blocksToInsert.push({
             therapist_id: user.id,
             clinic_id: null,
+            box_id: selectedBoxId,
             start_time: startDateTime.toISOString(),
             end_time: endDateTime.toISOString(),
             reason: finalReason,
@@ -259,6 +261,7 @@ const BlockTimeModal = ({
             blocksToInsert.push({
               therapist_id: user.id,
               clinic_id: cId === 'all' ? null : cId,
+              box_id: selectedBoxId,
               start_time: startDateTime.toISOString(),
               end_time: endDateTime.toISOString(),
               reason: finalReason,
@@ -307,6 +310,7 @@ const BlockTimeModal = ({
           blocksToInsert.push({
             therapist_id: user.id,
             clinic_id: null,
+            box_id: selectedBoxId,
             start_time: blockStartTime,
             end_time: blockEndTime,
             reason: finalReason,
@@ -316,6 +320,7 @@ const BlockTimeModal = ({
             blocksToInsert.push({
               therapist_id: user.id,
               clinic_id: cId === 'all' ? null : cId,
+              box_id: selectedBoxId,
               start_time: blockStartTime,
               end_time: blockEndTime,
               reason: finalReason,
