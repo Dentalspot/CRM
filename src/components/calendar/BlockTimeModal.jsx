@@ -295,8 +295,13 @@ const BlockTimeModal = ({
       const blocksToInsert = [];
 
       for (const dateStr of datesToBlock) {
-        const blockStartTime = `${dateStr}T${startTime}:00`;
-        const blockEndTime = `${dateStr}T${endTime}:00`;
+        // Timezone fix: construir Date en TZ local del browser y serializar
+        // como ISO UTC. Sin esto, Postgres trata el string como UTC y el
+        // bloqueo termina con 3-4h de desfase + el trigger valida mal.
+        const localStart = new Date(`${dateStr}T${startTime}:00`);
+        const localEnd = new Date(`${dateStr}T${endTime}:00`);
+        const blockStartTime = localStart.toISOString();
+        const blockEndTime = localEnd.toISOString();
 
         if (clinicsToBlock.length === 0) {
           blocksToInsert.push({

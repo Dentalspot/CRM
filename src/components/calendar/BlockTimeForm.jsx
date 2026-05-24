@@ -70,11 +70,21 @@ const BlockTimeForm = ({ slotInfo, clinics = [], onSuccess, setIsSubmitting }) =
     setIsSubmitting(true);
 
     try {
+      // Critical timezone fix: serializar como ISO UTC pasando por local Date
+      // primero (browser interpreta el string como local TZ → toISOString lo
+      // convierte a UTC con offset). Sin este trick, Postgres interpretaría
+      // 'YYYY-MM-DDTHH:mm' como UTC y el bloqueo aparecería con 3-4hs de
+      // desfase en la UI del user chileno + el trigger validate_appointment
+      // bloquearía horarios incorrectos. Mismo approach que createOrgBlockedTime
+      // en org.api.js.
+      const localStart = new Date(`${blockData.date}T${blockData.start_time}`);
+      const localEnd = new Date(`${blockData.date}T${blockData.end_time}`);
+
       const { error } = await supabase.from('blocked_times').insert({
         therapist_id: user.id,
         clinic_id: (blockData.clinic_id && blockData.clinic_id !== 'all') ? blockData.clinic_id : null,
-        start_time: `${blockData.date}T${blockData.start_time}`,
-        end_time: `${blockData.date}T${blockData.end_time}`,
+        start_time: localStart.toISOString(),
+        end_time: localEnd.toISOString(),
         reason: blockData.reason,
       });
 
