@@ -12,7 +12,7 @@ import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { useNavigate } from 'react-router-dom';
 
 const AssistantDashboard = () => {
-  const { currentOrganizationId, currentOrganization, loading: orgLoading } = useCurrentOrganization();
+  const { currentOrganizationId, currentOrganization, organizations = [], loading: orgLoading } = useCurrentOrganization();
   const navigate = useNavigate();
 
   const [todayAppointments, setTodayAppointments] = useState([]);
@@ -107,13 +107,33 @@ const AssistantDashboard = () => {
   }
 
   if (!currentOrganizationId) {
+    // Distinguir dos casos:
+    //  - Tiene orgs pero no eligió una → guiar al selector (caso normal multi-org)
+    //  - No tiene NINGUNA org → asistente sin vínculo activo (nunca aceptó
+    //    invitación, o fue revocado). El selector está vacío, así que el
+    //    mensaje "usa el selector" sería un dead-end confuso.
+    const hasNoOrgs = (organizations?.length || 0) === 0;
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
         <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Selecciona una organización</h2>
-        <p className="text-muted-foreground max-w-md">
-          Usa el selector en el menú superior para elegir la clínica donde trabajas hoy.
-        </p>
+        {hasNoOrgs ? (
+          <>
+            <h2 className="text-xl font-semibold mb-2">Todavía no estás vinculado a una clínica</h2>
+            <p className="text-muted-foreground max-w-md">
+              Para trabajar como asistente necesitás una invitación de la clínica.
+              Si ya la recibiste por email, abrí el enlace para aceptarla. Si creés
+              que es un error o tu acceso fue dado de baja, contactá al administrador
+              de la clínica.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-semibold mb-2">Selecciona una organización</h2>
+            <p className="text-muted-foreground max-w-md">
+              Usa el selector en el menú superior para elegir la clínica donde trabajas hoy.
+            </p>
+          </>
+        )}
       </div>
     );
   }
