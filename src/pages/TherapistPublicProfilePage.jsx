@@ -42,7 +42,6 @@ import {
   TestimonialsSection,
   ClinicsAndBookingSection,
   // CTA & Navigation
-  BookingCTASection,
   StickyActionBar,
   FooterSection,
   LoadingSkeleton,
@@ -132,7 +131,7 @@ const TherapistPublicProfilePage = () => {
               university, graduation_year, slug,
               social_instagram_url, social_facebook_url,
               social_linkedin_url, social_twitter_url,
-              public_email, accepts_online_booking
+              public_email, accepts_online_booking, booking_instructions
             ),
             therapist_specialties ( specialties (id, name) )
           `).eq('id', therapistId).maybeSingle(), // Changed to maybeSingle for safety
@@ -462,12 +461,6 @@ const TherapistPublicProfilePage = () => {
           specialtyBadges={data.specialtyBadges}
           languages={data.languages}
         />
-        {/* 8. CTA */}
-        <BookingCTASection
-          branding={branding}
-          onBookClick={handleBookClick}
-        />
-
         {/* 3. CONDITIONS */}
         <ConditionsSection
           conditions={data.conditions}
@@ -503,6 +496,7 @@ const TherapistPublicProfilePage = () => {
           branding={branding}
           therapistName={therapist.full_name?.split(' ')[0]}
           acceptsOnlineBooking={details.accepts_online_booking === true}
+          bookingInstructions={details.booking_instructions || ''}
         />
 
        

@@ -136,7 +136,8 @@ const ClinicsAndBookingSection = forwardRef(({
   clinics = [],
   branding = {},
   therapistName = '',
-  acceptsOnlineBooking = false
+  acceptsOnlineBooking = false,
+  bookingInstructions = ''
 }, ref) => {
   const { primaryColor = '#E11D48', secondaryColor = '#0F172A' } = branding;
   const rgb = hexToRgb(primaryColor);
@@ -264,6 +265,7 @@ const ClinicsAndBookingSection = forwardRef(({
                 branding={branding}
                 clinicId={activeClinicId}
                 modality={activeModality}
+                bookingInstructions={bookingInstructions}
               />
             </motion.div>
           </AnimatedSection>

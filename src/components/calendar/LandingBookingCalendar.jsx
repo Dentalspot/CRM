@@ -10,7 +10,8 @@ import {
   Loader2,
   CheckCircle2,
   Sparkles,
-  PartyPopper
+  PartyPopper,
+  Info
 } from 'lucide-react';
 import {
   format,
@@ -40,6 +41,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
@@ -187,7 +189,8 @@ export default function LandingBookingCalendar({
   therapistId,
   branding = {},
   clinicId = null,
-  modality = 'online' // 'online' | 'presencial'
+  modality = 'online', // 'online' | 'presencial'
+  bookingInstructions = '' // nota configurable del dentista
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -211,6 +214,8 @@ export default function LandingBookingCalendar({
   });
   // Consentimiento de datos personales (Ley 21.719). Obligatorio antes de reservar.
   const [consentChecked, setConsentChecked] = useState(false);
+  // Motivo de consulta (opcional) que el paciente escribe para el dentista.
+  const [consultReason, setConsultReason] = useState('');
 
   const isFetchingRef = useRef(false);
 
@@ -336,8 +341,8 @@ export default function LandingBookingCalendar({
       const endDate = addMinutes(startDate, 30);
       const endTimeStr = format(endDate, 'HH:mm');
 
-      // Use RPC for guest booking
-      const { error } = await supabase.rpc('schedule_appointment_and_patient', {
+      // Use RPC for guest booking. Retorna el appointment_id (uuid).
+      const { data: newAppointmentId, error } = await supabase.rpc('schedule_appointment_and_patient', {
         p_therapist_id: therapistId,
         p_clinic_id: modality === 'presencial' ? clinicId : null,
         p_service_id: null,
@@ -348,11 +353,22 @@ export default function LandingBookingCalendar({
         p_date: format(selectedDate, 'yyyy-MM-dd'),
         p_start_time: selectedTime,
         p_end_time: endTimeStr,
-        p_notes: `Reserva desde Landing Page. Modalidad: ${modality}`,
+        p_notes: [
+          consultReason.trim() ? `Motivo del paciente: ${consultReason.trim()}` : null,
+          `Reserva online. Modalidad: ${modality}`,
+        ].filter(Boolean).join('\n'),
         p_send_email_reminder: true
       });
 
       if (error) throw error;
+
+      // Notificación por email (paciente + dentista). Fire-and-forget: si el
+      // email falla, NO bloqueamos el éxito de la reserva (ya quedó creada).
+      if (newAppointmentId) {
+        supabase.functions
+          .invoke('send-booking-notification', { body: { appointment_id: newAppointmentId } })
+          .catch((e) => logger.warn('[LandingBooking] email notification failed:', e?.message));
+      }
 
       // Show success state
       setBookingSuccess(true);
@@ -612,7 +628,7 @@ export default function LandingBookingCalendar({
           setBookingModalOpen(open);
         }
       }}>
-        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden bg-white rounded-2xl gap-0 border-0">
+        <DialogContent className="sm:max-w-[450px] p-0 max-h-[90vh] overflow-y-auto bg-white rounded-2xl gap-0 border-0">
           <AnimatePresence mode="wait">
             {bookingSuccess ? (
               <SuccessState
@@ -702,6 +718,30 @@ export default function LandingBookingCalendar({
                     </div>
                   </div>
 
+                  {/* Motivo de consulta (opcional) — lo ve el dentista antes de aceptar */}
+                  <div className="space-y-2">
+                    <Label>Motivo de consulta <span className="text-slate-400 font-normal">(Opcional)</span></Label>
+                    <Textarea
+                      value={consultReason}
+                      onChange={(e) => setConsultReason(e.target.value)}
+                      placeholder="Cuéntale brevemente al dentista el motivo de tu visita (ej. control, dolor, limpieza)..."
+                      className="bg-slate-50 border-slate-200 resize-none h-20"
+                      maxLength={300}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+
+                  {/* Instrucciones del dentista (si las configuró) */}
+                  {bookingInstructions?.trim() && (
+                    <div className="flex items-start gap-2 text-sm bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-900">
+                      <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-xs uppercase tracking-wide text-amber-700 mb-0.5">Antes de tu cita</p>
+                        <p className="whitespace-pre-wrap">{bookingInstructions.trim()}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Consentimiento de datos (Ley 21.719) — obligatorio */}
                   <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer pt-1">
                     <input
@@ -727,7 +767,7 @@ export default function LandingBookingCalendar({
                 </div>
 
                 {/* Footer */}
-                <DialogFooter className="p-6 pt-2 bg-slate-50">
+                <DialogFooter className="p-6 pt-3 bg-slate-50 sticky bottom-0 border-t border-slate-100">
                   <Button
                     variant="ghost"
                     onClick={() => setBookingModalOpen(false)}

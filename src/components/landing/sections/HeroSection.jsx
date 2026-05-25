@@ -9,7 +9,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import {
   MapPin, Video, ShieldCheck, Shield, Calendar, ArrowRight,
-  Share2, Check, ChevronDown, Trophy, CheckCircle2, FileDown
+  Share2, Check, ChevronDown, Trophy, CheckCircle2
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -111,7 +111,7 @@ const HeroSection = ({ therapist, branding, onBookClick, onShareClick, onDownloa
             >
               Soy {therapist.full_name?.split(' ')[0]}
               <span className="block text-slate-500 text-sm md:text-base font-medium mt-0.5">
-                {details.professional_title || 'Fonoaudiólogo/a'}
+                {details.professional_title || 'Dentista'}
               </span>
             </motion.h1>
 
@@ -187,17 +187,6 @@ const HeroSection = ({ therapist, branding, onBookClick, onShareClick, onDownloa
                   <><Share2 className="w-4 h-4 mr-2" />Compartir</>
                 )}
               </Button>
-              {onDownloadCV && (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={onDownloadCV}
-                  className="rounded-full px-5 h-10 font-medium border-2 hover:bg-slate-50"
-                >
-                  <FileDown className="w-4 h-4 mr-2" />
-                  Descargar CV
-                </Button>
-              )}
             </motion.div>
           </div>
 

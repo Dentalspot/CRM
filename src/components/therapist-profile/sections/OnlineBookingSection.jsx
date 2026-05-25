@@ -3,7 +3,8 @@ import ProfileSectionCard from '@/components/therapist-profile/ProfileSectionCar
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, CalendarCheck, Info, Link2, Copy, Check } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, CalendarCheck, Info, Link2, Copy, Check, Save, MessageSquare } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,6 +32,9 @@ const OnlineBookingSection = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Instrucciones para el paciente (ej. "Llegá 5 min antes")
+  const [instructions, setInstructions] = useState('');
+  const [savingInstructions, setSavingInstructions] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -38,12 +42,13 @@ const OnlineBookingSection = () => {
     try {
       const { data, error } = await supabase
         .from('therapist_details')
-        .select('accepts_online_booking, slug, profiles:user_id(full_name)')
+        .select('accepts_online_booking, slug, booking_instructions, profiles:user_id(full_name)')
         .eq('user_id', user.id)
         .maybeSingle();
       if (error) throw error;
       setEnabled(data?.accepts_online_booking === true);
       setSlug(data?.slug || null);
+      setInstructions(data?.booking_instructions || '');
       setFullName(data?.profiles?.full_name || profile?.full_name || '');
     } catch (error) {
       logger.error('[OnlineBookingSection] load failed:', error);
@@ -106,7 +111,7 @@ const OnlineBookingSection = () => {
       toast({
         title: next ? '✅ Reservas online activadas' : 'Reservas online desactivadas',
         description: next
-          ? 'Compartí tu enlace para que los pacientes reserven.'
+          ? 'Comparte tu enlace para que los pacientes reserven.'
           : 'Tu perfil público ya no muestra el calendario de reserva.',
       });
     } catch (error) {
@@ -118,6 +123,25 @@ const OnlineBookingSection = () => {
     }
   };
 
+  const handleSaveInstructions = async () => {
+    setSavingInstructions(true);
+    try {
+      const { data, error } = await supabase
+        .from('therapist_details')
+        .update({ booking_instructions: instructions.trim() || null })
+        .eq('user_id', user.id)
+        .select('user_id');
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('No se pudo guardar.');
+      toast({ title: '✅ Instrucciones guardadas', description: 'Se mostrarán al paciente antes de reservar.' });
+    } catch (error) {
+      logger.error('[OnlineBookingSection] save instructions failed:', error);
+      toast({ variant: 'destructive', title: 'Error', description: error.message || 'No se pudo guardar.' });
+    } finally {
+      setSavingInstructions(false);
+    }
+  };
+
   const publicUrl = slug ? `${window.location.origin}/${slug}` : '';
 
   const handleCopy = async () => {
@@ -125,7 +149,7 @@ const OnlineBookingSection = () => {
     try {
       await navigator.clipboard.writeText(publicUrl);
       setCopied(true);
-      toast({ title: '¡Enlace copiado!', description: 'Ya podés compartirlo con tus pacientes.' });
+      toast({ title: '¡Enlace copiado!', description: 'Ya puedes compartirlo con tus pacientes.' });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({ variant: 'destructive', title: 'No se pudo copiar', description: 'Copialo manualmente.' });
@@ -193,9 +217,41 @@ const OnlineBookingSection = () => {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Compartí este enlace en tu Instagram, WhatsApp o tarjeta. Tus pacientes
+                Comparte este enlace en tu Instagram, WhatsApp o tarjeta. Tus pacientes
                 podrán reservar directamente.
               </p>
+            </div>
+          )}
+
+          {/* Instrucciones para el paciente (se muestran antes de confirmar reserva) */}
+          {enabled && (
+            <div className="space-y-2">
+              <Label htmlFor="booking-instructions" className="text-sm font-medium flex items-center gap-1.5">
+                <MessageSquare className="h-4 w-4 text-primary" /> Instrucciones para el paciente
+                <span className="text-xs font-normal text-muted-foreground">(opcional)</span>
+              </Label>
+              <Textarea
+                id="booking-instructions"
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder="Ej: Llega 5 minutos antes de tu cita. Trae tus exámenes previos si los tienes."
+                className="resize-none h-20"
+                maxLength={300}
+                disabled={savingInstructions}
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveInstructions}
+                  disabled={savingInstructions}
+                  className="gap-1.5"
+                >
+                  {savingInstructions ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Guardar instrucciones
+                </Button>
+              </div>
             </div>
           )}
 
@@ -203,7 +259,7 @@ const OnlineBookingSection = () => {
             <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
             <p>
               Las reservas entran como <strong>pendientes de confirmar</strong> en tu agenda.
-              Vos decidís si las aceptás o las rechazás. Los horarios disponibles se toman
+              Tú decides si las aceptas o las rechazas. Los horarios disponibles se toman
               de tu disponibilidad configurada por clínica.
             </p>
           </div>

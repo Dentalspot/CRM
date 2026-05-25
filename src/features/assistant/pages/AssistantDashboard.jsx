@@ -120,9 +120,9 @@ const AssistantDashboard = () => {
           <>
             <h2 className="text-xl font-semibold mb-2">Todavía no estás vinculado a una clínica</h2>
             <p className="text-muted-foreground max-w-md">
-              Para trabajar como asistente necesitás una invitación de la clínica.
-              Si ya la recibiste por email, abrí el enlace para aceptarla. Si creés
-              que es un error o tu acceso fue dado de baja, contactá al administrador
+              Para trabajar como asistente necesitas una invitación de la clínica.
+              Si ya la recibiste por email, abre el enlace para aceptarla. Si crees
+              que es un error o tu acceso fue dado de baja, contacta al administrador
               de la clínica.
             </p>
           </>
