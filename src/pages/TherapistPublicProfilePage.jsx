@@ -132,7 +132,7 @@ const TherapistPublicProfilePage = () => {
               university, graduation_year, slug,
               social_instagram_url, social_facebook_url,
               social_linkedin_url, social_twitter_url,
-              public_email
+              public_email, accepts_online_booking
             ),
             therapist_specialties ( specialties (id, name) )
           `).eq('id', therapistId).maybeSingle(), // Changed to maybeSingle for safety
@@ -502,6 +502,7 @@ const TherapistPublicProfilePage = () => {
           clinics={data.clinics}
           branding={branding}
           therapistName={therapist.full_name?.split(' ')[0]}
+          acceptsOnlineBooking={details.accepts_online_booking === true}
         />
 
        

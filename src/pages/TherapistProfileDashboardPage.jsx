@@ -35,6 +35,7 @@ import { normalizeDetails, DENTALSPOT_COLORS } from '@/components/landing/sectio
 // Lazy loaded components
 const AcademicFormationSection = lazy(() => import('@/components/therapist-profile/sections/AcademicFormationSection'));
 const MyClinicsSection = lazy(() => import('@/components/therapist-profile/sections/MyClinicsSection'));
+const OnlineBookingSection = lazy(() => import('@/components/therapist-profile/sections/OnlineBookingSection'));
 const PersonalInfoSection = lazy(() => import('@/components/therapist-profile/sections/PersonalInfoSection'));
 const ServicesFeesSection = lazy(() => import('@/components/therapist-profile/sections/ServicesFeesSection'));
 const SpecialtiesConditionsSection = lazy(() => import('@/components/therapist-profile/sections/SpecialtiesConditionsSection'));
@@ -468,6 +469,7 @@ export default function TherapistProfileDashboardPage() {
               <div className="space-y-6">
                 <Chunk><MyClinicsSection /></Chunk>
                 <Chunk><ServicesFeesSection /></Chunk>
+                <Chunk><OnlineBookingSection /></Chunk>
               </div>
             )}
           </TabsContent>

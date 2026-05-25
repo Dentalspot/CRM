@@ -107,7 +107,7 @@ const ModalityIndicator = ({ selectedClinic, primaryColor }) => {
 const TrustBadges = ({ primaryColor, secondaryColor }) => (
   <div className="flex flex-wrap gap-6 justify-center mt-8 pt-6 border-t border-slate-100">
     {[
-      { icon: Zap, label: 'Confirmación inmediata', color: primaryColor },
+      { icon: Zap, label: 'Sujeto a confirmación del profesional', color: primaryColor },
       { icon: Clock, label: 'Recordatorios automáticos', color: secondaryColor },
       { icon: RotateCcw, label: 'Reprogramación flexible', color: primaryColor },
     ].map((item, i) => (
@@ -135,7 +135,8 @@ const ClinicsAndBookingSection = forwardRef(({
   therapistId,
   clinics = [],
   branding = {},
-  therapistName = ''
+  therapistName = '',
+  acceptsOnlineBooking = false
 }, ref) => {
   const { primaryColor = '#E11D48', secondaryColor = '#0F172A' } = branding;
   const rgb = hexToRgb(primaryColor);
@@ -161,6 +162,12 @@ const ClinicsAndBookingSection = forwardRef(({
 
   const activeClinicId = selectedClinic?.modality === 'online' ? null : selectedClinic?.id;
   const activeModality = selectedClinic?.modality === 'online' ? 'online' : 'presencial';
+
+  // Gate self-booking: si el dentista no activó "Aceptar reservas online",
+  // no mostramos la sección de reserva. El visitante igual puede contactarlo
+  // por los otros medios del perfil (teléfono, redes). Se ubica tras los hooks
+  // para no violar las reglas de hooks de React.
+  if (!acceptsOnlineBooking) return null;
 
   return (
     <section

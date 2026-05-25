@@ -209,6 +209,8 @@ export default function LandingBookingCalendar({
     phone: '',
     rut: ''
   });
+  // Consentimiento de datos personales (Ley 21.719). Obligatorio antes de reservar.
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const isFetchingRef = useRef(false);
 
@@ -305,6 +307,17 @@ export default function LandingBookingCalendar({
         variant: "destructive",
         title: "Datos incompletos",
         description: "Por favor ingresa tu nombre y correo."
+      });
+      return;
+    }
+
+    // Ley 21.719: el tratamiento de datos personales requiere consentimiento
+    // explícito del titular. Sin el checkbox marcado, no creamos la reserva.
+    if (!consentChecked) {
+      toast({
+        variant: "destructive",
+        title: "Falta tu consentimiento",
+        description: "Debes aceptar el tratamiento de tus datos para reservar."
       });
       return;
     }
@@ -688,6 +701,29 @@ export default function LandingBookingCalendar({
                       />
                     </div>
                   </div>
+
+                  {/* Consentimiento de datos (Ley 21.719) — obligatorio */}
+                  <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      checked={consentChecked}
+                      onChange={(e) => setConsentChecked(e.target.checked)}
+                      disabled={isSubmitting}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 shrink-0"
+                    />
+                    <span>
+                      Autorizo el tratamiento de mis datos personales para gestionar esta
+                      reserva, conforme a la{' '}
+                      <a
+                        href="/legal/politica-privacidad"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:text-slate-800"
+                      >
+                        Política de Privacidad
+                      </a>.
+                    </span>
+                  </label>
                 </div>
 
                 {/* Footer */}
@@ -702,7 +738,7 @@ export default function LandingBookingCalendar({
                   </Button>
                   <Button
                     onClick={handleBooking}
-                    disabled={isSubmitting || !patientForm.name || !patientForm.email}
+                    disabled={isSubmitting || !patientForm.name || !patientForm.email || !consentChecked}
                     className="text-white shadow-lg"
                     style={{
                       backgroundColor: primaryColor,
