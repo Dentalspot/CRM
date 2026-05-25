@@ -96,6 +96,7 @@ const AssistantPatientsPage = lazy(() => import('@/features/assistant/pages/Assi
 // Clinic Pages
 const ClinicDashboardPage = lazy(() => import('@/features/clinic-dashboard/ClinicDashboardPageV2.jsx'));
 const ClinicTherapistsManagementPage = lazy(() => import('@/pages/clinic/ClinicTherapistsManagementPage.jsx'));
+const ClinicSchedulesPage = lazy(() => import('@/pages/clinic/ClinicSchedulesPage.jsx'));
 const ClinicReportsPage = lazy(() => import('@/pages/clinic/ClinicReportsPage.jsx'));
 // Spec 025: ClinicAgendasPage (vista lista) reemplazado por ClinicAdminCalendarPage (rich calendar).
 // El archivo legacy permanece en filesystem hasta Polish task T011.
@@ -252,6 +253,10 @@ const DashboardRouter = () => {
           <Route path="clinic">
             <Route index element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicDashboardPage /></RoleGuard>} />
             <Route path="therapists" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicTherapistsManagementPage /></RoleGuard>} />
+            {/* Horarios del equipo: clinic_admin Y asistente pueden editar
+                disponibilidad de dentistas (mínimo privilegio — sin gestión
+                de personal). El dentista invitado queda read-only por RLS. */}
+            <Route path="schedules" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC, USER_ROLES.ASSISTANT]}><ClinicSchedulesPage /></RoleGuard>} />
             <Route path="reports" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicReportsPage /></RoleGuard>} />
             <Route path="agendas" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicAdminCalendarPage /></RoleGuard>} />
             <Route path="patients" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicPatientsPage /></RoleGuard>} />
