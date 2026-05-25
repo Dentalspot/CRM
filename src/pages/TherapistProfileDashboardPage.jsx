@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy, useEffect } from 'react';
+import React, { useState, Suspense, lazy, useEffect, useRef, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -17,7 +17,9 @@ import {
   Landmark,
   Building2,
   Users,
-  Gift
+  Gift,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
@@ -42,9 +44,6 @@ const SpecialtiesConditionsSection = lazy(() => import('@/components/therapist-p
 const WorkExperienceSection = lazy(() => import('@/components/therapist-profile/sections/WorkExperienceSection'));
 const VisualCustomizationSection = lazy(() => import('@/components/therapist-profile/sections/VisualCustomizationSection'));
 const ImagesSection = lazy(() => import('@/components/therapist-profile/sections/ImagesSection'));
-const PatientDocsSection = lazy(() => import('@/components/therapist-profile/sections/PatientDocsSection'));
-const CustomMaterialsSection = lazy(() => import('@/components/therapist-profile/sections/CustomMaterialsSection'));
-const MyMarketplaceResourcesSection = lazy(() => import('@/components/therapist-profile/sections/MyMarketplaceResourcesSection'));
 const MembershipPlansPage = lazy(() => import('@/features/membership/pages/MembershipPlansPage'));
 
 // Clinic Profile Components
@@ -60,7 +59,6 @@ const BankTransferInfoForm = lazy(() => import('@/features/settings/components/B
 const ReputationDashboard = lazy(() => import('@/components/reputation/ReputationDashboard'));
 const GrowthPanel = lazy(() => import('@/components/reputation/GrowthPanel'));
 const InvitationsPanel = lazy(() => import('@/features/invitations/components/InvitationsPanel'));
-const MyClinicInvitationsPanel = lazy(() => import('@/features/dashboard/components/MyClinicInvitationsPanel'));
 
 const PageLoader = () => (
   <div className="flex justify-center items-center min-h-[280px]">
@@ -120,6 +118,38 @@ export default function TherapistProfileDashboardPage() {
   };
 
   const [cvLoading, setCvLoading] = useState(false);
+
+  // Scroll horizontal de la barra de tabs (cuando no caben todos en pantalla
+  // angosta). Mostramos flechas ◂ ▸ solo cuando hay contenido oculto a ese lado.
+  const tabsScrollRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateTabArrows = useCallback(() => {
+    const el = tabsScrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = tabsScrollRef.current;
+    if (!el) return;
+    updateTabArrows();
+    el.addEventListener('scroll', updateTabArrows, { passive: true });
+    window.addEventListener('resize', updateTabArrows);
+    return () => {
+      el.removeEventListener('scroll', updateTabArrows);
+      window.removeEventListener('resize', updateTabArrows);
+    };
+  }, [updateTabArrows]);
+
+  const scrollTabs = (dir) => {
+    const el = tabsScrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(160, el.clientWidth * 0.6), behavior: 'smooth' });
+  };
 
   const handleDownloadCV = async () => {
     if (!user?.id) return;
@@ -205,9 +235,7 @@ export default function TherapistProfileDashboardPage() {
     { key: 'academic', label: 'Formación', icon: <GraduationCap className="h-4 w-4" /> },
     { key: 'dentallevel', label: 'DentalLevel', icon: <Award className="h-4 w-4" />, highlight: true },
     { key: 'clinics-availability', label: 'Agenda', icon: <MapPin className="h-4 w-4" /> },
-    { key: 'docs', label: 'Plantillas', icon: <FileText className="h-4 w-4" /> },
     { key: 'membership', label: 'Mi Plan', icon: <CreditCard className="h-4 w-4" /> },
-    { key: 'invitations', label: 'Mis Invitaciones', icon: <Gift className="h-4 w-4" /> },
   ];
 
   // Clinic-specific tabs
@@ -334,31 +362,65 @@ export default function TherapistProfileDashboardPage() {
         onValueChange={handleTabChange}
         className="flex flex-col gap-6"
       >
-        {/* Horizontal scrollable tabs — all screen sizes */}
-        <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm py-2 -mt-2">
-          <TabsList className="inline-flex gap-1 p-1.5 bg-muted/30 rounded-xl h-auto min-w-max">
-            {tabs.map(t => (
-              <TabsTrigger
-                key={t.key}
-                value={t.key}
-                className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all
-                  data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary
-                  hover:bg-slate-100 dark:hover:bg-slate-800
-                  ${t.highlight ? 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-50 data-[state=active]:to-primary data-[state=active]:text-purple-700' : ''}`}
+        {/* Horizontal scrollable tabs — all screen sizes.
+            Flechas ◂ ▸ + gradientes fade aparecen cuando hay tabs ocultos
+            (pantalla angosta). El scroll también funciona con swipe en touch. */}
+        <div className="relative sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm py-2 -mt-2">
+          {/* Flecha izquierda */}
+          {canScrollLeft && (
+            <>
+              <button
+                type="button"
+                onClick={() => scrollTabs(-1)}
+                aria-label="Desplazar pestañas a la izquierda"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:bg-slate-50"
               >
-                <span className={`p-1 sm:p-1.5 rounded-md ${activeTab === t.key ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
-                  {t.icon}
-                </span>
-                <span className="hidden sm:inline">{t.label}</span>
-                <span className="sm:hidden">{t.label.split(' ')[0]}</span>
-                {t.highlight && (
-                  <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-primary bg-clip-text text-transparent">
-                    Único
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white to-transparent z-10" />
+            </>
+          )}
+
+          {/* Flecha derecha */}
+          {canScrollRight && (
+            <>
+              <button
+                type="button"
+                onClick={() => scrollTabs(1)}
+                aria-label="Desplazar pestañas a la derecha"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 h-8 w-8 flex items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-600 hover:bg-slate-50"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white to-transparent z-10" />
+            </>
+          )}
+
+          <div ref={tabsScrollRef} className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+            <TabsList className="inline-flex gap-1 p-1.5 bg-muted/30 rounded-xl h-auto min-w-max">
+              {tabs.map(t => (
+                <TabsTrigger
+                  key={t.key}
+                  value={t.key}
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all
+                    data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-primary
+                    hover:bg-slate-100 dark:hover:bg-slate-800
+                    ${t.highlight ? 'data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-50 data-[state=active]:to-primary data-[state=active]:text-purple-700' : ''}`}
+                >
+                  <span className={`p-1 sm:p-1.5 rounded-md ${activeTab === t.key ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}>
+                    {t.icon}
                   </span>
-                )}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+                  <span className="hidden sm:inline">{t.label}</span>
+                  <span className="sm:hidden">{t.label.split(' ')[0]}</span>
+                  {t.highlight && (
+                    <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-purple-600 to-primary bg-clip-text text-transparent">
+                      Único
+                    </span>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
         </div>
 
         {/* Content */}
@@ -467,9 +529,9 @@ export default function TherapistProfileDashboardPage() {
           <TabsContent value="clinics-availability" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
             {activeTab === 'clinics-availability' && (
               <div className="space-y-6">
+                <Chunk><OnlineBookingSection /></Chunk>
                 <Chunk><MyClinicsSection /></Chunk>
                 <Chunk><ServicesFeesSection /></Chunk>
-                <Chunk><OnlineBookingSection /></Chunk>
               </div>
             )}
           </TabsContent>
@@ -497,17 +559,6 @@ export default function TherapistProfileDashboardPage() {
             {activeTab === 'services' && <Chunk><ServicesFeesSection /></Chunk>}
           </TabsContent>
 
-          {/* Documentos y Materiales */}
-          <TabsContent value="docs" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
-            {activeTab === 'docs' && (
-              <div className="space-y-6">
-                <Chunk><PatientDocsSection /></Chunk>
-                <Chunk><CustomMaterialsSection /></Chunk>
-                <Chunk><MyMarketplaceResourcesSection /></Chunk>
-              </div>
-            )}
-          </TabsContent>
-
           {/* Mi Plan / Membresía + Programa de Referidos */}
           <TabsContent value="membership" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
             {activeTab === 'membership' && (
@@ -518,10 +569,6 @@ export default function TherapistProfileDashboardPage() {
             )}
           </TabsContent>
 
-          {/* Mis Invitaciones — invitaciones a clínicas (recibidas) */}
-          <TabsContent value="invitations" className="mt-0 animate-in fade-in slide-in-from-right-4 duration-300">
-            {activeTab === 'invitations' && <Chunk><MyClinicInvitationsPanel /></Chunk>}
-          </TabsContent>
         </div>
       </Tabs>
     </div>
