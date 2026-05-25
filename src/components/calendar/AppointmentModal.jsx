@@ -251,7 +251,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     try {
       const { error } = await supabase
         .from('appointments')
-        .update({ status: 'canceled' })
+        .update({ status: 'cancelled' })
         .eq('id', slotInfo.id);
       if (error) throw error;
       toast({ title: 'Cita cancelada' });
