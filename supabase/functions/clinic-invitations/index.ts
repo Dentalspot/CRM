@@ -1,8 +1,24 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://dentalspot.cl',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// CORS dinámico: refleja el Origin del request si está en la allowlist.
+// Permite prod (dentalspot.cl) + dev local (localhost:3000 / 5173). Sin esto,
+// el preflight desde localhost falla porque el header hardcodeado a
+// dentalspot.cl no matchea el origin de desarrollo.
+const ALLOWED_ORIGINS = [
+  'https://dentalspot.cl',
+  'https://www.dentalspot.cl',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+
+function buildCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') ?? '';
+  const allowOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : 'https://dentalspot.cl';
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  };
+}
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 
@@ -47,6 +63,9 @@ const sendEmail = async (to: string, subject: string, html: string) => {
 };
 
 Deno.serve(async (req) => {
+  // CORS headers calculados por request (refleja el Origin permitido).
+  const corsHeaders = buildCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -239,6 +258,17 @@ Deno.serve(async (req) => {
       const { token } = body;
       const { data: invite } = await supabase.from("clinic_invitations").select("*").eq("token", token).eq("status", "pending").single();
       if (!invite) throw new Error("Invitación no válida o ya aceptada");
+
+      // Seguridad: la invitación solo puede aceptarla el dueño del email al
+      // que fue enviada. Sin este check, cualquier usuario logueado (ej. el
+      // clinic_admin que invitó) podía abrir el link y auto-agregarse con el
+      // rol de la invitación. Bug detectado 2026-05-25.
+      if ((user.email ?? "").toLowerCase().trim() !== (invite.email ?? "").toLowerCase().trim()) {
+        return new Response(JSON.stringify({
+          success: false,
+          message: `Esta invitación fue enviada a ${invite.email}. Iniciá sesión con esa cuenta para aceptarla.`,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
       // Spec 023: chequear expiración antes de aceptar
       if (invite.expires_at && new Date(invite.expires_at) < new Date()) {

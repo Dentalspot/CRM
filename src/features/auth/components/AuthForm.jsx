@@ -141,12 +141,23 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
   // Spec 023 US2: si venimos de un link de invitación, post-auth invocar accept
   // y navegar a redirect_to contextual (/dashboard/assistant o /dashboard/therapist)
   const acceptInvitationIfPresent = async () => {
-    if (!invitationToken) return false;
+    // Token de la URL (flujo directo) o de localStorage (flujo con
+    // confirmación de email — el state de navigate se pierde al abrir el
+    // link del email en otra pestaña, así que persistimos en localStorage).
+    let token = invitationToken;
+    if (!token) {
+      try { token = localStorage.getItem('pending_invitation_token'); } catch { /* noop */ }
+    }
+    if (!token) return false;
+
+    // Limpiar el token persistido apenas lo vamos a usar (evita reintentos
+    // en loop si la aceptación falla).
+    try { localStorage.removeItem('pending_invitation_token'); } catch { /* noop */ }
 
     try {
       const { data: acceptRes, error: acceptErr } = await supabase.functions.invoke(
         'clinic-invitations',
-        { body: { action: 'accept', token: invitationToken } }
+        { body: { action: 'accept', token } }
       );
 
       if (acceptErr || !acceptRes?.success) {
@@ -343,10 +354,14 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
     }
 
     if (needsEmailConfirmation) {
-      // Spec 023 US2: si viene invitación pero email confirmation está activa,
-      // no podemos aceptar ahora (session no válida hasta confirmar). Preservamos
-      // el token en state del confirm-email para accept post-confirmación (futura
-      // extensión). MVP asume email confirmation OFF en testing.
+      // Spec 023 US2 + fix 2026-05-25: con email confirmation ON no podemos
+      // aceptar ahora (session no válida hasta confirmar). Persistimos el token
+      // en localStorage para que sobreviva el cambio de pestaña al confirmar
+      // email (el state de navigate se pierde). acceptInvitationIfPresent lo
+      // recupera en el primer login post-confirmación.
+      if (invitationToken) {
+        try { localStorage.setItem('pending_invitation_token', invitationToken); } catch { /* noop */ }
+      }
       navigate('/auth/confirm-email', {
         state: { email: formData.email, pendingInvitationToken: invitationToken },
       });
