@@ -117,8 +117,6 @@ export default function TherapistProfileDashboardPage() {
     setSearchParams({ tab: value });
   };
 
-  const [cvLoading, setCvLoading] = useState(false);
-
   // Scroll horizontal de la barra de tabs (cuando no caben todos en pantalla
   // angosta). Mostramos flechas ◂ ▸ solo cuando hay contenido oculto a ese lado.
   const tabsScrollRef = useRef(null);
@@ -151,63 +149,6 @@ export default function TherapistProfileDashboardPage() {
     el.scrollBy({ left: dir * Math.max(160, el.clientWidth * 0.6), behavior: 'smooth' });
   };
 
-  const handleDownloadCV = async () => {
-    if (!user?.id) return;
-    setCvLoading(true);
-    try {
-      const [profileRes, brandingRes, educationRes, experienceRes, servicesRes, conditionsRes, specialtiesRes, specialtyBadgesRes] = await Promise.all([
-        supabase.from('profiles').select(`id, full_name, email, phone, therapist_details!fk_therapist_profile (*)`).eq('id', user.id).maybeSingle(),
-        supabase.from('therapist_branding').select('avatar_url, primary_color, secondary_color, text_color, background_color').eq('therapist_id', user.id).maybeSingle(),
-        supabase.from('therapist_education').select('*').eq('therapist_id', user.id).order('graduation_year', { ascending: false }),
-        supabase.from('therapist_experience').select('*').eq('therapist_id', user.id).order('start_date', { ascending: false }),
-        supabase.from('therapist_services').select('*').eq('therapist_id', user.id).eq('is_active', true),
-        supabase.from('therapist_conditions').select('condition_name').eq('therapist_id', user.id),
-        supabase.from('therapist_specialties').select('specialties(id, name)').eq('therapist_id', user.id),
-        supabase.from('therapist_specialty_badges').select('specialty, badge, final_score').eq('therapist_id', user.id).order('final_score', { ascending: false }),
-      ]);
-
-      const details = normalizeDetails(profileRes.data?.therapist_details);
-      const branding = brandingRes.data || {};
-      const specialties = (specialtiesRes.data || []).map(s => s.specialties?.name).filter(Boolean);
-      const conditions = (conditionsRes.data || []).map(c => c.condition_name).filter(Boolean);
-      const specialtyBadges = specialtyBadgesRes.data || [];
-      const mainBadge = specialtyBadges[0] || null;
-
-      let languages = [];
-      if (details.languages) {
-        if (Array.isArray(details.languages)) {
-          languages = details.languages.map(l => typeof l === 'string' ? { language: l, level: 5 } : l);
-        }
-      }
-      if (!languages.length) languages = [{ language: 'Español', level: 5 }];
-
-      exportTherapistCV({
-        therapist: {
-          ...profileRes.data,
-          therapist_details: details,
-          avatar_url: branding.avatar_url,
-          badge_label: mainBadge?.badge || null,
-          final_score: mainBadge?.final_score || null,
-        },
-        branding: {
-          primaryColor: branding.primary_color || DENTALSPOT_COLORS.primary,
-          secondaryColor: branding.secondary_color || DENTALSPOT_COLORS.secondary,
-        },
-        education: educationRes.data || [],
-        experience: experienceRes.data || [],
-        services: servicesRes.data || [],
-        specialties,
-        conditions,
-        specialtyBadges,
-        languages,
-      });
-    } catch (err) {
-      logger.error('Error generating CV:', err);
-      toast({ variant: 'destructive', title: 'Error al generar CV' });
-    } finally {
-      setCvLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -299,23 +240,23 @@ export default function TherapistProfileDashboardPage() {
       )}
 
       {/* Profile Header */}
-      <Card className="mb-8 overflow-hidden bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-none shadow-md">
-        <CardContent className="p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      <Card className="mb-5 overflow-hidden bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-none shadow-md">
+        <CardContent className="p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4">
             <div className="relative">
-              <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full ring-4 ring-white dark:ring-slate-800 shadow-lg overflow-hidden">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full ring-4 ring-white dark:ring-slate-800 shadow-lg overflow-hidden">
                 <ProfileAvatar
                   profile={profile}
                   src={profile?.avatar_url}
                   className="h-full w-full"
                 />
               </div>
-              <div className="absolute bottom-0 right-0 p-1.5 bg-green-500 rounded-full border-4 border-white dark:border-slate-800 shadow-sm" title="Online"></div>
+              <div className="absolute bottom-0 right-0 p-1 bg-green-500 rounded-full border-2 border-white dark:border-slate-800 shadow-sm" title="Online"></div>
             </div>
-            
+
             <div className="text-center sm:text-left flex-1">
-              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 mb-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 mb-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {profile.full_name || 'Tu Nombre'}
                 </h1>
                 {(isTherapist || isClinic) && (
@@ -324,27 +265,15 @@ export default function TherapistProfileDashboardPage() {
                   </Badge>
                 )}
               </div>
-              
-              <div className="flex flex-wrap items-center gap-3 mb-4">
+
+              <div className="flex flex-wrap items-center gap-3">
                 <p className="text-gray-500 dark:text-gray-400">
                   {profile.email} • {profile.rut || 'RUT no informado'}
                 </p>
-                {isTherapist && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleDownloadCV}
-                    disabled={cvLoading}
-                    className="rounded-full text-xs"
-                  >
-                    {cvLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <FileText className="h-3 w-3 mr-1" />}
-                    Descargar CV
-                  </Button>
-                )}
               </div>
 
-              {(isTherapist || isClinic) && (
-                <div className="flex flex-wrap justify-center sm:justify-start gap-2 text-sm">
+              {(isTherapist || isClinic) && profile.specialization_areas?.length > 0 && (
+                <div className="flex flex-wrap justify-center sm:justify-start gap-2 text-sm mt-2">
                   {profile.specialization_areas?.map((area, idx) => (
                     <span key={idx} className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                       {area}
