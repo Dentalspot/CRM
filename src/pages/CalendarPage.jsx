@@ -156,7 +156,12 @@ const CalendarPage = () => {
   // compat con citas legacy sin box_id asignado.
   const filteredAppointments = useMemo(() => {
     if (!selectedBoxId) return appointments;
-    return appointments.filter((apt) => apt.box_id === selectedBoxId);
+    // Incluir citas del box seleccionado + citas legacy sin box (box_id NULL).
+    // Sin esto, las citas creadas antes de la asignación por box quedaban
+    // invisibles en la grilla pero seguían bloqueando horarios vía el trigger
+    // check_patient_double_booking → el user "no veía a nadie" pero no podía
+    // agendar. Mismo criterio que filteredBlockedTimes.
+    return appointments.filter((apt) => !apt.box_id || apt.box_id === selectedBoxId);
   }, [appointments, selectedBoxId]);
 
   // Filtrar blocked_times por box (misma lógica que appointments).
