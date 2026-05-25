@@ -40,6 +40,8 @@ import { getScheduledReminders } from '@/features/reminders/api/remindersApi';
 import useDebounce from '@/hooks/useDebounce';
 import logger from '@/lib/utils/logger';
 import { searchPatientsForAgenda } from '@/lib/patientApi';
+import { usePendingOnlineBookings } from '@/hooks/usePendingOnlineBookings';
+import { CalendarClock, Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 const CalendarPage = () => {
   const { user } = useAuth();
@@ -121,6 +123,33 @@ const CalendarPage = () => {
 
   const debouncedSearch = useDebounce(searchTerm, 300);
 
+  // Reservas online pendientes de confirmar (banner + contador).
+  const { count: pendingOnlineCount, bookings: pendingOnlineBookings, refresh: refreshPendingOnline } = usePendingOnlineBookings();
+  const [showPendingList, setShowPendingList] = useState(false);
+  const [processingBookingId, setProcessingBookingId] = useState(null);
+
+  // Aceptar (confirmar) o cancelar una reserva online desde el banner.
+  const handleResolveOnlineBooking = async (appointmentId, newStatus) => {
+    setProcessingBookingId(appointmentId);
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({ status: newStatus })
+        .eq('id', appointmentId)
+        .select('id');
+      if (error) throw error;
+      // UI Honesty (Constitution V): validar que el update tocó una fila
+      if (!data || data.length === 0) throw new Error('No se pudo actualizar la cita.');
+      toast({ title: newStatus === 'confirmed' ? '✅ Cita confirmada' : 'Cita cancelada' });
+      await refreshPendingOnline();
+      fetchAppointments();
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Error', description: err.message });
+    } finally {
+      setProcessingBookingId(null);
+    }
+  };
+
   // Computed: lee config del calendario desde la clinic seleccionada
   // (calendar_start_hour, calendar_end_hour, calendar_slot_minutes).
   // Si "Todas las clínicas" → toma el menor start_hour y mayor end_hour
@@ -154,15 +183,26 @@ const CalendarPage = () => {
   // explícitamente no quiere mezclar agendas en una sola vista).
   // Si selectedBoxId es null (clinic sin boxes), no filtrar — backward
   // compat con citas legacy sin box_id asignado.
+  // Citas visibles en la grilla: ocultamos las reservas online SIN confirmar
+  // (booking_source online + status scheduled). Se gestionan solo desde el
+  // banner verde (Aceptar/Cancelar). Al confirmarlas (status confirmed)
+  // aparecen en el grid normalmente.
+  const visibleAppointments = useMemo(
+    () => appointments.filter(
+      (apt) => !(apt.booking_source === 'online_self_booking' && apt.status === 'scheduled')
+    ),
+    [appointments]
+  );
+
   const filteredAppointments = useMemo(() => {
-    if (!selectedBoxId) return appointments;
+    if (!selectedBoxId) return visibleAppointments;
     // Incluir citas del box seleccionado + citas legacy sin box (box_id NULL).
     // Sin esto, las citas creadas antes de la asignación por box quedaban
     // invisibles en la grilla pero seguían bloqueando horarios vía el trigger
     // check_patient_double_booking → el user "no veía a nadie" pero no podía
     // agendar. Mismo criterio que filteredBlockedTimes.
-    return appointments.filter((apt) => !apt.box_id || apt.box_id === selectedBoxId);
-  }, [appointments, selectedBoxId]);
+    return visibleAppointments.filter((apt) => !apt.box_id || apt.box_id === selectedBoxId);
+  }, [visibleAppointments, selectedBoxId]);
 
   // Filtrar blocked_times por box (misma lógica que appointments).
   // box_id NULL en blocked = legacy global → se muestra en todos los boxes.
@@ -495,6 +535,85 @@ const CalendarPage = () => {
           <MotivationalPhrase />
         </motion.div>
 
+        {/* Banner de reservas online pendientes de confirmar */}
+        {pendingOnlineCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 rounded-xl border border-green-300 bg-green-50 px-4 py-3"
+          >
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-green-100 p-2 shrink-0">
+                <CalendarClock className="h-5 w-5 text-green-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-green-900">
+                  {pendingOnlineCount === 1
+                    ? '1 paciente agendó online y está sin confirmar'
+                    : `${pendingOnlineCount} pacientes agendaron online y están sin confirmar`}
+                  {' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowPendingList((v) => !v)}
+                    className="inline-flex items-center gap-1 text-green-700 underline underline-offset-2 hover:text-green-900 font-medium"
+                  >
+                    {showPendingList ? 'Ocultar' : 'Ver citas'}
+                    {showPendingList ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  </button>
+                </p>
+
+                {/* Lista desplegable con acciones Aceptar / Cancelar */}
+                {showPendingList && (
+                  <div className="mt-3 space-y-2">
+                    {pendingOnlineBookings.map((b) => {
+                      const name = b.patient?.full_name || 'Paciente';
+                      const d = b.date ? b.date.split('-').reverse().join('/') : '';
+                      const h = (b.start_time || '').slice(0, 5);
+                      const motivoLine = (b.notes || '').split('\n').find((l) => l.startsWith('Motivo del paciente:'));
+                      const motivo = motivoLine ? motivoLine.replace('Motivo del paciente:', '').trim() : '';
+                      const processing = processingBookingId === b.id;
+                      return (
+                        <div
+                          key={b.id}
+                          className="flex items-center justify-between gap-3 rounded-lg bg-white border border-green-200 px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">{name}</p>
+                            <p className="text-xs text-gray-500">
+                              {d} · {h} hrs{motivo ? ` · ${motivo}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                              disabled={processing}
+                              onClick={() => handleResolveOnlineBooking(b.id, 'cancelled')}
+                            >
+                              {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="h-8 gap-1 bg-green-600 hover:bg-green-700 text-white"
+                              disabled={processing}
+                              onClick={() => handleResolveOnlineBooking(b.id, 'confirmed')}
+                            >
+                              {processing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                              Aceptar
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-xl shadow-sm p-4 mb-6">
           {/* Mobile: stack vertical (titulo / nav semana / buscador).
               Desktop (lg+): row horizontal con todo en una línea. */}
@@ -547,7 +666,7 @@ const CalendarPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-1">
             <AgendaSidebar
-              appointments={appointments}
+              appointments={visibleAppointments}
               clinics={clinics}
               selectedClinicId={selectedClinic}
               onClinicChange={handleClinicChange}

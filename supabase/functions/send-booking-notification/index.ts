@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     const { data: appt, error } = await supabase
       .from("appointments")
       .select(`
-        id, date, start_time, end_time, notes, modality_patient,
+        id, date, start_time, end_time, notes, modality_patient, therapist_id,
         patient:patients!appointments_patient_id_fkey(full_name, email),
         therapist:profiles!appointments_therapist_id_fkey(full_name, email),
         clinic:clinics(name, address)
@@ -150,6 +150,22 @@ Deno.serve(async (req) => {
         </div>
       `);
       results.dentist = await sendEmail(dentistEmail, "Nueva reserva online pendiente — DentalSpot", html);
+    }
+
+    // 3) Notificación in-app para el dentista (campanita). Realtime la
+    //    empuja al instante a la sesión del dentista si está conectado.
+    if (appt.therapist_id) {
+      const { error: notifErr } = await supabase.from("notifications").insert({
+        user_id: appt.therapist_id,
+        type: "appointment",
+        title: "Nueva reserva online",
+        message: `${patientName} reservó para el ${fecha} a las ${hora} hrs. Pendiente de confirmar.`,
+        action_url: "/dashboard/agenda",
+        priority: "high",
+        data: { appointment_id: appt.id, booking_source: "online_self_booking" },
+      });
+      if (notifErr) console.error("notification insert failed:", notifErr.message);
+      results.notification = notifErr ? { success: false } : { success: true };
     }
 
     return new Response(JSON.stringify({ success: true, results }), {

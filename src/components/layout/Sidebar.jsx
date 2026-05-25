@@ -45,6 +45,7 @@ import { USER_ROLES } from '@/constants/roles';
 import { FEATURE_FLAGS } from '@/constants/featureFlags';
 import SupportTicketModal from '@/components/shared/SupportTicketModal';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
+import { usePendingOnlineBookings } from '@/hooks/usePendingOnlineBookings';
 import logger from '@/lib/utils/logger';
 
 const SidebarItem = ({ item, isSubItem = false, onClick, onAction }) => {
@@ -99,9 +100,13 @@ const SidebarItem = ({ item, isSubItem = false, onClick, onAction }) => {
           <item.icon className={cn("h-5 w-5", isSubItem && "h-4 w-4")} />
           <span className={cn(isSubItem && "text-sm")}>{item.name}</span>
         </div>
-        {hasSubItems && (
+        {hasSubItems ? (
           isOpen ? <ChevronDown className="h-4 w-4 opacity-50" /> : <ChevronRight className="h-4 w-4 opacity-50" />
-        )}
+        ) : item.badgeCount > 0 ? (
+          <span className="h-5 min-w-[20px] px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+            {item.badgeCount > 9 ? '9+' : item.badgeCount}
+          </span>
+        ) : null}
       </NavLink>
 
       <AnimatePresence>
@@ -273,6 +278,9 @@ const Sidebar = ({ isOpen, onClose }) => {
   const navItems = getNavigationItems(userRole);
   const [supportModalOpen, setSupportModalOpen] = useState(false);
 
+  // Reservas online pendientes de confirmar → badge junto a "Agenda".
+  const { count: pendingBookingsCount } = usePendingOnlineBookings();
+
   const handleItemClick = () => {
     if (onClose) onClose();
   };
@@ -303,11 +311,17 @@ const Sidebar = ({ isOpen, onClose }) => {
               {section.section}
             </h3>
             <ul className="space-y-1">
-              {section.items.map((item, itemIndex) => (
-                <li key={itemIndex}>
-                  <SidebarItem item={item} onClick={handleItemClick} onAction={() => setSupportModalOpen(true)} />
-                </li>
-              ))}
+              {section.items.map((item, itemIndex) => {
+                // Inyectar badge de reservas pendientes en el item "Agenda".
+                const itemWithBadge = item.path === '/dashboard/agenda' && pendingBookingsCount > 0
+                  ? { ...item, badgeCount: pendingBookingsCount }
+                  : item;
+                return (
+                  <li key={itemIndex}>
+                    <SidebarItem item={itemWithBadge} onClick={handleItemClick} onAction={() => setSupportModalOpen(true)} />
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
