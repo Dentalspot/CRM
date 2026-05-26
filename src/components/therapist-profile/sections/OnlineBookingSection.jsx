@@ -4,7 +4,10 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, CalendarCheck, Info, Link2, Copy, Check, Save, MessageSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import TimePicker from '@/components/ui/time-picker';
+import { Loader2, CalendarCheck, Info, Link2, Copy, Check, Save, MessageSquare, Clock, PlusCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,6 +38,10 @@ const OnlineBookingSection = () => {
   // Instrucciones para el paciente (ej. "Llegá 5 min antes")
   const [instructions, setInstructions] = useState('');
   const [savingInstructions, setSavingInstructions] = useState(false);
+  // Franjas horarias para reservas online
+  const [useGeneral, setUseGeneral] = useState(true);
+  const [windows, setWindows] = useState([]); // [{ id?, day_of_week, start_time, end_time }]
+  const [savingWindows, setSavingWindows] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -42,14 +49,29 @@ const OnlineBookingSection = () => {
     try {
       const { data, error } = await supabase
         .from('therapist_details')
-        .select('accepts_online_booking, slug, booking_instructions, profiles:user_id(full_name)')
+        .select('accepts_online_booking, slug, booking_instructions, online_booking_use_general, profiles:user_id(full_name)')
         .eq('user_id', user.id)
         .maybeSingle();
       if (error) throw error;
       setEnabled(data?.accepts_online_booking === true);
       setSlug(data?.slug || null);
       setInstructions(data?.booking_instructions || '');
+      setUseGeneral(data?.online_booking_use_general !== false);
       setFullName(data?.profiles?.full_name || profile?.full_name || '');
+
+      // Cargar franjas de reserva online
+      const { data: winData } = await supabase
+        .from('online_booking_windows')
+        .select('id, day_of_week, start_time, end_time')
+        .eq('therapist_id', user.id)
+        .order('day_of_week')
+        .order('start_time');
+      setWindows((winData || []).map((w) => ({
+        id: w.id,
+        day_of_week: w.day_of_week,
+        start_time: (w.start_time || '').slice(0, 5),
+        end_time: (w.end_time || '').slice(0, 5),
+      })));
     } catch (error) {
       logger.error('[OnlineBookingSection] load failed:', error);
     } finally {
@@ -139,6 +161,69 @@ const OnlineBookingSection = () => {
       toast({ variant: 'destructive', title: 'Error', description: error.message || 'No se pudo guardar.' });
     } finally {
       setSavingInstructions(false);
+    }
+  };
+
+  // --- Franjas de reserva online ---
+  const DAYS = [
+    { id: 1, name: 'Lunes' }, { id: 2, name: 'Martes' }, { id: 3, name: 'Miércoles' },
+    { id: 4, name: 'Jueves' }, { id: 5, name: 'Viernes' }, { id: 6, name: 'Sábado' }, { id: 0, name: 'Domingo' },
+  ];
+
+  const addWindow = () => {
+    setWindows((prev) => [...prev, { day_of_week: 4, start_time: '14:00', end_time: '18:00', is_new: true }]);
+  };
+
+  const updateWindow = (index, field, value) => {
+    setWindows((prev) => prev.map((w, i) => (i === index ? { ...w, [field]: value } : w)));
+  };
+
+  const removeWindow = (index) => {
+    setWindows((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveWindows = async () => {
+    setSavingWindows(true);
+    try {
+      // Validación de franjas si NO usa la disponibilidad general
+      if (!useGeneral) {
+        const invalid = windows.filter((w) => !w.start_time || !w.end_time || w.start_time >= w.end_time);
+        if (invalid.length > 0) throw new Error('Revisá las franjas: la hora de fin debe ser posterior a la de inicio.');
+        if (windows.length === 0) throw new Error('Agregá al menos una franja, o marcá "usar mi disponibilidad general".');
+      }
+
+      // 1) Guardar la preferencia (casilla)
+      const { error: prefErr } = await supabase
+        .from('therapist_details')
+        .update({ online_booking_use_general: useGeneral })
+        .eq('user_id', user.id);
+      if (prefErr) throw prefErr;
+
+      // 2) Reemplazar las franjas (delete + insert), solo relevante si !useGeneral
+      const { error: delErr } = await supabase
+        .from('online_booking_windows')
+        .delete()
+        .eq('therapist_id', user.id);
+      if (delErr) throw delErr;
+
+      if (!useGeneral && windows.length > 0) {
+        const rows = windows.map((w) => ({
+          therapist_id: user.id,
+          day_of_week: w.day_of_week,
+          start_time: w.start_time,
+          end_time: w.end_time,
+        }));
+        const { error: insErr } = await supabase.from('online_booking_windows').insert(rows);
+        if (insErr) throw insErr;
+      }
+
+      toast({ title: '✅ Horarios de reserva guardados' });
+      load();
+    } catch (error) {
+      logger.error('[OnlineBookingSection] save windows failed:', error);
+      toast({ variant: 'destructive', title: 'Error', description: error.message || 'No se pudo guardar.' });
+    } finally {
+      setSavingWindows(false);
     }
   };
 
@@ -250,6 +335,73 @@ const OnlineBookingSection = () => {
                 >
                   {savingInstructions ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Guardar instrucciones
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Horarios que se muestran en la reserva online */}
+          {enabled && (
+            <div className="space-y-3 border-t pt-4">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-primary" /> Horarios para reservas online
+              </Label>
+
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={useGeneral}
+                  onCheckedChange={(c) => setUseGeneral(!!c)}
+                  className="mt-0.5"
+                />
+                <span className="text-gray-700">
+                  Usar mi disponibilidad general de agenda
+                  <span className="block text-xs text-muted-foreground">
+                    Los pacientes verán los mismos horarios que tenés configurados en tus clínicas.
+                  </span>
+                </span>
+              </label>
+
+              {/* Editor de franjas — solo si NO usa la disponibilidad general */}
+              {!useGeneral && (
+                <div className="space-y-2 pl-6">
+                  <p className="text-xs text-muted-foreground">
+                    Definí los días y horas en que aceptás reservas online (ej. solo jueves y viernes en la tarde).
+                  </p>
+                  {windows.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic py-1">Aún no agregaste franjas.</p>
+                  )}
+                  {windows.map((w, index) => (
+                    <div key={w.id || `new-${index}`} className="grid grid-cols-[1fr,auto,auto,auto] gap-2 items-center">
+                      <Select value={String(w.day_of_week)} onValueChange={(v) => updateWindow(index, 'day_of_week', parseInt(v))}>
+                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {DAYS.map((d) => <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <TimePicker value={w.start_time} onChange={(v) => updateWindow(index, 'start_time', v)} />
+                      <TimePicker value={w.end_time} onChange={(v) => updateWindow(index, 'end_time', v)} />
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeWindow(index)} className="text-destructive hover:bg-destructive/10 h-9 w-9">
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addWindow} className="gap-1.5">
+                    <PlusCircle className="h-4 w-4" /> Agregar franja
+                  </Button>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveWindows}
+                  disabled={savingWindows}
+                  className="gap-1.5"
+                >
+                  {savingWindows ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Guardar horarios
                 </Button>
               </div>
             </div>

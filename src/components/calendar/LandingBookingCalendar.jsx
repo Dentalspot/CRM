@@ -27,7 +27,8 @@ import {
   isToday,
   isBefore,
   set,
-  addMinutes
+  addMinutes,
+  addDays
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -255,20 +256,59 @@ export default function LandingBookingCalendar({
 
     try {
       const monthStart = startOfMonth(currentMonth);
-      const data = await getTherapistAvailability(
-        therapistId,
-        modality === 'presencial' ? clinicId : null,
-        format(monthStart, 'yyyy-MM-dd'),
-        45
-      );
 
-      const list = Array.isArray(data) ? data : [];
-      const availMap = {};
-      list.forEach(day => {
-        if (day?.availability_date) {
-          availMap[day.availability_date] = (day.time_slots || []).filter(s => s.available);
+      // ¿El dentista usa franjas de reserva online específicas o su
+      // disponibilidad general? (therapist_details.online_booking_use_general)
+      const { data: td } = await supabase
+        .from('therapist_details')
+        .select('online_booking_use_general')
+        .eq('user_id', therapistId)
+        .maybeSingle();
+      const useGeneral = td?.online_booking_use_general !== false;
+
+      let availMap = {};
+
+      if (useGeneral) {
+        // Disponibilidad general (comportamiento clásico)
+        const data = await getTherapistAvailability(
+          therapistId,
+          modality === 'presencial' ? clinicId : null,
+          format(monthStart, 'yyyy-MM-dd'),
+          45
+        );
+        const list = Array.isArray(data) ? data : [];
+        list.forEach(day => {
+          if (day?.availability_date) {
+            availMap[day.availability_date] = (day.time_slots || []).filter(s => s.available);
+          }
+        });
+      } else {
+        // Franjas de reserva online: generar slots de 30 min por día de semana
+        const { data: wins } = await supabase
+          .from('online_booking_windows')
+          .select('day_of_week, start_time, end_time')
+          .eq('therapist_id', therapistId);
+        const windows = wins || [];
+        const pad = (n) => String(n).padStart(2, '0');
+        for (let i = 0; i < 45; i++) {
+          const d = addDays(monthStart, i);
+          const dow = d.getDay(); // 0=domingo..6=sábado
+          const dayWindows = windows.filter((w) => w.day_of_week === dow);
+          if (dayWindows.length === 0) continue;
+          const slots = [];
+          dayWindows.forEach((w) => {
+            let [h, m] = (w.start_time || '').split(':').map(Number);
+            const [eh, em] = (w.end_time || '').split(':').map(Number);
+            while (h * 60 + m < eh * 60 + em) {
+              slots.push({ time: `${pad(h)}:${pad(m)}`, available: true });
+              m += 30;
+              if (m >= 60) { m -= 60; h += 1; }
+            }
+          });
+          if (slots.length > 0) availMap[format(d, 'yyyy-MM-dd')] = slots;
         }
-      });
+      }
+
       setAvailability(availMap);
 
     } catch (error) {
