@@ -10,10 +10,12 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AssistantDashboard = () => {
   const { currentOrganizationId, currentOrganization, organizations = [], loading: orgLoading } = useCurrentOrganization();
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const [todayAppointments, setTodayAppointments] = useState([]);
   const [recentPatients, setRecentPatients] = useState([]);
@@ -119,12 +121,13 @@ const AssistantDashboard = () => {
         {hasNoOrgs ? (
           <>
             <h2 className="text-xl font-semibold mb-2">Todavía no estás vinculado a una clínica</h2>
-            <p className="text-muted-foreground max-w-md">
+            <p className="text-muted-foreground max-w-md mb-4">
               Para trabajar como asistente necesitas una invitación de la clínica.
               Si ya la recibiste por email, abre el enlace para aceptarla. Si crees
               que es un error o tu acceso fue dado de baja, contacta al administrador
               de la clínica.
             </p>
+            <Button variant="outline" onClick={() => signOut()}>Cerrar sesión</Button>
           </>
         ) : (
           <>
