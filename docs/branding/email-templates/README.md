@@ -37,7 +37,7 @@ Templates HTML para los correos transaccionales que Supabase Auth envía vía SM
 
 - **Encoding UTF-8** obligatorio (la `ñ` y tildes deben verse, no `n` ni `?`)
 - **Inline CSS only** — Gmail strippa `<style>` blocks. Mientras menos `<style>`, mejor compat
-- **Imagen del logo** sirve hotlinked desde `https://dentalspot.cl/logo-dentalspot.png`
+- **Imagen del logo** sirve hotlinked desde `https://dentalspot.cl/logo-dentalspot-full.png` (logo horizontal completo, alto 40px, max-width 240px)
 - **Color primario**: `#14B8A6` (teal-500 Tailwind, alineado con la paleta del frontend)
 - **Tuteo informal chileno** — alineado con la chilenización de todo el repo
 - **Sin emojis** — feedback de Danissa (perfil user)
