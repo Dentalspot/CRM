@@ -44,8 +44,11 @@ export const initSentry = () => {
     replaysSessionSampleRate: 0,  // Session Replay deshabilitado (costo + privacidad)
     replaysOnErrorSampleRate: 0,
 
-    // Integrations mínimas — sin BrowserTracing por defecto (consume volumen)
-    integrations: [],
+    // Integrations: usar defaults del SDK (globalHandlers, breadcrumbs, etc).
+    // Antes había `integrations: []` que vaciaba TODO incluyendo
+    // globalHandlersIntegration — sin él los throws uncaught NO llegan a
+    // Sentry (que es el caso de uso principal). En v8+ del SDK la API
+    // cambió: pasar [] significa "ninguna integration", no "defaults".
 
     // Ignorar errores benignos conocidos
     ignoreErrors: [
@@ -91,6 +94,13 @@ export const initSentry = () => {
 
   initialized = true;
   logger.info(`[Sentry] Inicializado — env="${environment}" release="${release || 'unset'}"`);
+
+  // Beacon de verificación — al primer init manda un evento "info" al dashboard
+  // de Sentry. Útil para confirmar wiring end-to-end (build + DSN + network
+  // sin firewall + project ID OK). Una vez verificado se puede eliminar.
+  try {
+    Sentry.captureMessage(`sentry-init-beacon-${environment}-${Date.now()}`, 'info');
+  } catch { /* never throw on beacon */ }
 };
 
 /**
