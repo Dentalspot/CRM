@@ -72,6 +72,15 @@ jobs:
           VITE_SENTRY_RELEASE=${VITE_SENTRY_RELEASE}
           EOF
           echo "Wrote .env.production with $(wc -l < .env.production) lines"
+          # Debug — reportar longitud de cada valor para confirmar que no
+          # se escribieron strings vacías (sin revelar el valor en sí).
+          while IFS='=' read -r key value; do
+            echo "  $key length: ${#value}"
+          done < .env.production
+          # Confirmar también que vite va a encontrar el archivo
+          ls -la .env.production
+          # Verificar que el dist no exista todavía (sería de un build previo)
+          ls -la dist/ 2>/dev/null || echo "dist/ does not exist yet (expected)"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -82,6 +91,22 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Verificación post-build — confirmar que VITE_SENTRY_DSN entró
+      # efectivamente al bundle. Si no entra, abortar antes de subir bundle
+      # incompleto a prod. Busca el orgID de Sentry en cualquier chunk.
+      - name: Verify Sentry DSN in build output
+        run: |
+          if grep -rl "ingest\.us\.sentry\.io" dist/assets/ > /dev/null 2>&1; then
+            echo "✓ Sentry DSN baked into bundle correctly"
+            grep -l "ingest\.us\.sentry\.io" dist/assets/*.js | head -3
+          else
+            echo "::error::Sentry DSN NOT found in dist — build did not pick up VITE_SENTRY_DSN"
+            echo "Contents of .env.production (sanitized):"
+            sed -E 's/=.*/=<value>/' .env.production
+            echo "Vite log might have more context above."
+            exit 1
+          fi
 
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
