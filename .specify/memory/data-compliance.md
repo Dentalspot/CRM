@@ -27,6 +27,14 @@
 - `organization_id`, `therapist_id` (asignaciones)
 El paciente sí puede editar campos administrativos propios: teléfono, email, dirección.
 **UI paciente:** los campos clínicos ya no se muestran como editables — evita el toast falso "Guardado" cuando RLS rechaza (Constitution V).
+
+### Hardening del rol asistente (puede editar administrativo, no clínico) — 2026-05-24
+**Trigger DB:** `prevent_assistant_clinical_edit` (migración `20260524000012`). Análogo al del paciente, pero para la asistente. `BEFORE UPDATE` en `patients`:
+- Si el editor es **dentista** (dueño o member `dentist`) o **clinic_admin** → permite editar todo (sin cambios).
+- Si es **asistente** de la org del paciente → rechaza cambios en campos clínicos: `medical_history`, `diagnosis`, `diagnosis_summary`, `allergies`, `other_info`, `medications`, `systemic_diseases`, `pregnancy`, `surgical_history`, `clinical_alerts`, `consultation_reason`, `treatment_stage`, `notes`, `anamnesis_template`, `evaluation_template`.
+- La asistente **sí** puede editar datos administrativos (nombre, contacto, estado, fechas operativas) que necesita para recepción.
+
+**Contexto:** la policy `pat_assistant_update` (`is_org_member(organization_id, 'assistant')`) da UPDATE sin restricción de columnas. El trigger es la capa que acota qué columnas. Defensa en profundidad (Constitution II) — no depende de la UI; la ficha clínica del asistente es read-only por diseño (la invitación de asistente ya lo promete: "la ficha clínica detallada queda reservada a dentistas por Ley 20.584").
 ---
 ## Ley 21.719 — Protección de datos personales
 ### Auditoría clínica (derecho de acceso ARCO)
@@ -119,7 +127,7 @@ Checklist de backlog regulatorio. Cada ítem es candidato a spec dedicada.
 | Borrado de cuenta con retención legal (soft delete + purga diferida) | 21.719 | Alta | Grande (flujo legal + técnico) |
 | Notificación al paciente sobre nuevo procesamiento de sus datos | 21.719 | Media | Chico (email + UI opt-in) |
 | UI de gestión de `exceptional_access_grants` | 21.719 | Media | Medio |
-| Hardening rol `assistant` (hoy UPDATE amplio sobre `patients`) | 20.584 | Alta | Chico (análogo al hecho con patient) |
+| ~~Hardening rol `assistant`~~ ✅ **HECHO 2026-05-24** (trigger `prevent_assistant_clinical_edit`, migración `20260524000012`) | 20.584 | — | — |
 | Scope refinado de `clinic_admin` | 20.584 | Media | Medio |
 | Auditoría de impresión/exportación de documentos clínicos | 21.719 | Media | Chico (extender logger existente) |
 | Fallback legacy `therapist_id` en SELECTs clínicos → migrar a `patient_care_team` (spec 003 cerró la parte de writes al audit log via trigger sync; los SELECTs del modelo Phase 2 con fallback siguen pendientes) | 21.719 | Media | Grande (migración datos + queries) |
