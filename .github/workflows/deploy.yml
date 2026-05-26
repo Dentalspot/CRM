@@ -115,12 +115,11 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          # Hostinger FTP user aterriza directamente en public_html/ del dominio.
-          # Antes era `./public_html/` que ponía los archivos en
-          # `public_html/public_html/` (sub-dir ignorado por el server),
-          # por eso los deploys subían "exitosamente" pero el sitio nunca
-          # se actualizaba. Server-dir relativo a donde aterriza el FTP.
-          server-dir: ./
+          # ROLLBACK: server-dir vuelve a public_html/ porque FTP user
+          # aterriza en /home/<user>/ (no en public_html/). Con `./` se
+          # subió todo a /home/ y rompió el sitio (index.html quedó ahí,
+          # chunks de assets no se encontraban → ErrorBoundary).
+          server-dir: ./public_html/
           # dangerous-clean-slate: true → causaba FTPError 550 (no such file
           # or directory) en Hostinger porque borraba el directorio assets/
           # y al re-subir el server reportaba el dir como inexistente.
