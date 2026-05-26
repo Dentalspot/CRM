@@ -309,6 +309,36 @@ export default function LandingBookingCalendar({
         }
       }
 
+      // Filtrar slots ya ocupados (citas activas + bloqueos) vía RPC
+      // SECURITY DEFINER — el perfil público es anónimo y no puede leer
+      // appointments/blocked_times directo por RLS. La RPC retorna solo
+      // rangos ocupados (sin datos sensibles).
+      try {
+        const { data: busy } = await supabase.rpc('get_therapist_busy_slots', {
+          p_therapist_id: therapistId,
+          p_start_date: format(monthStart, 'yyyy-MM-dd'),
+          p_days: 45,
+        });
+        if (Array.isArray(busy) && busy.length > 0) {
+          const busyByDate = {};
+          busy.forEach((b) => {
+            const ranges = busyByDate[b.busy_date] || (busyByDate[b.busy_date] = []);
+            ranges.push([(b.busy_start || '').slice(0, 5), (b.busy_end || '').slice(0, 5)]);
+          });
+          Object.keys(availMap).forEach((dateStr) => {
+            const ranges = busyByDate[dateStr];
+            if (!ranges || ranges.length === 0) return;
+            availMap[dateStr] = availMap[dateStr].filter((slot) => {
+              const t = slot.time;
+              // Slot ocupado si su inicio cae dentro de algún rango ocupado
+              return !ranges.some(([bs, be]) => t >= bs && t < be);
+            });
+          });
+        }
+      } catch (busyErr) {
+        logger.warn('[LandingBooking] busy slots filter failed:', busyErr?.message);
+      }
+
       setAvailability(availMap);
 
     } catch (error) {

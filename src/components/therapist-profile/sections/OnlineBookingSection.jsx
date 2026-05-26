@@ -87,7 +87,17 @@ const OnlineBookingSection = () => {
   // sufijo aleatorio ante colisión (unique constraint).
   const ensureSlug = async () => {
     if (slug) return slug;
-    const base = slugify(fullName) || `dentista-${user.id.slice(0, 8)}`;
+    // Asegurar el nombre real (puede no haber cargado aún en el state).
+    let name = fullName;
+    if (!name) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+      name = data?.full_name || '';
+    }
+    const base = slugify(name) || `dentista-${user.id.slice(0, 8)}`;
     let candidate = base;
     for (let attempt = 0; attempt < 4; attempt++) {
       const { error } = await supabase
