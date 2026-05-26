@@ -101,11 +101,11 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>DentalSpot | Resuelve tu problema dental en minutos</title>
+        <title>DentalSpot | Encuentra un dentista en minutos</title>
         <meta name="description" content="Conectamos pacientes con dentistas cercanos usando IA. Describe tu sintoma, obtiene diagnostico preliminar y agenda con el profesional ideal." />
         <meta name="keywords" content="dentista, radiografia dental, diagnostico dental IA, agenda dentista, DentalSpot, healthtech Chile" />
         <link rel="canonical" href="https://dentalspot.cl" />
-        <meta property="og:title" content="DentalSpot - Resuelve tu problema dental en minutos" />
+        <meta property="og:title" content="DentalSpot - Encuentra un dentista en minutos" />
         <meta property="og:description" content="Describe tu sintoma, analiza tu radiografia con IA y encuentra el dentista ideal." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://dentalspot.cl" />
