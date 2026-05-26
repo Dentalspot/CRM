@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Plus, Search, Pencil, Phone, Mail, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import useDebounce from '@/hooks/useDebounce';
 import AssistantPatientDialog from '../components/AssistantPatientDialog';
@@ -18,7 +19,8 @@ const PREVISION_LABELS = {
 };
 
 const AssistantPatientsPage = () => {
-  const { currentOrganizationId, currentOrganization, loading: orgLoading } = useCurrentOrganization();
+  const { currentOrganizationId, currentOrganization, organizations, loading: orgLoading } = useCurrentOrganization();
+  const { signOut } = useAuth();
 
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,11 +71,33 @@ const AssistantPatientsPage = () => {
   }
 
   if (!currentOrganizationId) {
+    // Distinguir dos casos (alineado con AssistantDashboard):
+    //  - hasNoOrgs: asistente sin vínculo activo (revocado o nunca aceptó
+    //    invitación). El selector está vacío → guiar a contactar admin o
+    //    cerrar sesión.
+    //  - tiene orgs pero no eligió: caso normal multi-org → usar selector.
+    const hasNoOrgs = (organizations?.length || 0) === 0;
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
         <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Selecciona una organización</h2>
-        <p className="text-muted-foreground">Usa el selector en el menú superior para ver pacientes.</p>
+        {hasNoOrgs ? (
+          <>
+            <h2 className="text-xl font-semibold mb-2">Todavía no estás vinculado a una clínica</h2>
+            <p className="text-muted-foreground max-w-md mb-4">
+              Para gestionar pacientes necesitas pertenecer a una clínica. Si recibiste
+              una invitación por email, abre el enlace para aceptarla. Si crees que es
+              un error o tu acceso fue dado de baja, contacta al administrador.
+            </p>
+            <Button variant="outline" onClick={() => signOut()}>Cerrar sesión</Button>
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-semibold mb-2">Selecciona una organización</h2>
+            <p className="text-muted-foreground max-w-md">
+              Usa el selector en el menú superior para ver pacientes de la clínica.
+            </p>
+          </>
+        )}
       </div>
     );
   }
