@@ -214,7 +214,7 @@ const ResetPasswordPage = () => {
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-primary via-accent to-primary p-4 font-sans">
       
       <div className="w-full max-w-md mb-8 text-center text-white">
-        <img src="/logo-dentalspot.png" alt="DentalSpot" className="h-12 w-12 mx-auto mb-3" />
+        <img src="/logo-dentalspot-full.png" alt="DentalSpot" className="h-12 w-auto mx-auto mb-3" />
         <h1 className="text-3xl font-bold tracking-tight">Restablecer Contraseña</h1>
         <p className="text-white/80 mt-2">Crea una nueva clave segura para tu cuenta</p>
       </div>

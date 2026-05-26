@@ -24,11 +24,8 @@ const PublicConsultaPage = () => {
         {/* Header */}
         <div className="bg-white border-b border-slate-100 sticky top-0 z-50">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2">
-              <img src="/logo-dentalspot.png" alt="DentalSpot" className="h-8 w-8" />
-              <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-                Dental<span className="font-light">Spot</span>
-              </span>
+            <a href="/" className="inline-flex items-center">
+              <img src="/logo-dentalspot-full.png" alt="DentalSpot" className="h-8 w-auto" />
             </a>
             <div className="flex items-center gap-1">
               {STEPS.map((s, i) => (
