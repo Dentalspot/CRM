@@ -72,4 +72,15 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: ./public_html/
-          dangerous-clean-slate: true  # Borra archivos viejos antes de subir
+          # dangerous-clean-slate: true → causaba FTPError 550 (no such file
+          # or directory) en Hostinger porque borraba el directorio assets/
+          # y al re-subir el server reportaba el dir como inexistente.
+          # Sin clean-slate, el action hace sync incremental por hash → solo
+          # sube los archivos que cambiaron. Archivos huérfanos (chunks
+          # viejos con hash diferente) se acumulan pero no afectan al sitio
+          # porque index.html solo referencia los hashes nuevos.
+          state-name: .ftp-deploy-sync-state.json
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
