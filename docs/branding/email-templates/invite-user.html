@@ -7,75 +7,90 @@
   <title>Te invitaron a DentalSpot</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f6f8fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#1f2937;">
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f6f8fa;padding:32px 16px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f6f8fa;padding:40px 16px;">
     <tr>
       <td align="center">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.04);overflow:hidden;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.04);overflow:hidden;">
 
-          <!-- Logo header -->
+          <!-- Header con logo horizontal -->
           <tr>
-            <td align="center" style="padding:32px 24px 16px 24px;">
-              <img src="https://dentalspot.cl/logo-dentalspot.png" alt="DentalSpot" width="56" height="56" style="display:block;border:0;">
+            <td align="center" style="padding:40px 32px 24px 32px;">
+              <img src="https://dentalspot.cl/logo-dentalspot-full.png" alt="DentalSpot" height="40" style="display:block;border:0;max-width:240px;">
+            </td>
+          </tr>
+
+          <!-- Linea de acento teal sutil -->
+          <tr>
+            <td align="center" style="padding:0 32px;">
+              <div style="width:48px;height:3px;background:linear-gradient(90deg,#14B8A6,#45b5c4);border-radius:2px;margin:0 auto;"></div>
             </td>
           </tr>
 
           <!-- Title -->
           <tr>
-            <td align="center" style="padding:0 24px 8px 24px;">
-              <h1 style="margin:0;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;">Te invitaron a DentalSpot</h1>
+            <td align="center" style="padding:24px 32px 8px 32px;">
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#0f172a;letter-spacing:-0.02em;line-height:1.2;">Te invitaron a DentalSpot</h1>
+              <p style="margin:8px 0 0 0;font-size:14px;color:#64748b;">Acepta para crear tu acceso</p>
             </td>
           </tr>
 
           <!-- Body text -->
           <tr>
-            <td style="padding:16px 32px 24px 32px;font-size:15px;line-height:1.6;color:#374151;">
-              <p style="margin:0 0 16px 0;">Hola,</p>
-              <p style="margin:0 0 16px 0;">
-                Te invitaron a usar DentalSpot con <strong>{{ .Email }}</strong>.
-                DentalSpot es una plataforma odontológica chilena que ayuda a dentistas a gestionar su agenda, pacientes y comunicación.
-              </p>
-              <p style="margin:0;">
-                Hacé click en el botón para aceptar la invitación y crear tu acceso.
-              </p>
+            <td style="padding:24px 40px 16px 40px;font-size:15px;line-height:1.7;color:#374151;">
+              <p style="margin:0 0 12px 0;">Hola,</p>
+              <p style="margin:0 0 12px 0;">Te invitaron a usar DentalSpot con <strong style="color:#0f172a;">{{ .Email }}</strong>. DentalSpot es una plataforma odontológica chilena que ayuda a dentistas a gestionar su agenda, pacientes y comunicación.</p>
+              <p style="margin:0;">Haz click en el botón para aceptar la invitación y crear tu acceso.</p>
             </td>
           </tr>
 
           <!-- CTA button -->
           <tr>
-            <td align="center" style="padding:8px 24px 32px 24px;">
-              <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:13px 32px;background-color:#14B8A6;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;letter-spacing:0.01em;">Aceptar invitación</a>
+            <td align="center" style="padding:8px 32px 24px 32px;">
+              <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 36px;background-color:#14B8A6;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:0.01em;box-shadow:0 1px 3px rgba(20,184,166,0.3);">Aceptar invitación</a>
             </td>
           </tr>
 
           <!-- Fallback link -->
           <tr>
-            <td style="padding:0 32px 24px 32px;font-size:12px;line-height:1.6;color:#6b7280;">
-              <p style="margin:0 0 8px 0;">¿No funciona el botón? Copiá y pegá este enlace en tu navegador:</p>
+            <td style="padding:0 40px 32px 40px;font-size:12px;line-height:1.6;color:#94a3b8;">
+              <p style="margin:0 0 6px 0;">¿No funciona el botón? Copia este enlace:</p>
               <p style="margin:0;word-break:break-all;color:#14B8A6;">{{ .ConfirmationURL }}</p>
             </td>
           </tr>
 
           <!-- Info note -->
           <tr>
-            <td style="padding:16px 32px;background-color:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;line-height:1.6;color:#6b7280;">
-              Si no esperabas esta invitación o creés que llegó por error, podés ignorar este correo. No vas a quedar registrado en DentalSpot hasta aceptarla.
+            <td style="padding:20px 40px;background-color:#f8fafc;border-top:1px solid #f1f5f9;font-size:12px;line-height:1.6;color:#94a3b8;">
+              Si no esperabas esta invitación o crees que llegó por error, puedes ignorar este correo. No vas a quedar registrado en DentalSpot hasta aceptarla.
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td align="center" style="padding:24px 32px;background-color:#0f172a;color:#94a3b8;font-size:12px;line-height:1.6;">
-              <p style="margin:0 0 4px 0;color:#ffffff;font-weight:600;">DentalSpot</p>
-              <p style="margin:0 0 8px 0;">La plataforma odontológica de Chile</p>
+            <td align="center" style="padding:24px 32px;background-color:#ffffff;border-top:1px solid #f1f5f9;font-size:11px;line-height:1.6;color:#94a3b8;">
+              <p style="margin:0 0 8px 0;color:#475569;font-weight:600;font-size:13px;">DentalSpot</p>
+              <p style="margin:0 0 12px 0;">La plataforma odontológica de Chile</p>
               <p style="margin:0;">
-                <a href="https://dentalspot.cl/legal/privacy" style="color:#94a3b8;text-decoration:underline;">Política de privacidad</a>
+                <a href="https://dentalspot.cl/legal/privacy" style="color:#94a3b8;text-decoration:none;">Privacidad</a>
                 &nbsp;·&nbsp;
-                <a href="https://dentalspot.cl/legal/terms" style="color:#94a3b8;text-decoration:underline;">Términos y condiciones</a>
+                <a href="https://dentalspot.cl/legal/terms" style="color:#94a3b8;text-decoration:none;">Términos</a>
+                &nbsp;·&nbsp;
+                <a href="https://dentalspot.cl/contacto" style="color:#94a3b8;text-decoration:none;">Soporte</a>
               </p>
             </td>
           </tr>
 
         </table>
+
+        <!-- Sub-footer dirección legal -->
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;margin-top:16px;">
+          <tr>
+            <td align="center" style="font-size:11px;color:#94a3b8;padding:0 32px;line-height:1.5;">
+              DentalSpot SpA · Santiago, Chile · contacto@dentalspot.cl
+            </td>
+          </tr>
+        </table>
+
       </td>
     </tr>
   </table>
