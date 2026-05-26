@@ -191,7 +191,7 @@ const ClinicPatientCreateModal = ({
               <p className="text-sm text-gray-600 mt-1">
                 {createdSummary.hasAccount
                   ? 'Se creó cuenta y se enviará email de activación.'
-                  : 'Sin cuenta. Podés invitarlo más tarde para que cree su perfil.'}
+                  : 'Sin cuenta. Puedes invitarlo más tarde para que cree su perfil.'}
               </p>
             </div>
           </div>

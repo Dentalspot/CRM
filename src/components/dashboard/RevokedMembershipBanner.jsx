@@ -109,7 +109,7 @@ const RevokedMembershipBanner = () => {
             Tu acceso como {roleLabel(revoked.role)} a {clinicName} fue revocado el {dateLabel}.
           </p>
           <p className="text-amber-800">
-            Si crees que es un error, contactá a la clínica directamente. Mientras tanto, podés seguir
+            Si crees que es un error, contacta a la clínica directamente. Mientras tanto, puedes seguir
             usando DentalSpot con tu cuenta personal.
           </p>
         </div>
