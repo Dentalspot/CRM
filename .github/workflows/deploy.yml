@@ -52,17 +52,36 @@ jobs:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
-      - name: Build
-        run: npm run build
+      # Escribir .env.production desde los secrets ANTES del build.
+      # Razón: pasar los secrets como `env:` al step de build no estaba
+      # propagando VITE_SENTRY_DSN al sub-proceso de vite (Supabase sí
+      # entraba pero Sentry DSN no — bug específico del chain
+      # `node tools/generate-llms.js && vite build` o de cómo bash
+      # propaga env vars en GitHub Actions Ubuntu).
+      # Solución: Vite SIEMPRE lee `.env.production` cuando mode=production.
+      # Esto garantiza que TODOS los VITE_* entren al bundle.
+      - name: Write .env.production from secrets
+        run: |
+          cat > .env.production <<EOF
+          VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+          VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+          VITE_META_PIXEL_ID=${VITE_META_PIXEL_ID}
+          VITE_META_DATASET_ID=${VITE_META_DATASET_ID}
+          VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+          VITE_SENTRY_ENVIRONMENT=production
+          VITE_SENTRY_RELEASE=${VITE_SENTRY_RELEASE}
+          EOF
+          echo "Wrote .env.production with $(wc -l < .env.production) lines"
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_META_PIXEL_ID: ${{ secrets.VITE_META_PIXEL_ID }}
           VITE_META_DATASET_ID: ${{ secrets.VITE_META_DATASET_ID }}
-          # Sentry — tracking de errores en prod (no-op si DSN vacío)
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
-          VITE_SENTRY_ENVIRONMENT: production
           VITE_SENTRY_RELEASE: ${{ github.sha }}
+
+      - name: Build
+        run: npm run build
 
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
