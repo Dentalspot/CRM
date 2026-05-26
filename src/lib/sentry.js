@@ -94,13 +94,6 @@ export const initSentry = () => {
 
   initialized = true;
   logger.info(`[Sentry] Inicializado — env="${environment}" release="${release || 'unset'}"`);
-
-  // Beacon de verificación — al primer init manda un evento "info" al dashboard
-  // de Sentry. Útil para confirmar wiring end-to-end (build + DSN + network
-  // sin firewall + project ID OK). Una vez verificado se puede eliminar.
-  try {
-    Sentry.captureMessage(`sentry-init-beacon-${environment}-${Date.now()}`, 'info');
-  } catch { /* never throw on beacon */ }
 };
 
 /**
