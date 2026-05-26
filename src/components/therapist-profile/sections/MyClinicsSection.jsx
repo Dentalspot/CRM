@@ -429,11 +429,11 @@ const MyClinicsSection = () => {
               <Building2 className="h-5 w-5 text-blue-700 flex-shrink-0 mt-0.5" />
               <div className="text-sm">
                 <p className="font-semibold text-blue-900 mb-0.5">
-                  ¿Buscás gestionar boxes o sucursales múltiples?
+                  ¿Buscas gestionar boxes o sucursales múltiples?
                 </p>
                 <p className="text-blue-800">
                   La sección <strong>Gestión de Clínicas</strong> (menú lateral) es el lugar centralizado
-                  para configurar boxes/salas físicas y administrar sucursales. Acá podés seguir editando
+                  para configurar boxes/salas físicas y administrar sucursales. Aquí puedes seguir editando
                   datos básicos y tus horarios de disponibilidad.
                 </p>
               </div>
@@ -503,7 +503,7 @@ const MyClinicsSection = () => {
                 Clínicas donde trabajás como invitado
               </h4>
               <p className="text-xs text-muted-foreground mb-4">
-                Sos parte del equipo en estos lugares pero no podés editar sus datos. Para configurar tus horarios personales, contactá al admin de la clínica.
+                Eres parte del equipo en estos lugares pero no puedes editar sus datos. Para configurar tus horarios personales, contacta al admin de la clínica.
               </p>
               <div className="space-y-3">
                 {externalClinics.map((clinic) => (

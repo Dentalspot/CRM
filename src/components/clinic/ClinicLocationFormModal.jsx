@@ -157,8 +157,8 @@ const ClinicLocationFormModal = ({ isOpen, onClose, clinic = null, organizationI
           <DialogTitle>{isEdit ? 'Editar sucursal' : 'Nueva sucursal'}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Modificá los datos básicos de esta sucursal.'
-              : 'Agregá una nueva sucursal a tu organización. Podés configurar boxes y horarios después.'}
+              ? 'Modifica los datos básicos de esta sucursal.'
+              : 'Agrega una nueva sucursal a tu organización. Puedes configurar boxes y horarios después.'}
           </DialogDescription>
         </DialogHeader>
 

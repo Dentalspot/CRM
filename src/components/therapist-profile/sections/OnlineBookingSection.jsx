@@ -273,7 +273,7 @@ const OnlineBookingSection = () => {
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {enabled
                     ? 'Activado — tu calendario de reserva es visible en tu perfil público.'
-                    : 'Desactivado — los pacientes no pueden reservar online (podés agendar manualmente).'}
+                    : 'Desactivado — los pacientes no pueden reservar online (puedes agendar manualmente).'}
                 </p>
               </div>
             </div>
@@ -366,7 +366,7 @@ const OnlineBookingSection = () => {
                 <span className="text-gray-700">
                   Usar mi disponibilidad general de agenda
                   <span className="block text-xs text-muted-foreground">
-                    Los pacientes verán los mismos horarios que tenés configurados en tus clínicas.
+                    Los pacientes verán los mismos horarios que tienes configurados en tus clínicas.
                   </span>
                 </span>
               </label>
@@ -375,7 +375,7 @@ const OnlineBookingSection = () => {
               {!useGeneral && (
                 <div className="space-y-2 pl-6">
                   <p className="text-xs text-muted-foreground">
-                    Definí los días y horas en que aceptás reservas online (ej. solo jueves y viernes en la tarde).
+                    Define los días y horas en que aceptas reservas online (ej. solo jueves y viernes en la tarde).
                   </p>
                   {windows.length === 0 && (
                     <p className="text-sm text-muted-foreground italic py-1">Aún no agregaste franjas.</p>

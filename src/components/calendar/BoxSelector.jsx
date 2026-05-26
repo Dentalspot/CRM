@@ -95,7 +95,7 @@ const BoxSelector = ({ clinicId, value, onChange, disabled = false, label = 'Box
           <Settings className="h-3 w-3" /> {label}
         </Label>
         <p className="text-xs text-muted-foreground italic">
-          Esta clínica todavía no tiene boxes configurados. Podés agregarlos desde Gestión de Clínicas.
+          Esta clínica todavía no tiene boxes configurados. Puedes agregarlos desde Gestión de Clínicas.
         </p>
       </div>
     );

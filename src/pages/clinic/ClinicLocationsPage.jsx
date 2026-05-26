@@ -205,7 +205,7 @@ const ClinicLocationsPage = () => {
       if (error) throw error;
       toast({
         title: 'Sucursal desactivada',
-        description: 'Si necesitás eliminarla definitivamente, contactá a soporte.',
+        description: 'Si necesitas eliminarla definitivamente, contacta a soporte.',
       });
       setClinicToDelete(null);
       await fetchData();
@@ -231,7 +231,7 @@ const ClinicLocationsPage = () => {
         <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
         <h2 className="text-xl font-bold">Sin organización activa</h2>
         <p className="text-muted-foreground mt-2">
-          Necesitás tener una clínica registrada para gestionar sucursales y boxes.
+          Necesitas tener una clínica registrada para gestionar sucursales y boxes.
         </p>
       </div>
     );
@@ -268,8 +268,8 @@ const ClinicLocationsPage = () => {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-blue-700 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-blue-900">
-            Acá gestionás <strong>sucursales</strong> y <strong>boxes</strong> de tu clínica. Para
-            configuración avanzada de una sucursal (mapa, fotos, horarios públicos), también podés
+            Aquí gestionas <strong>sucursales</strong> y <strong>boxes</strong> de tu clínica. Para
+            configuración avanzada de una sucursal (mapa, fotos, horarios públicos), también puedes
             ir a "Mi Perfil → Agenda → Mis Lugares de Atención".
           </p>
         </div>
@@ -404,7 +404,7 @@ const ClinicLocationsPage = () => {
             <AlertDialogDescription>
               "{clinicToDelete?.name}" se marcará como inactiva. Ya no se podrán agendar
               citas nuevas en esta sucursal, pero los datos históricos (boxes, citas pasadas,
-              pacientes) se preservan. Podés reactivarla después desde el botón "Editar".
+              pacientes) se preservan. Puedes reactivarla después desde el botón "Editar".
               <br /><br />
               Para eliminarla definitivamente, contactá a soporte.
             </AlertDialogDescription>
