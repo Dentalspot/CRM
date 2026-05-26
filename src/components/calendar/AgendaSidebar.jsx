@@ -119,14 +119,77 @@ const AgendaSidebar = ({
   return (
     <div className={cn("flex flex-col h-full gap-4", className)}>
 
-      {/* 0) Mini calendario mensual. Arriba de todo (order 0) — permite
-          saltar rápidamente a cualquier semana pasada/futura sin tener
-          que paginar semana a semana en la agenda principal. */}
-      {currentWeek && onWeekChange && (
-        <div className="order-0 lg:order-0">
+      {/* 0) Bloque superior: mini calendario + Ubicación.
+          En pantallas intermedias (sm/md), el sidebar es full-width arriba
+          del grid principal → mostramos los 2 cards lado a lado (50/50)
+          para no apilarlos y ocupar mejor el espacio.
+          En lg+ (sidebar lateral angosto) o mobile chico, se apilan. */}
+      <div className="order-0 lg:order-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+        {currentWeek && onWeekChange && (
           <MiniMonthCalendar currentWeek={currentWeek} onWeekChange={onWeekChange} />
-        </div>
-      )}
+        )}
+
+        {/* Ubicación + Box selector. Fondo teal sólido con texto blanco. */}
+        <Card className="shadow-sm border-2 border-primary bg-primary text-white">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-white">
+              <MapPin className="h-4 w-4 text-white" />
+              Ubicación
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0 space-y-2">
+            {/* Selector de sucursal — cada sucursal tiene su agenda independiente
+                (cada una con sus propios boxes y horarios). No hay opción
+                "Todas las clínicas" porque mezclar agendas no tiene sentido
+                operacional. Default a la primera sucursal (auto-set en CalendarPage). */}
+            <Select
+              value={selectedClinicId?.toString() || ''}
+              onValueChange={onClinicChange}
+            >
+              <SelectTrigger className="bg-white text-slate-900 border-white">
+                <SelectValue placeholder="Seleccionar clínica" />
+              </SelectTrigger>
+              <SelectContent>
+                {clinics.map((clinic) => {
+                  const color = getClinicColor(clinic.id, clinics);
+                  return (
+                    <SelectItem key={clinic.id} value={clinic.id}>
+                      <div className="flex items-center gap-2">
+                        {color && <div className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />}
+                        {clinic.name}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+
+            {/* Box selector — cada box tiene su agenda independiente.
+                No hay opción "Todos los boxes" porque la user no quiere
+                mezclar agendas en una sola vista (decisión de producto).
+                Default al primer box (auto-seteado en CalendarPage). */}
+            {boxes.length > 0 && (
+              <Select value={selectedBoxId || ''} onValueChange={onBoxChange}>
+                <SelectTrigger className="bg-white text-slate-900 border-white">
+                  <SelectValue placeholder="Seleccionar box" />
+                </SelectTrigger>
+                <SelectContent>
+                  {boxes.map((box) => (
+                    <SelectItem key={box.id} value={box.id}>
+                      {box.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <div className="flex justify-between items-center text-sm pt-1">
+              <span className="text-white/80">Esta semana</span>
+              <span className="font-semibold text-white">{weekAppointmentsCount} citas</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* 0) Today's appointments card. Desktop order 2 (después de Ubicación). */}
       <Card className="order-2 lg:order-2 shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
@@ -224,68 +287,6 @@ const AgendaSidebar = ({
                 );
               })
           )}
-        </CardContent>
-      </Card>
-
-      {/* 1) Ubicación + Box selector. Order 1 (primero del sidebar).
-          Fondo teal sólido con texto blanco para destacar visualmente. */}
-      <Card className="order-1 lg:order-1 shadow-sm border-2 border-primary bg-primary text-white">
-        <CardHeader className="p-3 pb-2">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-white">
-            <MapPin className="h-4 w-4 text-white" />
-            Ubicación
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 pt-0 space-y-2">
-          {/* Selector de sucursal — cada sucursal tiene su agenda independiente
-              (cada una con sus propios boxes y horarios). No hay opción
-              "Todas las clínicas" porque mezclar agendas no tiene sentido
-              operacional. Default a la primera sucursal (auto-set en CalendarPage). */}
-          <Select
-            value={selectedClinicId?.toString() || ''}
-            onValueChange={onClinicChange}
-          >
-            <SelectTrigger className="bg-white text-slate-900 border-white">
-              <SelectValue placeholder="Seleccionar clínica" />
-            </SelectTrigger>
-            <SelectContent>
-              {clinics.map((clinic) => {
-                const color = getClinicColor(clinic.id, clinics);
-                return (
-                  <SelectItem key={clinic.id} value={clinic.id}>
-                    <div className="flex items-center gap-2">
-                      {color && <div className={cn("w-2.5 h-2.5 rounded-full flex-shrink-0", color.dot)} />}
-                      {clinic.name}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-
-          {/* Box selector — cada box tiene su agenda independiente.
-              No hay opción "Todos los boxes" porque la user no quiere
-              mezclar agendas en una sola vista (decisión de producto).
-              Default al primer box (auto-seteado en CalendarPage). */}
-          {boxes.length > 0 && (
-            <Select value={selectedBoxId || ''} onValueChange={onBoxChange}>
-              <SelectTrigger className="bg-white text-slate-900 border-white">
-                <SelectValue placeholder="Seleccionar box" />
-              </SelectTrigger>
-              <SelectContent>
-                {boxes.map((box) => (
-                  <SelectItem key={box.id} value={box.id}>
-                    {box.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          <div className="flex justify-between items-center text-sm pt-1">
-            <span className="text-white/80">Esta semana</span>
-            <span className="font-semibold text-white">{weekAppointmentsCount} citas</span>
-          </div>
         </CardContent>
       </Card>
 

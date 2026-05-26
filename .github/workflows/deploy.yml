@@ -33,6 +33,25 @@ jobs:
         run: npm audit --audit-level=critical --omit=dev || true
         continue-on-error: true
 
+      # Debug temporal — confirma si los secrets VITE_* llegan al runner.
+      # Solo imprime LONGITUD, nunca el valor. Eliminar este step después.
+      - name: Debug — Sentry secret length
+        run: |
+          if [ -z "$VITE_SENTRY_DSN" ]; then
+            echo "::error::VITE_SENTRY_DSN is EMPTY or unset at runner"
+          else
+            echo "VITE_SENTRY_DSN length: ${#VITE_SENTRY_DSN}"
+            echo "VITE_SENTRY_DSN starts with: ${VITE_SENTRY_DSN:0:8}..."
+          fi
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::warning::VITE_SUPABASE_URL is EMPTY"
+          else
+            echo "VITE_SUPABASE_URL length: ${#VITE_SUPABASE_URL}"
+          fi
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+
       - name: Build
         run: npm run build
         env:
