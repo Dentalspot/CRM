@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Cookie, Shield, BarChart3, Megaphone, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { initAnalytics } from '@/lib/analytics';
 
 const CONSENT_KEY = 'dentalspot_cookie_consent';
 // Bump cuando cambie la Política de Cookies (legal_documents.slug='politica-cookies').
@@ -34,6 +35,13 @@ function applyConsent(consent) {
   window.__dentalspot_analytics_consent = consent.analytics;
   window.__dentalspot_essential_consent = consent.essential;
   window.dispatchEvent(new CustomEvent('dentalspot:consent-changed', { detail: consent }));
+
+  // Si el user aceptó analytics, inicializar Google Analytics 4 (carga gtag.js
+  // si VITE_GA4_MEASUREMENT_ID está configurado). Idempotente — segunda
+  // llamada es no-op. Si analytics=false, GA4 nunca se carga.
+  if (consent.analytics) {
+    initAnalytics();
+  }
 }
 
 /**

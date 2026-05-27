@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
 
 const HomePage = lazy(() => import('@/pages/HomePage'));
+const DentistLandingPage = lazy(() => import('@/pages/DentistLandingPage'));
 const PricingPage = lazy(() => import('@/pages/PricingPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -49,6 +50,9 @@ const PublicRouter = () => {
         {/* Pages with Layout */}
         <Route element={<Layout />}>
           <Route path="/" element={<HomePage />} />
+          {/* Spec 027: landing dedicada B2B para dentistas — DEBE ir antes del
+              catch-all `/:slug` para no quedar interceptada como slug. */}
+          <Route path="/para-dentistas" element={<DentistLandingPage />} />
           <Route path="/planes" element={<PricingPage />} />
           <Route path="/contacto" element={<ContactPage />} />
           <Route path="/blog" element={<BlogPage />} />
