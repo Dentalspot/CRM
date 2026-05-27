@@ -123,6 +123,38 @@ Registro honesto de ventanas donde Constitution III / Ley 21.719 estuvieron viol
 3. Patrón canónico de ambas lecciones en `architecture.md` §"Canonical patterns" y §"RLS coverage audit".
 
 ---
+## Observabilidad — tracking de errores en prod
+
+DentalSpot tiene observabilidad operacional configurada para detectar bugs y errores en tiempo real en producción. No reemplaza el audit clínico (que es legal por Ley 21.719 y vive en `clinical_audit_log`) — son sistemas distintos con propósitos distintos.
+
+### Sentry — error tracking (HECHO 2026-05-26)
+
+| Aspecto | Estado |
+|---|---|
+| **SDK** | `@sentry/react` ^10 (v10+) instalado en `src/lib/sentry.js`, init desde `main.jsx` |
+| **DSN** | Configurado como env var `VITE_SENTRY_DSN` en Hostinger hPanel — no commiteado al repo |
+| **Environment** | `production` en prod, `development` en local |
+| **Release** | Versionado por git SHA (`VITE_SENTRY_RELEASE = ${{ github.sha }}` cuando había workflow GitHub Actions; ahora Hostinger maneja el deploy) |
+| **PII scrubbing** | `beforeSend` filtra emails de user context, query params sensibles (`email`, `token`, `code`, `access_token` → `[REDACTED]`), y breadcrumbs que mencionen tablas clínicas (`patients`, `clinical_records`, `odontogram`, `legal_signatures`) |
+| **Integrations** | Defaults del SDK (incluyendo `globalHandlersIntegration` que captura uncaught throws). **NO usar `integrations: []`** — vacía todas las integraciones default y rompe la captura automática |
+| **Muestreo** | `tracesSampleRate: 0.1` (performance spans 10%). `replaysSessionSampleRate: 0` y `replaysOnErrorSampleRate: 0` por costo + privacidad PHI |
+| **Ignorados** | Ruido típico: `ResizeObserver loop`, `Non-Error promise rejection`, `Failed to fetch`, `Load failed` |
+| **Alertas email** | Pendiente configurar recipient en sentry.io (regla default usa "Suggested Assignees" que no llega al email correcto) |
+
+**Privacidad y compliance**: el `beforeSend` cumple con el principio de minimización de datos (Ley 21.719 art. 3). Sentry no recibe PHI ni datos personales identificables — solo stack traces y URL paths sin query params sensibles. La organización Sentry está fuera de Chile (US region) pero los datos enviados son técnicos, no de paciente.
+
+**Verificado end-to-end 2026-05-26** con commit `9e8da9f` (refactor landings + analytics GA4). Eventos llegan al dashboard correctamente.
+
+### Google Analytics 4 — analytics de landings (HECHO 2026-05-26)
+
+Tracking de eventos de las landings públicas (`/` y `/para-dentistas`) para medir conversión y engagement. **No procesa PHI** — solo eventos de marketing (page views, clicks de CTAs, scroll depth).
+
+- **DSN/Measurement ID**: env var `VITE_GA4_MEASUREMENT_ID` en Hostinger hPanel (formato `G-XXXXXXXXXX`)
+- **Consent-gated**: solo carga si user acepta cookies de categoría "analytics" en el banner. Sin consent → no se carga gtag.js
+- **Eventos definidos**: `specs/027-patient-dentist-landings/contracts/analytics-events.md`
+- **Coexiste con Meta Pixel** existente (categoría "marketing" del consent) vía módulo unificado `src/lib/analytics/`
+
+---
 ## Deuda compliance conocida
 Checklist de backlog regulatorio. Cada ítem es candidato a spec dedicada.
 | Ítem | Ley | Prioridad | Tamaño |

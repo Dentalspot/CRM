@@ -174,7 +174,7 @@ const HomePage = () => {
 
                 <motion.h1 id="hero-heading" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
                   className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-3 leading-[1.1] tracking-tight">
-                  Resuelve tu problema dental
+                  Encuentra un dentista
                 </motion.h1>
                 <motion.p initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
                   className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 leading-[1.1] tracking-tight text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(90deg, hsl(189,49%,52%), hsl(170,40%,75%), hsl(187,77%,37%))', backgroundSize: '200% auto', animation: 'gradient-x 3s ease infinite' }}>
