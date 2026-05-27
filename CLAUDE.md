@@ -70,9 +70,13 @@ React 18 · react-router-dom 6 · Vite 4.4 · Tailwind 3 · shadcn/ui (JS, new-y
 <!-- SPECKIT START -->
 Para contexto adicional (spec activa, plan en curso, tasks), ver los archivos que Spec Kit crea en `specs/` durante el ciclo `/speckit-*`. Los 4 docs fundacionales en `.specify/memory/` son la referencia permanente.
 
-**Plan activo**: [specs/025-clinic-admin-rich-calendar/plan.md](specs/025-clinic-admin-rich-calendar/plan.md)
+**Plan activo**: [specs/027-patient-dentist-landings/plan.md](specs/027-patient-dentist-landings/plan.md)
 
-**Active feature**: `025-clinic-admin-rich-calendar` **IMPLEMENTED** (2026-04-24). Extiende spec 024 — replica el calendario rich para role `clinic_admin` en `/dashboard/clinic/agendas`. Reuso total de `OrgCalendarView` + `org.api.js` + `AssistantAppointmentModal` (componentes genéricos de spec 024). Código neto nuevo: ~30 líneas (page wrapper) + 1 route update. Código eliminado: `ClinicAgendasPage.jsx` legacy (~375 líneas vista lista). Net ~260 líneas menos.
+**Active feature**: `027-patient-dentist-landings` **PLANNING** (2026-05-26). Restructurar home en 2 landings separadas por audiencia: paciente (`/`) y dentista (`/para-dentistas`). Patrón Airbnb. Fase 1: estructura text-only + analytics GA4 nuevo + Meta Pixel existente. Sin PHI, sin cambios DB. Spec en `specs/027-patient-dentist-landings/spec.md`, decisiones clarify documentadas. Plan + research + data-model + contracts/analytics-events + quickstart generados. Listo para `/speckit-tasks`.
+
+---
+
+**Previous feature**: `025-clinic-admin-rich-calendar` **IMPLEMENTED** (2026-04-24). Extiende spec 024 — replica el calendario rich para role `clinic_admin` en `/dashboard/clinic/agendas`. Reuso total de `OrgCalendarView` + `org.api.js` + `AssistantAppointmentModal` (componentes genéricos de spec 024). Código neto nuevo: ~30 líneas (page wrapper) + 1 route update. Código eliminado: `ClinicAgendasPage.jsx` legacy (~375 líneas vista lista). Net ~260 líneas menos.
 
 Migration `20260424000004_blocked_times_reminders_admin_rls.sql` agrega 6 policies RLS faltantes para clinic_admin: `blocked_times_admin_*` (select/insert/delete) + `"Org admins * reminders"` (insert/update/delete en scheduled_reminders). Sin estas policies, US3 (bloquear hora) y US2 (crear cita vía trigger cascade) fallaban por RLS.
 

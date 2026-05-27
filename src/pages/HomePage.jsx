@@ -3,7 +3,10 @@ import { Helmet } from 'react-helmet-async';
 import { useMetaTracking } from '@/hooks/useMetaTracking';
 import { Button } from '@/components/ui/button';
 import { motion, useInView } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { trackEvent, trackPageView } from '@/lib/analytics';
+import useScrollDepth from '@/hooks/useScrollDepth';
+import useTimeOnPage from '@/hooks/useTimeOnPage';
 import {
   ArrowRight, Sparkles, Users, Clock, Star,
   Brain, Calendar, BarChart3, Shield, Zap,
@@ -87,8 +90,41 @@ const faqItems = [
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 const HomePage = () => {
-  const { trackEvent } = useMetaTracking();
-  useEffect(() => { trackEvent('ViewContent', { content_name: 'Home Page', content_category: 'Landing' }); }, []);
+  const navigate = useNavigate();
+  const { trackEvent: trackMetaCustom } = useMetaTracking();
+  const [symptomInput, setSymptomInput] = useState('');
+
+  // Page view + analytics tracking (Meta legacy + nuevo módulo unificado)
+  useEffect(() => {
+    trackMetaCustom('ViewContent', { content_name: 'Home Page', content_category: 'Landing' });
+    trackEvent('patient_home_view');
+    trackPageView('/', 'DentalSpot | Encuentra un dentista en minutos');
+  }, []);
+
+  // Scroll depth tracking (25/50/75/100%)
+  useScrollDepth((pct) => {
+    trackEvent('scroll_depth', { depth_pct: pct, page: 'patient_home' });
+  });
+
+  // Time on page tracking
+  useTimeOnPage((seconds) => {
+    trackEvent('time_on_page', { seconds, page: 'patient_home' });
+  });
+
+  // Handler del hero CTA — trackea click + navega a /consulta con el síntoma
+  const handleHeroCtaClick = () => {
+    trackEvent('patient_hero_cta_click', { has_symptom_input: symptomInput.trim().length > 0 });
+    if (symptomInput.trim().length > 0) {
+      navigate(`/consulta?symptom=${encodeURIComponent(symptomInput.trim())}`);
+    } else {
+      navigate('/consulta');
+    }
+  };
+
+  // Handler del FAQ — trackea apertura de pregunta
+  const handleFaqOpen = (questionId) => {
+    trackEvent('patient_faq_question_open', { question_id: questionId });
+  };
 
   const schemaData = {
     '@context': 'https://schema.org', '@type': 'WebApplication', name: 'DentalSpot', url: 'https://dentalspot.cl',
@@ -170,14 +206,24 @@ const HomePage = () => {
                   ))}
                 </motion.div>
 
-                {/* CTAs */}
+                {/* Input + CTA — paciente describe síntoma → flujo IA */}
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-                  className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-8">
-                  <Button asChild size="lg" className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 text-base">
-                    <Link to="/consulta" className="flex items-center gap-2">Describe tu sintoma <ArrowRight className="w-5 h-5" /></Link>
-                  </Button>
-                  <Button asChild variant="outline" size="lg" className="h-14 px-8 border-2 border-white/40 text-white bg-white/10 hover:bg-white/20 rounded-2xl font-semibold text-base backdrop-blur-sm">
-                    <Link to="/auth/register">Soy Dentista</Link>
+                  className="flex flex-col sm:flex-row items-stretch justify-center lg:justify-start gap-3 mb-8 max-w-xl mx-auto lg:mx-0">
+                  <input
+                    type="text"
+                    value={symptomInput}
+                    onChange={(e) => setSymptomInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleHeroCtaClick(); }}
+                    placeholder="Describe tu síntoma o necesidad"
+                    aria-label="Describe tu síntoma o necesidad"
+                    className="flex-1 h-14 px-5 rounded-2xl bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white placeholder-white/60 text-base focus:outline-none focus:border-primary focus:bg-white/15 transition-colors"
+                  />
+                  <Button
+                    onClick={handleHeroCtaClick}
+                    size="lg"
+                    className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl shadow-lg shadow-primary/25 text-base flex items-center gap-2 justify-center whitespace-nowrap"
+                  >
+                    Encontrar dentista <ArrowRight className="w-5 h-5" />
                   </Button>
                 </motion.div>
 
@@ -499,63 +545,9 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* ═══════════ 5. PARA DENTISTAS ═══════════ */}
-        <section className="py-24 bg-slate-50 relative overflow-hidden" aria-labelledby="dentists-heading">
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-                <span className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-xs font-semibold mb-5">🧑‍⚕️ Para profesionales</span>
-                <h2 id="dentists-heading" className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-6 leading-tight">
-                  Llena tu agenda con <span className="text-gradient-primary">pacientes reales</span>
-                </h2>
-                <p className="text-base text-slate-500 mb-8 leading-relaxed">
-                  Pacientes con pre-diagnostico IA, listos para agendar. Sin tiempos muertos.
-                </p>
-                <div className="space-y-3 mb-8">
-                  {[
-                    'Recibe pacientes con pre-diagnostico IA',
-                    'Gestiona tu agenda en tiempo real',
-                    'Define tus precios y especialidades',
-                    'Perfil con resenas verificadas',
-                    'Odontograma digital integrado',
-                    'Dashboard con metricas de practica',
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 p-3 bg-white rounded-xl shadow-sm hover:shadow-md hover:translate-x-1 transition-all">
-                      <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-slate-700">{item}</span>
-                    </div>
-                  ))}
-                </div>
-                <Button asChild size="lg" className="h-12 px-6 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-semibold rounded-2xl">
-                  <Link to="/auth/register" className="flex items-center gap-2">Unirme como Dentista <ArrowRight className="w-5 h-5" /></Link>
-                </Button>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-                className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl p-8 border border-primary/10">
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { icon: <Users className="w-8 h-8" />, value: 200, suffix: '+', label: 'Dentistas activos' },
-                    { icon: <MapPin className="w-8 h-8" />, value: 8, suffix: '+', label: 'Ciudades' },
-                    { icon: <Star className="w-8 h-8" />, value: '4.8', suffix: '', label: 'Rating promedio' },
-                    { icon: <Calendar className="w-8 h-8" />, value: 95, suffix: '%', label: 'Citas confirmadas' },
-                  ].map((stat, i) => (
-                    <div key={i} className="bg-white rounded-2xl p-5 text-center shadow-sm">
-                      <div className="text-primary mx-auto mb-2 flex justify-center">{stat.icon}</div>
-                      <div className="text-2xl font-extrabold text-slate-900">
-                        {typeof stat.value === 'number' ? <AnimatedCounter target={stat.value} suffix={stat.suffix} /> : stat.value}
-                      </div>
-                      <div className="text-xs text-slate-500 mt-1">{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══════════ 6. TESTIMONIALS ═══════════ */}
-        <section className="py-24 bg-slate-900 relative overflow-hidden">
+        {/* ═══════════ 5. TESTIMONIALS ═══════════ */}
+        {/* (Sección "Para Dentistas" eliminada — ahora vive en /para-dentistas, ver spec 027) */}
+        <section data-section="testimonials" className="py-24 bg-slate-900 relative overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center mb-14">
@@ -608,7 +600,7 @@ const HomePage = () => {
                 <h2 id="faq-heading" className="text-2xl md:text-4xl font-extrabold text-slate-900 mb-3">Preguntas frecuentes</h2>
                 <p className="text-slate-500">Todo sobre DentalSpot</p>
               </div>
-              <Accordion type="single" collapsible className="space-y-3">
+              <Accordion type="single" collapsible className="space-y-3" onValueChange={(val) => { if (val) handleFaqOpen(val); }}>
                 {faqItems.map((faq, i) => (
                   <AccordionItem key={i} value={`faq-${i}`} className="bg-white rounded-2xl border border-slate-100 px-6 hover:border-slate-200 transition-colors">
                     <AccordionTrigger className="text-left font-semibold text-slate-800 hover:no-underline py-5">{faq.question}</AccordionTrigger>
@@ -631,12 +623,9 @@ const HomePage = () => {
             <p className="text-base text-slate-500 max-w-lg mx-auto mb-10">
               Diagnostico preliminar con IA, precios claros y el dentista ideal cerca de ti.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+            <div className="flex items-center justify-center mb-6">
               <Button asChild size="lg" className="h-14 px-8 bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-bold rounded-2xl shadow-lg text-base">
                 <Link to="/consulta" className="flex items-center gap-2">Empezar ahora <ArrowRight className="w-5 h-5" /></Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="h-14 px-8 rounded-2xl font-semibold text-base">
-                <Link to="/auth/register">Soy Dentista</Link>
               </Button>
             </div>
             <div className="flex items-center justify-center gap-6">

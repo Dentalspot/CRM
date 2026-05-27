@@ -1,12 +1,23 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Logo from '@/components/shared/Logo';
-import { Mail, Phone, MapPin, Heart, Facebook, Instagram, Linkedin, Twitter, Cookie } from 'lucide-react';
+import { Mail, Phone, MapPin, Heart, Facebook, Instagram, Linkedin, Twitter, Cookie, ArrowRight } from 'lucide-react';
 import { openCookieBanner } from '@/components/shared/CookieBanner';
+import { trackEvent } from '@/lib/analytics';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const location = useLocation();
+  const isPatientHome = location.pathname === '/';
+  const isDentistLanding = location.pathname === '/para-dentistas' || location.pathname === '/para-dentistas/';
+
+  const handlePatientToDentistClick = () => {
+    trackEvent('patient_footer_to_dentist_click');
+  };
+  const handleDentistToPatientClick = () => {
+    trackEvent('dentist_footer_to_patient_click');
+  };
 
   const footerLinks = {
     plataforma: [
@@ -14,7 +25,7 @@ const Footer = () => {
       { label: 'Buscar Dentistas', href: '/dentistas' },
       { label: 'Blog para Familias', href: '/blog' },
       { label: 'Preguntas Frecuentes', href: '/#faq' },
-      { label: 'Soy Profesional', href: '/auth/register' },
+      { label: 'Soy Profesional', href: '/para-dentistas' },
     ],
     recursos: [
       { label: 'Centro de Ayuda', href: '/contacto' },
@@ -91,6 +102,31 @@ const Footer = () => {
             </ul>
           </div>
         </div>
+
+        {/* Cross-link entre patient home y dentist landing (spec 027) */}
+        {(isPatientHome || isDentistLanding) && (
+          <div className="mt-10 pt-6 border-t border-slate-800 text-center">
+            {isPatientHome ? (
+              <Link
+                to="/para-dentistas"
+                onClick={handlePatientToDentistClick}
+                className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-primary transition-colors"
+              >
+                ¿Eres dentista? Conoce DentalSpot para profesionales
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link
+                to="/"
+                onClick={handleDentistToPatientClick}
+                className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-primary transition-colors"
+              >
+                ¿Eres paciente? Buscar dentista
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
+        )}
 
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-slate-500">
