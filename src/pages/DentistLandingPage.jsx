@@ -42,6 +42,22 @@ import useTimeOnPage from '@/hooks/useTimeOnPage';
 
 // ── Animations ──────────────────────────────────────────────────────────
 const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
+const fadeUpStagger = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
+};
+const fadeUpItem = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+};
+const slideInLeft = {
+  hidden: { opacity: 0, x: -30 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+};
+const slideInRight = {
+  hidden: { opacity: 0, x: 30 },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+};
 
 // ── Data ────────────────────────────────────────────────────────────────
 // NOTA: stats son placeholders Fase 1 — números mockeados realistas.
@@ -177,6 +193,66 @@ const DentistLandingPage = () => {
     }
   };
 
+  // Schema.org SoftwareApplication — diferencia esta landing del MedicalWebPage del patient home
+  const softwareSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'DentalSpot para Profesionales',
+    applicationCategory: 'BusinessApplication',
+    applicationSubCategory: 'Practice Management Software',
+    operatingSystem: 'Web',
+    url: 'https://dentalspot.cl/para-dentistas',
+    description: 'Software de gestión para clínicas dentales en Chile. Agenda inteligente, ficha clínica unificada, ingresos automáticos y asistente IA 24/7.',
+    inLanguage: 'es-CL',
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'CLP',
+      availability: 'https://schema.org/InStock',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'DentalSpot',
+      url: 'https://dentalspot.cl',
+      logo: 'https://dentalspot.cl/logo-dentalspot-full.png',
+    },
+    audience: {
+      '@type': 'BusinessAudience',
+      audienceType: ['Dentistas', 'Clínicas dentales', 'Profesionales odontológicos'],
+    },
+    featureList: FEATURES.map((f) => f.title),
+  };
+
+  const orgSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'DentalSpot',
+    url: 'https://dentalspot.cl',
+    logo: 'https://dentalspot.cl/logo-dentalspot-full.png',
+    description: 'Plataforma odontológica chilena: software para clínicas dentales + buscador de dentistas para pacientes con IA.',
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'CL',
+      addressRegion: 'Santiago',
+    },
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'sales',
+      email: 'contacto@dentalspot.cl',
+      areaServed: 'CL',
+      availableLanguage: 'Spanish',
+    },
+  };
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ_ITEMS.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  };
+
   return (
     <>
       <Helmet>
@@ -191,7 +267,16 @@ const DentistLandingPage = () => {
         <meta property="og:description" content="Tu clínica, organizada y creciendo. Agenda + ficha clínica + ingresos + IA 24/7 en una sola plataforma." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://dentalspot.cl/para-dentistas" />
+        <meta property="og:image" content="https://dentalspot.cl/og-image.png" />
         <meta property="og:locale" content="es_CL" />
+        {/* Twitter Cards */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="DentalSpot para Profesionales | Software para clínicas dentales" />
+        <meta name="twitter:description" content="Agenda + ficha clínica + ingresos + asistente IA 24/7. Todo en una plataforma." />
+        {/* Schema.org */}
+        <script type="application/ld+json">{JSON.stringify(softwareSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(orgSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
 
       <div className="overflow-hidden">
@@ -258,14 +343,20 @@ const DentistLandingPage = () => {
         {/* ═══════════ 2. STATS SOCIALES ═══════════ */}
         <TrackedSection sectionName="stats" className="py-16 bg-white border-b border-slate-100">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <motion.div
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-80px' }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+            >
               {STATS.map((stat) => (
-                <div key={stat.label} className="text-center">
+                <motion.div key={stat.label} variants={fadeUpItem} className="text-center">
                   <div className="text-3xl md:text-4xl font-extrabold text-primary mb-2">{stat.value}</div>
                   <div className="text-sm text-slate-500">{stat.label}</div>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </TrackedSection>
 
@@ -282,14 +373,18 @@ const DentistLandingPage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            <motion.div
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-80px' }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto"
+            >
               {PROBLEMS.map((item, i) => (
                 <motion.div
                   key={i}
-                  variants={fadeUp}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
+                  variants={fadeUpItem}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-lg transition-shadow"
                 >
                   <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-4`}>
@@ -302,7 +397,7 @@ const DentistLandingPage = () => {
                   <p className="text-sm text-slate-500 leading-relaxed">{item.description}</p>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </TrackedSection>
 
@@ -320,36 +415,56 @@ const DentistLandingPage = () => {
             </div>
 
             <div className="max-w-5xl mx-auto space-y-16">
-              {FEATURES.map((feature, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className={`grid grid-cols-1 lg:grid-cols-2 gap-10 items-center ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}
-                >
-                  <div className={i % 2 === 1 ? 'lg:order-2' : ''}>
-                    {feature.icon}
-                    <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 mt-4 mb-3">{feature.title}</h3>
-                    <p className="text-base text-slate-500 mb-5 leading-relaxed">{feature.description}</p>
-                    <ul className="space-y-2">
-                      {feature.bullets.map((b) => (
-                        <li key={b} className="flex items-center gap-2 text-sm text-slate-700">
-                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
-                          {b}
-                        </li>
-                      ))}
-                    </ul>
+              {FEATURES.map((feature, i) => {
+                const fromLeft = i % 2 === 0;
+                return (
+                  <div
+                    key={i}
+                    className={`grid grid-cols-1 lg:grid-cols-2 gap-10 items-center`}
+                  >
+                    <motion.div
+                      variants={fromLeft ? slideInLeft : slideInRight}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: '-100px' }}
+                      className={fromLeft ? '' : 'lg:order-2'}
+                    >
+                      <motion.div
+                        whileHover={{ rotate: -5, scale: 1.1 }}
+                        transition={{ type: 'spring', stiffness: 300 }}
+                        className="inline-block"
+                      >
+                        {feature.icon}
+                      </motion.div>
+                      <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 mt-4 mb-3">{feature.title}</h3>
+                      <p className="text-base text-slate-500 mb-5 leading-relaxed">{feature.description}</p>
+                      <ul className="space-y-2">
+                        {feature.bullets.map((b) => (
+                          <li key={b} className="flex items-center gap-2 text-sm text-slate-700">
+                            <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                            {b}
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+
+                    {/* Placeholder visual — Fase 2: reemplazar por mockup de celular con screenshot real */}
+                    <motion.div
+                      variants={fromLeft ? slideInRight : slideInLeft}
+                      initial="hidden"
+                      whileInView="visible"
+                      viewport={{ once: true, margin: '-100px' }}
+                      whileHover={{ scale: 1.02 }}
+                      className={`bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl border border-primary/10 p-12 flex items-center justify-center min-h-[280px] ${fromLeft ? '' : 'lg:order-1'}`}
+                    >
+                      <div className="text-center text-slate-400 text-sm italic">
+                        [ Vista previa del módulo ]<br />
+                        <span className="text-xs">— screenshots reales en Fase 2 —</span>
+                      </div>
+                    </motion.div>
                   </div>
-                  {/* Placeholder visual — Fase 2: reemplazar por mockup de celular con screenshot real */}
-                  <div className={`bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl border border-primary/10 p-12 flex items-center justify-center min-h-[280px] ${i % 2 === 1 ? 'lg:order-1' : ''}`}>
-                    <div className="text-center text-slate-400 text-sm italic">
-                      [ Vista previa del módulo ]<br />
-                      <span className="text-xs">— screenshots reales en Fase 2 —</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </TrackedSection>
@@ -407,27 +522,47 @@ const DentistLandingPage = () => {
 
         {/* ═══════════ 7. FINAL CTA ═══════════ */}
         <TrackedSection sectionName="cta_final" className="py-24 bg-gradient-to-br from-primary via-accent to-teal-700 text-white text-center relative overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-[400px] h-[400px] rounded-full bg-white/5 pointer-events-none" />
-          <div className="absolute bottom-12 -left-20 w-[250px] h-[250px] rounded-full border-2 border-white/10 pointer-events-none" />
+          <motion.div
+            animate={{ x: [0, 20, 0], y: [0, 10, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute -top-24 -right-24 w-[400px] h-[400px] rounded-full bg-white/5 pointer-events-none"
+          />
+          <motion.div
+            animate={{ x: [0, -15, 0], y: [0, -10, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute bottom-12 -left-20 w-[250px] h-[250px] rounded-full border-2 border-white/10 pointer-events-none"
+          />
 
-          <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="container mx-auto px-4 relative z-10"
+          >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-5 leading-tight max-w-2xl mx-auto">
               Empezá gratis y descubrí cómo se siente tener tu clínica al día
             </h2>
             <p className="text-base text-white/80 max-w-lg mx-auto mb-10">
               Sin tarjeta de crédito. Sin compromiso. Configura tu clínica en menos de 10 minutos.
             </p>
-            <Button
-              asChild
-              size="lg"
-              onClick={handleFinalCtaClick}
-              className="h-14 px-10 bg-white text-primary hover:bg-white/90 rounded-2xl font-bold shadow-xl text-base"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-block"
             >
-              <Link to="/auth/register" className="flex items-center gap-2">
-                Empezá gratis 30 días <ArrowRight className="w-5 h-5" />
-              </Link>
-            </Button>
-          </div>
+              <Button
+                asChild
+                size="lg"
+                onClick={handleFinalCtaClick}
+                className="h-14 px-10 bg-white text-primary hover:bg-white/90 rounded-2xl font-bold shadow-xl text-base"
+              >
+                <Link to="/auth/register" className="flex items-center gap-2">
+                  Empezá gratis 30 días <ArrowRight className="w-5 h-5" />
+                </Link>
+              </Button>
+            </motion.div>
+          </motion.div>
         </TrackedSection>
       </div>
     </>

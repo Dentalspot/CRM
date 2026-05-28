@@ -126,11 +126,41 @@ const HomePage = () => {
     trackEvent('patient_faq_question_open', { question_id: questionId });
   };
 
+  // Schema.org MedicalWebPage — más preciso que WebApplication para landing dirigida
+  // a pacientes que buscan información médica/dental. Diferencia esta página del
+  // dentist landing (que usa SoftwareApplication) para SEO + rich snippets distintos.
   const schemaData = {
-    '@context': 'https://schema.org', '@type': 'WebApplication', name: 'DentalSpot', url: 'https://dentalspot.cl',
-    description: 'DentalSpot conecta pacientes con dentistas cercanos usando IA.',
-    applicationCategory: 'HealthApplication', operatingSystem: 'Web',
-    provider: { '@type': 'Organization', name: 'DentalSpot', address: { '@type': 'PostalAddress', addressCountry: 'CL' } },
+    '@context': 'https://schema.org',
+    '@type': 'MedicalWebPage',
+    name: 'DentalSpot — Encuentra un dentista en minutos',
+    url: 'https://dentalspot.cl',
+    description: 'DentalSpot conecta pacientes con dentistas cercanos usando IA. Describe tu síntoma, recibe orientación con IA y agenda con el profesional ideal.',
+    inLanguage: 'es-CL',
+    medicalAudience: 'Patient',
+    specialty: {
+      '@type': 'MedicalSpecialty',
+      name: 'Dentistry',
+    },
+    about: {
+      '@type': 'MedicalCondition',
+      name: 'Salud dental',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'DentalSpot',
+      url: 'https://dentalspot.cl',
+      logo: 'https://dentalspot.cl/logo-dentalspot-full.png',
+      address: {
+        '@type': 'PostalAddress',
+        addressCountry: 'CL',
+        addressRegion: 'Santiago',
+      },
+    },
+    audience: {
+      '@type': 'PeopleAudience',
+      audienceType: ['Pacientes', 'Familias', 'Adultos'],
+      geographicArea: { '@type': 'Country', name: 'Chile' },
+    },
   };
   const faqSchema = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqItems.map(i => ({ '@type': 'Question', name: i.question, acceptedAnswer: { '@type': 'Answer', text: i.answer } })) };
 
