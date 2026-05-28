@@ -147,6 +147,152 @@ const FAQ_ITEMS = [
   },
 ];
 
+// ── Mock wireframes para feature placeholders ─────────────────────────────
+// Visuales tipo "preview" que representan cada feature sin necesidad de
+// screenshots reales (Fase 2 los reemplaza con capturas de la app).
+
+const AgendaMock = () => (
+  <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 w-full max-w-[280px]">
+    <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+      <div className="flex items-center gap-1.5">
+        <Calendar className="w-3.5 h-3.5 text-primary" />
+        <span className="text-[10px] font-bold text-slate-700">Lunes 26 May</span>
+      </div>
+      <span className="text-[9px] text-slate-400">Box 1 · Box 2</span>
+    </div>
+    <div className="space-y-1.5">
+      {[
+        { time: '09:00', name: 'María P.', color: 'bg-primary/15 border-l-primary' },
+        { time: '09:30', name: 'Juan L.', color: 'bg-emerald-100/60 border-l-emerald-400' },
+        { time: '10:00', name: '— libre —', color: 'bg-slate-50 border-l-slate-200 text-slate-400' },
+        { time: '10:30', name: 'Carla R.', color: 'bg-violet-100/60 border-l-violet-400' },
+        { time: '11:00', name: 'Pedro M.', color: 'bg-amber-100/60 border-l-amber-400' },
+      ].map((slot, i) => (
+        <div key={i} className={`flex items-center gap-2 ${slot.color} border-l-2 rounded-r-md px-2 py-1`}>
+          <span className="text-[9px] font-mono text-slate-500 w-8">{slot.time}</span>
+          <span className="text-[10px] font-medium text-slate-700">{slot.name}</span>
+        </div>
+      ))}
+    </div>
+    <div className="mt-3 pt-2 border-t border-slate-100 text-center">
+      <span className="text-[9px] text-slate-400">arrastra para reprogramar →</span>
+    </div>
+  </div>
+);
+
+const FichaClinicaMock = () => (
+  <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 w-full max-w-[280px]">
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center text-[10px] font-bold text-white">MP</div>
+      <div>
+        <p className="text-xs font-bold text-slate-800">María Pérez</p>
+        <p className="text-[9px] text-slate-400">RUT 12.345.678-9 · 34 años</p>
+      </div>
+    </div>
+    {/* Mini odontograma */}
+    <div className="bg-slate-50 rounded-lg p-2 mb-2">
+      <p className="text-[9px] font-semibold text-slate-500 mb-1.5">Odontograma</p>
+      <div className="flex gap-0.5 justify-center">
+        {[18, 17, 16, 15, 14, 13, 12, 11].map((n, i) => (
+          <div
+            key={n}
+            className={`w-3.5 h-4 rounded-sm ${i === 3 ? 'bg-red-200' : i === 5 ? 'bg-amber-200' : 'bg-white border border-slate-200'}`}
+          />
+        ))}
+      </div>
+    </div>
+    {/* Items */}
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-[10px] py-1 border-b border-slate-50">
+        <span className="text-slate-600">Caries pieza 14</span>
+        <span className="text-emerald-500 font-semibold">Tratada</span>
+      </div>
+      <div className="flex items-center justify-between text-[10px] py-1 border-b border-slate-50">
+        <span className="text-slate-600">Radiografía periapical</span>
+        <span className="text-primary font-semibold">15 May</span>
+      </div>
+      <div className="flex items-center justify-between text-[10px] py-1">
+        <span className="text-slate-600">Endodoncia pieza 17</span>
+        <span className="text-amber-500 font-semibold">Pendiente</span>
+      </div>
+    </div>
+  </div>
+);
+
+const AsistenteIAMock = () => (
+  <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 w-full max-w-[280px]">
+    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
+      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+        <MessageCircle className="w-4 h-4 text-white" />
+      </div>
+      <div>
+        <p className="text-xs font-bold text-slate-800">Asistente DentalSpot</p>
+        <div className="flex items-center gap-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="text-[9px] text-emerald-600">En línea 24/7</span>
+        </div>
+      </div>
+    </div>
+    <div className="space-y-2">
+      <div className="bg-slate-100 rounded-lg rounded-tl-sm px-2.5 py-1.5 max-w-[80%]">
+        <p className="text-[10px] text-slate-700">Hola, quiero agendar limpieza dental</p>
+      </div>
+      <div className="bg-primary/10 rounded-lg rounded-tr-sm px-2.5 py-1.5 max-w-[85%] ml-auto">
+        <p className="text-[10px] text-slate-700">Tengo disponibilidad jueves 29 a las 16:00 con Dra. Reyes. ¿Te sirve?</p>
+      </div>
+      <div className="bg-slate-100 rounded-lg rounded-tl-sm px-2.5 py-1.5 max-w-[60%]">
+        <p className="text-[10px] text-slate-700">¡Perfecto!</p>
+      </div>
+      <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-2 mt-1">
+        <div className="flex items-center gap-1.5">
+          <CheckCircle className="w-3 h-3 text-emerald-500" />
+          <p className="text-[10px] font-semibold text-emerald-700">Cita confirmada</p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ReportesMock = () => (
+  <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 w-full max-w-[280px]">
+    <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+      <span className="text-xs font-bold text-slate-800">Ingresos · Mayo 2026</span>
+      <BarChart3 className="w-4 h-4 text-primary" />
+    </div>
+    <div className="mb-3">
+      <p className="text-2xl font-extrabold text-slate-900">$4.250.000</p>
+      <div className="flex items-center gap-1">
+        <TrendingUp className="w-3 h-3 text-emerald-500" />
+        <span className="text-[10px] text-emerald-600 font-semibold">+18% vs Abril</span>
+      </div>
+    </div>
+    {/* Mini bar chart */}
+    <div className="flex items-end gap-1 h-16 mb-2">
+      {[35, 50, 42, 65, 48, 72, 60, 80, 68, 90, 75, 95].map((h, i) => (
+        <div
+          key={i}
+          className="flex-1 bg-gradient-to-t from-primary/60 to-primary rounded-t-sm"
+          style={{ height: `${h}%` }}
+        />
+      ))}
+    </div>
+    <div className="flex items-center justify-between text-[9px] text-slate-400 pt-1 border-t border-slate-50">
+      <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+    </div>
+    <div className="mt-2 flex items-center justify-between text-[10px]">
+      <span className="text-slate-600">Comisiones dentistas</span>
+      <span className="font-semibold text-slate-800">$1.275.000</span>
+    </div>
+  </div>
+);
+
+const FEATURE_MOCKS = [
+  AgendaMock,        // Agenda multi-box
+  FichaClinicaMock,  // Ficha clínica
+  AsistenteIAMock,   // Asistente IA
+  ReportesMock,      // Reportes
+];
+
 // ── Section wrapper con tracking section_visible ────────────────────────
 const TrackedSection = ({ id, sectionName, children, className }) => {
   const ref = useRef(null);
@@ -417,6 +563,7 @@ const DentistLandingPage = () => {
             <div className="max-w-5xl mx-auto space-y-16">
               {FEATURES.map((feature, i) => {
                 const fromLeft = i % 2 === 0;
+                const FeatureMock = FEATURE_MOCKS[i] || (() => null);
                 return (
                   <div
                     key={i}
@@ -448,19 +595,16 @@ const DentistLandingPage = () => {
                       </ul>
                     </motion.div>
 
-                    {/* Placeholder visual — Fase 2: reemplazar por mockup de celular con screenshot real */}
+                    {/* Mock wireframe — Fase 2: reemplazar por screenshot real de la app */}
                     <motion.div
                       variants={fromLeft ? slideInRight : slideInLeft}
                       initial="hidden"
                       whileInView="visible"
                       viewport={{ once: true, margin: '-100px' }}
                       whileHover={{ scale: 1.02 }}
-                      className={`bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl border border-primary/10 p-12 flex items-center justify-center min-h-[280px] ${fromLeft ? '' : 'lg:order-1'}`}
+                      className={`bg-gradient-to-br from-primary/5 to-accent/5 rounded-3xl border border-primary/10 p-8 flex items-center justify-center min-h-[320px] ${fromLeft ? '' : 'lg:order-1'}`}
                     >
-                      <div className="text-center text-slate-400 text-sm italic">
-                        [ Vista previa del módulo ]<br />
-                        <span className="text-xs">— screenshots reales en Fase 2 —</span>
-                      </div>
+                      <FeatureMock />
                     </motion.div>
                   </div>
                 );
