@@ -1,0 +1,27 @@
+# Supabase project config — solo lo que `supabase config push` aplica al
+# proyecto remoto. NO contiene secrets ni DSN; los secrets viven en
+# Supabase Dashboard → Edge Functions → Secrets.
+#
+# Versionado en git para que los cambios de templates queden trackeados.
+
+project_id = "tomremkbuxvedliyywbo"
+
+[auth.email.template.invite]
+subject = "Te invitaron a DentalSpot"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.confirmation]
+subject = "Confirma tu cuenta de DentalSpot"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Restablece tu contraseña de DentalSpot"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Tu enlace de acceso a DentalSpot"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.email_change]
+subject = "Confirma tu nuevo correo en DentalSpot"
+content_path = "./supabase/templates/email_change.html"
