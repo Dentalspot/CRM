@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Propuesta C — Ribbons / SVG waves</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+  .stage {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* Ribbons SVG con animación de morph + rotación lenta */
+  .ribbon-wrap { position: absolute; inset: 0; pointer-events: none; }
+  .ribbon-wrap svg { width: 100%; height: 100%; }
+  .ribbon-1 { animation: float1 18s ease-in-out infinite; transform-origin: center; }
+  .ribbon-2 { animation: float2 22s ease-in-out infinite; transform-origin: center; }
+  .ribbon-3 { animation: float3 25s ease-in-out infinite; transform-origin: center; }
+
+  @keyframes float1 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(40px, -30px) rotate(8deg); } }
+  @keyframes float2 { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-50px, 40px) rotate(-6deg); } }
+  @keyframes float3 { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, 30px) scale(1.05); } }
+
+  /* Content */
+  .logo { height: 40px; margin-bottom: 32px; position: relative; z-index: 10; }
+  .card-stack { position: relative; z-index: 10; text-align: center; max-width: 800px; width: 100%; }
+  h1 { font-size: 32px; font-weight: 700; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .subtitle { font-size: 16px; color: #475569; margin-bottom: 32px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 16px rgba(15,23,42,0.05); cursor: pointer; transition: all .25s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(20,184,166,0.20); border-color: rgba(20,184,166,0.4); }
+  .card .icon { font-size: 28px; }
+  .card .body { text-align: left; flex: 1; }
+  .card .title { font-weight: 600; color: #0d9488; margin-bottom: 4px; }
+  .card .desc { font-size: 13px; color: #64748b; }
+  .footer { font-size: 13px; color: #475569; margin-top: 24px; }
+  .footer a { color: #14B8A6; font-weight: 600; text-decoration: none; }
+
+  .badge-name { position: fixed; bottom: 16px; right: 16px; padding: 8px 14px; background: #0f172a; color: white; font-size: 11px; border-radius: 8px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="ribbon-wrap">
+    <svg viewBox="0 0 1200 800" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#14B8A6" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="#45b5c4" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#99f6e4" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#0d9488" stop-opacity="0.15"/>
+        </linearGradient>
+        <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#45b5c4" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#14B8A6" stop-opacity="0.1"/>
+        </linearGradient>
+      </defs>
+      <path class="ribbon-1" d="M -100 200 C 200 100, 400 300, 700 150 S 1100 250, 1300 100 L 1300 0 L -100 0 Z" fill="url(#g1)"/>
+      <path class="ribbon-2" d="M -100 600 C 250 500, 500 700, 800 550 S 1200 650, 1300 500 L 1300 800 L -100 800 Z" fill="url(#g2)"/>
+      <path class="ribbon-3" d="M 0 400 C 200 350, 400 500, 700 400 S 1100 450, 1200 350" stroke="url(#g3)" stroke-width="80" fill="none" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <img src="http://localhost:3000/logo-dentalspot-full.png" class="logo" alt="DentalSpot">
+  <div class="card-stack">
+    <h1>¿Cómo quieres ingresar?</h1>
+    <p class="subtitle">Elige el tipo que mejor te describe</p>
+    <div class="grid">
+      <div class="card"><div class="icon">👤</div><div class="body"><div class="title">Paciente</div><div class="desc">Busco atención dental para mí o un familiar</div></div></div>
+      <div class="card"><div class="icon">🦷</div><div class="body"><div class="title">Dentista</div><div class="desc">Soy dentista y quiero gestionar mis pacientes</div></div></div>
+      <div class="card"><div class="icon">🏥</div><div class="body"><div class="title">Clínica</div><div class="desc">Administro un centro o clínica dental</div></div></div>
+      <div class="card"><div class="icon">🧑‍💼</div><div class="body"><div class="title">Asistente</div><div class="desc">Colaboro en la coordinación de una clínica</div></div></div>
+    </div>
+    <p class="footer">¿No tienes cuenta? <a href="#">Regístrate gratis</a></p>
+  </div>
+</div>
+<div class="badge-name">C — Ribbons (waves)</div>
+</body>
+</html>

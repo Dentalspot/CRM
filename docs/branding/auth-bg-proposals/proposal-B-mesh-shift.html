@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Propuesta B — Mesh gradient animado</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+  .stage {
+    min-height: 100vh;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* Mesh gradient — radiales que cambian de posición y color en un loop largo */
+  .mesh {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(at 20% 30%, rgba(20,184,196,0.35) 0px, transparent 50%),
+      radial-gradient(at 80% 20%, rgba(69,181,196,0.30) 0px, transparent 50%),
+      radial-gradient(at 75% 80%, rgba(13,148,136,0.28) 0px, transparent 45%),
+      radial-gradient(at 10% 90%, rgba(153,246,228,0.40) 0px, transparent 45%);
+    background-size: 200% 200%;
+    animation: meshShift 24s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes meshShift {
+    0%, 100% { background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%; }
+    50% { background-position: 30% 20%, 70% 30%, 60% 70%, 30% 80%; }
+  }
+
+  /* Capa de noise sutil para textura premium */
+  .noise {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    pointer-events: none;
+  }
+
+  /* Content */
+  .logo { height: 40px; margin-bottom: 32px; position: relative; z-index: 10; }
+  .card-stack { position: relative; z-index: 10; text-align: center; max-width: 800px; width: 100%; }
+  h1 { font-size: 32px; font-weight: 700; color: #0f172a; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .subtitle { font-size: 16px; color: #475569; margin-bottom: 32px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .card { background: #ffffff; border: 1px solid rgba(0,0,0,0.05); border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); cursor: pointer; transition: all .25s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(20,184,166,0.18); border-color: rgba(20,184,166,0.4); }
+  .card .icon { font-size: 28px; }
+  .card .body { text-align: left; flex: 1; }
+  .card .title { font-weight: 600; color: #0d9488; margin-bottom: 4px; }
+  .card .desc { font-size: 13px; color: #64748b; }
+  .footer { font-size: 13px; color: #475569; margin-top: 24px; }
+  .footer a { color: #14B8A6; font-weight: 600; text-decoration: none; }
+
+  .badge-name { position: fixed; bottom: 16px; right: 16px; padding: 8px 14px; background: #0f172a; color: white; font-size: 11px; border-radius: 8px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="mesh"></div>
+  <div class="noise"></div>
+
+  <img src="http://localhost:3000/logo-dentalspot-full.png" class="logo" alt="DentalSpot">
+  <div class="card-stack">
+    <h1>¿Cómo quieres ingresar?</h1>
+    <p class="subtitle">Elige el tipo que mejor te describe</p>
+    <div class="grid">
+      <div class="card"><div class="icon">👤</div><div class="body"><div class="title">Paciente</div><div class="desc">Busco atención dental para mí o un familiar</div></div></div>
+      <div class="card"><div class="icon">🦷</div><div class="body"><div class="title">Dentista</div><div class="desc">Soy dentista y quiero gestionar mis pacientes</div></div></div>
+      <div class="card"><div class="icon">🏥</div><div class="body"><div class="title">Clínica</div><div class="desc">Administro un centro o clínica dental</div></div></div>
+      <div class="card"><div class="icon">🧑‍💼</div><div class="body"><div class="title">Asistente</div><div class="desc">Colaboro en la coordinación de una clínica</div></div></div>
+    </div>
+    <p class="footer">¿No tienes cuenta? <a href="#">Regístrate gratis</a></p>
+  </div>
+</div>
+<div class="badge-name">B — Mesh gradient</div>
+</body>
+</html>

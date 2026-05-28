@@ -8,6 +8,10 @@
  * email+password. La selección solo aporta UX context + para registro
  * setea `profile.role`. En login, si el rol elegido no coincide con
  * el real del usuario en DB, el post-login routing usa el real.
+ *
+ * Diseño: fondo blanco con 4 blobs aurora teal/accent flotando suave
+ * (animación CSS keyframes `float`, ya definida en tailwind.config).
+ * Cards translucent con backdrop-blur encima → efecto "vidrio sobre aurora".
  */
 
 import React from 'react';
@@ -29,14 +33,40 @@ export default function RolePicker({ isLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-primary to-teal-100 p-4">
-      <div className="w-full max-w-3xl">
-        {/* Logo */}
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-white p-4 overflow-hidden">
+      {/* ── Aurora blobs — fondo decorativo animado ───────────────────── */}
+      {/* 4 círculos borroseados que flotan suave con animación float (ver
+          tailwind.config.js keyframes). Cada uno con delay distinto. */}
+      <div
+        className="absolute top-[-150px] left-[-100px] w-[500px] h-[500px] rounded-full bg-primary/40 blur-[100px] pointer-events-none"
+        style={{ animation: 'float 18s ease-in-out infinite' }}
+      />
+      <div
+        className="absolute bottom-[-200px] right-[-150px] w-[600px] h-[600px] rounded-full bg-accent/35 blur-[110px] pointer-events-none"
+        style={{ animation: 'float 22s ease-in-out infinite reverse', animationDelay: '2s' }}
+      />
+      <div
+        className="absolute top-[25%] right-[15%] w-[400px] h-[400px] rounded-full bg-teal-500/25 blur-[90px] pointer-events-none hidden md:block"
+        style={{ animation: 'float-slow 25s ease-in-out infinite', animationDelay: '4s' }}
+      />
+      <div
+        className="absolute bottom-[15%] left-[20%] w-[350px] h-[350px] rounded-full bg-teal-200/40 blur-[90px] pointer-events-none hidden md:block"
+        style={{ animation: 'float 20s ease-in-out infinite reverse', animationDelay: '1s' }}
+      />
+
+      {/* ── Logo arriba (fuera de la card) ─────────────────────────────── */}
+      <a href="/" className="relative z-10 mb-8 inline-block hover:opacity-90 transition-opacity">
+        <img
+          src="/logo-dentalspot-full.png"
+          alt="DentalSpot"
+          className="h-16 sm:h-20 w-auto"
+        />
+      </a>
+
+      {/* ── Container principal ─────────────────────────────────────────── */}
+      <div className="relative z-10 w-full max-w-3xl">
+        {/* Title */}
         <div className="text-center mb-8">
-          <a href="/" className="inline-block text-3xl font-bold mb-3">
-            <span className="text-primary">DENTAL</span>
-            <span className="text-teal-500">SPOT</span>
-          </a>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             {isLogin ? '¿Cómo quieres ingresar?' : '¿Qué tipo de cuenta quieres crear?'}
           </h1>
@@ -45,14 +75,14 @@ export default function RolePicker({ isLogin }) {
           </p>
         </div>
 
-        {/* Grid de cards */}
+        {/* Grid de cards translucent con backdrop-blur — efecto vidrio sobre aurora */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           {roles.map((role) => (
             <button
               key={role.value}
               type="button"
               onClick={() => handlePick(role.value)}
-              className="group text-left bg-white rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all border-2 border-transparent hover:border-teal-300 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+              className="group text-left bg-white/85 backdrop-blur-md rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all border border-teal-100/60 hover:border-teal-400 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
             >
               <div className="flex items-start gap-4">
                 <div className="text-4xl flex-shrink-0" aria-hidden="true">
