@@ -145,15 +145,15 @@ Tanto pacientes como dentistas tienen un botón "Iniciar sesión" en el header d
 
 **Fuera de scope Fase 1** (out of scope explícito):
 
-- **FR-OUT-001**: Featured dentists carousel con dentistas reales — Fase 2 cuando haya dentistas con perfiles completos
-- **FR-OUT-002**: Mapa interactivo con dentistas reales en patient hero — Fase 2
-- **FR-OUT-003**: Mockups de celular con screenshots de la app real (calendario, ficha clínica, dashboard) — Fase 2 cuando founder provea screenshots
-- **FR-OUT-004**: Animaciones interactivas (Framer Motion, GIFs, videos) — Fase 2
-- **FR-OUT-005**: Testimonials reales de pacientes y dentistas — Fase 2 cuando se obtengan
-- **FR-OUT-006**: Pricing con planes reales — Fase 2 cuando se definan los tiers de Communicare/DentalSpot
-- **FR-OUT-007**: SEO Schema.org diferenciado (MedicalWebPage patient vs SoftwareApplication dentist) — Fase 3
-- **FR-OUT-008**: Toggle "Para Pacientes / Para Dentistas" en header — Fase 2/3 según conversión
-- **FR-OUT-009**: A/B test del hero patient (input grande vs CTA tradicional) — Fase 3
+- **FR-OUT-001**: Featured dentists carousel con dentistas reales — Fase 2 cuando haya dentistas con perfiles completos. **🚧 PENDIENTE — bloqueado en input founder**: lista de 6-8 dentistas verificados con foto + especialidad + ubicación.
+- **FR-OUT-002**: Mapa interactivo con dentistas reales en patient hero — Fase 2. **🚧 PENDIENTE — bloqueado en decisión founder**: confirmar si va en hero o sección aparte; UX del mapa (zoom default, ¿pin clickable abre perfil?).
+- **FR-OUT-003**: Mockups de celular con screenshots de la app real (calendario, ficha clínica, dashboard) — Fase 2 cuando founder provea screenshots. **🚧 PENDIENTE — bloqueado en input founder**: 4 PNGs en alta resolución (calendario en uso, ficha clínica con paciente, dashboard ingresos, asistente IA chat).
+- **FR-OUT-004**: ~~Animaciones interactivas (Framer Motion, GIFs, videos)~~ — ✅ **HECHO 2026-05-26** (commit `66332e1`). Animaciones Framer Motion agregadas: stagger fade-up stats, slide-in alternado features con hover wiggle, orbital floating final CTA. Videos/GIFs siguen out of scope.
+- **FR-OUT-005**: Testimonials reales de pacientes y dentistas — Fase 2 cuando se obtengan. **🚧 PENDIENTE — bloqueado en input founder**: 3-4 quotes paciente + 3-4 dentista con consentimiento para uso público (nombre, foto opcional, ubicación).
+- **FR-OUT-006**: Pricing con planes reales — Fase 2 cuando se definan los tiers de Communicare/DentalSpot. **🚧 PENDIENTE — bloqueado en decisión founder**: definir 3-4 planes con features y precios públicos. Spec 022 (`add-plans-tier-model`) ya tiene tiers internos en DB (`free`, `individual`, `clinic_pro`, `clinic_premium` con precios) — la decisión es si se exponen tal cual o se ajustan.
+- **FR-OUT-007**: ~~SEO Schema.org diferenciado~~ — ✅ **HECHO 2026-05-26** (commit `66332e1`). HomePage usa `MedicalWebPage` (especialidad Dentistry, audience Patients); DentistLandingPage usa `SoftwareApplication` (BusinessApplication / Practice Management Software) + `Organization` + `FAQPage`.
+- **FR-OUT-008**: Toggle "Para Pacientes / Para Dentistas" en header — Fase 2/3 según conversión. **🚧 PENDIENTE — bloqueado en decisión founder**: ¿se agrega o se mantiene el cross-link solo en footer?
+- **FR-OUT-009**: A/B test del hero patient (input grande vs CTA tradicional) — Fase 3. **🚧 PENDIENTE**: requiere tooling de A/B (GrowthBook o similar) — no se implementa hasta tener tráfico estable.
 
 ### Key Entities
 
