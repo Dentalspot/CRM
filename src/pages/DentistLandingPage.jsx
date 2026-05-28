@@ -500,6 +500,64 @@ const DentistLandingPage = () => {
           <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
           <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-accent/8 blur-[120px] pointer-events-none" />
 
+          {/* Floating badges decorativos — solo visibles en desktop (≥ lg) */}
+          {/* Posicionados con left/right en % para que no tapen el contenido central */}
+          <motion.div
+            initial={{ opacity: 0, y: 10, x: -20 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            style={{ animation: 'float 5s ease-in-out infinite' }}
+            className="hidden lg:flex absolute top-[20%] left-[6%] z-20 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-2.5"
+          >
+            <span className="text-xl">🇨🇱</span>
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Hecho en Chile</p>
+              <p className="text-[10px] text-white/60 leading-tight">Para clínicas chilenas</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10, x: 20 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+            style={{ animation: 'float 6s ease-in-out infinite', animationDelay: '0.5s' }}
+            className="hidden lg:flex absolute top-[18%] right-[6%] z-20 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-2.5"
+          >
+            <Shield className="w-5 h-5 text-emerald-400" />
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Compliance</p>
+              <p className="text-[10px] text-white/60 leading-tight">Ley 21.719 + 20.584</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9, duration: 0.6 }}
+            style={{ animation: 'float 7s ease-in-out infinite', animationDelay: '1s' }}
+            className="hidden lg:flex absolute bottom-[18%] left-[8%] z-20 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-2.5"
+          >
+            <MessageCircle className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">Asistente IA 24/7</p>
+              <p className="text-[10px] text-white/60 leading-tight">Chat + WhatsApp</p>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1, duration: 0.6 }}
+            style={{ animation: 'float 5.5s ease-in-out infinite', animationDelay: '0.3s' }}
+            className="hidden lg:flex absolute bottom-[20%] right-[8%] z-20 items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-3.5 py-2.5"
+          >
+            <TrendingUp className="w-5 h-5 text-amber-400" />
+            <div>
+              <p className="text-xs font-bold text-white leading-tight">+18% ingresos</p>
+              <p className="text-[10px] text-white/60 leading-tight">Promedio 3 meses</p>
+            </div>
+          </motion.div>
+
           <div className="container mx-auto px-4 relative z-10 text-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
