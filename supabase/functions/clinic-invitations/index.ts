@@ -195,22 +195,80 @@ Deno.serve(async (req) => {
         ? `<p style="color:#9ca3af;font-size:11px;text-align:center;margin-top:8px">Esta invitación expira en 7 días.</p>`
         : "";
 
-      const emailHtml = `<div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-        <div style="background:linear-gradient(135deg,#0d9488,#0891b2);padding:32px 24px;text-align:center;border-radius:12px 12px 0 0">
-          <h1 style="color:white;margin:0;font-size:24px">DENTALSPOT</h1>
-        </div>
-        <div style="padding:32px 24px">
-          ${roleBadge}
-          <h2 style="color:#111827;font-size:20px;margin-top:8px">${headline}</h2>
-          <p style="color:#6b7280;font-size:15px">${intro}</p>
-          ${message ? `<div style="background:#f9fafb;border-left:3px solid #0d9488;padding:12px 16px;margin:16px 0"><p style="color:#374151;font-size:14px;margin:0">"${message}"</p></div>` : ""}
-          <div style="text-align:center;margin:32px 0">
-            <a href="${inviteUrl}" style="display:inline-block;background:#0d9488;color:white;padding:14px 32px;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px">Aceptar Invitación</a>
-          </div>
-          <p style="color:#9ca3af;font-size:12px;text-align:center">Link: <a href="${inviteUrl}" style="color:#0d9488">${inviteUrl}</a></p>
-          ${expirationNote}
-        </div>
-      </div>`;
+      // Email rediseñado con estética Propuesta A (consistente con templates
+      // de Supabase Auth) — logo horizontal, línea acento teal, footer claro.
+      const emailHtml = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${headline}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f6f8fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#1f2937;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f6f8fa;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.05),0 4px 16px rgba(0,0,0,0.04);overflow:hidden;">
+          <tr>
+            <td align="center" style="padding:40px 32px 24px 32px;">
+              <img src="https://dentalspot.cl/logo-dentalspot-full.png" alt="DentalSpot" height="40" style="display:block;border:0;max-width:240px;">
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:0 32px;">
+              <div style="width:48px;height:3px;background:linear-gradient(90deg,#14B8A6,#45b5c4);border-radius:2px;margin:0 auto;"></div>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:24px 32px 8px 32px;">
+              ${roleBadge}
+              <h1 style="margin:8px 0 0 0;font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;line-height:1.3;">${headline}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 40px 16px 40px;font-size:15px;line-height:1.7;color:#374151;">
+              <p style="margin:0;">${intro}</p>
+              ${message ? `<div style="background:#f8fafc;border-left:3px solid #14B8A6;padding:12px 16px;margin:16px 0;border-radius:0 8px 8px 0;"><p style="color:#374151;font-size:14px;margin:0;font-style:italic;">"${message}"</p></div>` : ""}
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:8px 32px 24px 32px;">
+              <a href="${inviteUrl}" style="display:inline-block;padding:14px 36px;background-color:#14B8A6;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:0.01em;box-shadow:0 1px 3px rgba(20,184,166,0.3);">Aceptar invitación</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 40px 24px 40px;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center;">
+              ¿No funciona el botón? Copia este enlace:<br>
+              <a href="${inviteUrl}" style="color:#14B8A6;word-break:break-all;">${inviteUrl}</a>
+            </td>
+          </tr>
+          ${expirationNote ? `<tr><td style="padding:0 40px 24px 40px;">${expirationNote}</td></tr>` : ""}
+          <tr>
+            <td align="center" style="padding:24px 32px;background-color:#ffffff;border-top:1px solid #f1f5f9;font-size:11px;line-height:1.6;color:#94a3b8;">
+              <p style="margin:0 0 8px 0;color:#475569;font-weight:600;font-size:13px;">DentalSpot</p>
+              <p style="margin:0 0 12px 0;">La plataforma odontológica de Chile</p>
+              <p style="margin:0;">
+                <a href="https://dentalspot.cl/legal/politica-privacidad" style="color:#94a3b8;text-decoration:none;">Privacidad</a>
+                &nbsp;·&nbsp;
+                <a href="https://dentalspot.cl/legal/terminos-condiciones" style="color:#94a3b8;text-decoration:none;">Términos</a>
+                &nbsp;·&nbsp;
+                <a href="https://dentalspot.cl/contacto" style="color:#94a3b8;text-decoration:none;">Soporte</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;margin-top:16px;">
+          <tr>
+            <td align="center" style="font-size:11px;color:#94a3b8;padding:0 32px;line-height:1.5;">
+              DentalSpot SpA · Santiago, Chile · contacto@dentalspot.cl
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
       const emailResult = await sendEmail(email, subject, emailHtml);
       console.log("Email result:", JSON.stringify(emailResult));
