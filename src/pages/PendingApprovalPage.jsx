@@ -39,23 +39,33 @@ const PendingApprovalPage = () => {
       <Helmet>
         <title>{isRejected ? 'Cuenta no aprobada' : 'Cuenta en revisión'} | DentalSpot</title>
       </Helmet>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-teal-50 px-4 py-12">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-teal-50 px-4 py-12">
+        {/* Logo horizontal — brand consistency con landings y emails */}
+        <img
+          src="/logo-dentalspot-full.png"
+          alt="DentalSpot"
+          className="h-10 w-auto mb-8"
+        />
+
         <div className="max-w-lg w-full bg-white rounded-2xl shadow-xl p-8 sm:p-10">
-          <div className="text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            {/* Ícono ahora inline al lado del texto, más sutil */}
             {isRejected ? (
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <XCircle className="h-8 w-8 text-red-600" />
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <XCircle className="h-5 w-5 text-red-600" />
               </div>
             ) : (
-              <div className="mx-auto w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-                <Clock className="h-8 w-8 text-amber-600" />
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 text-amber-600" />
               </div>
             )}
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               {isRejected ? 'Tu solicitud no fue aprobada' : 'Tu cuenta está en revisión'}
             </h1>
+          </div>
 
+          <div className="text-center">
             <p className="text-gray-600 leading-relaxed">
               {isRejected
                 ? 'Lamentablemente no pudimos aprobar tu solicitud de registro en DentalSpot.'
