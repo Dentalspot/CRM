@@ -30,7 +30,7 @@ import { motion, useInView } from 'framer-motion';
 import {
   ArrowRight, Calendar, Users, DollarSign, MessageCircle,
   Stethoscope, FileText, BarChart3, Sparkles, CheckCircle,
-  Building2, TrendingUp, Clock, Shield,
+  Building2, TrendingUp, Clock, Shield, Quote, Star,
 } from 'lucide-react';
 import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
@@ -149,6 +149,29 @@ const FEATURES = [
     description: 'Dashboard con tus números clave. Ingresos por mes, por procedimiento, por dentista del equipo. Comparativas, tendencias y exportes para tu contadora.',
     icon: <BarChart3 className="w-12 h-12 text-primary" />,
     bullets: ['Dashboard mensual', 'Ingresos por procedimiento', 'Comisiones por dentista', 'Export a Excel/CSV'],
+  },
+];
+
+// Testimonials de dentistas — placeholder Fase 1, reemplazar por reales en Fase 2
+// (ver spec 027 FR-OUT-005: requiere consentimiento para uso público).
+const DENTIST_TESTIMONIALS = [
+  {
+    quote: 'Desde que estoy en DentalSpot recibo pacientes con pre-diagnóstico. Ahorro 30 min por consulta.',
+    name: 'Dr. Mendoza',
+    role: 'Ortodoncista',
+    location: 'Santiago',
+  },
+  {
+    quote: 'La transparencia de precios generó confianza. Mis pacientes llegan informados y decididos.',
+    name: 'Dra. Reyes',
+    role: 'Endodoncista',
+    location: 'Valparaíso',
+  },
+  {
+    quote: 'El odontograma digital y el dashboard me dan una visión completa de mi práctica.',
+    name: 'Dr. Torres',
+    role: 'Implantólogo',
+    location: 'Concepción',
   },
 ];
 
@@ -844,6 +867,51 @@ const DentistLandingPage = () => {
                   <div className="flex justify-center mb-3">{item.icon}</div>
                   <p className="text-sm font-bold text-slate-800 mb-1">{item.title}</p>
                   <p className="text-xs text-slate-500 leading-snug">{item.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </TrackedSection>
+
+        {/* ═══════════ 6.5 TESTIMONIALS DENTISTAS ═══════════ */}
+        <TrackedSection sectionName="testimonials" className="py-20 bg-slate-900 relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="text-center mb-12 max-w-2xl mx-auto">
+              <p className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">Lo que dicen los dentistas</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-3">
+                De colegas, para colegas
+              </h2>
+              <p className="text-base text-slate-400">
+                Profesionales que ya transformaron su clínica con DentalSpot.
+              </p>
+            </div>
+
+            <motion.div
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-80px' }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-6xl mx-auto"
+            >
+              {DENTIST_TESTIMONIALS.map((t, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUpItem}
+                  whileHover={{ y: -4 }}
+                  className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:border-primary/30 transition-colors"
+                >
+                  <Quote className="w-7 h-7 text-primary/40 mb-3" />
+                  <p className="text-slate-200 text-sm leading-relaxed mb-5">{t.quote}</p>
+                  <div className="flex items-center gap-3 pt-3 border-t border-white/10">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/40 to-accent/40 flex items-center justify-center text-white text-xs font-bold">
+                      {t.name.split(' ').slice(-1)[0][0]}
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-semibold">{t.name}</p>
+                      <p className="text-slate-400 text-xs">{t.role} · {t.location}</p>
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>
