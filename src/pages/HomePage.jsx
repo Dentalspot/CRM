@@ -71,12 +71,12 @@ const featuredProfessionalsData = [
   { name: 'Dra. Valentina Diaz', specialty: 'Periodoncia', rating: 5, location: 'Santiago' },
 ];
 
+// Patient home: solo testimonials de pacientes (los dentistas viven en /para-dentistas).
+// Pendiente Fase 2: reemplazar por testimonials reales con consentimiento (ver spec 027 FR-OUT-005).
 const testimonials = [
-  { quote: 'Me dolia una muela un domingo. En 10 minutos tenia la orden de radiografia y al dia siguiente ya estaba agendada.', name: 'Maria P.', role: 'Paciente', location: 'Santiago' },
-  { quote: 'La IA detecto un problema que yo no habia notado. Mi dentista confirmo el diagnostico. Impresionante.', name: 'Carlos R.', role: 'Paciente', location: 'Valparaiso' },
-  { quote: 'Desde que estoy en DentalSpot recibo pacientes con pre-diagnostico. Ahorro 30 min por consulta.', name: 'Dr. Mendoza', role: 'Ortodoncista', location: 'Santiago' },
-  { quote: 'La transparencia de precios genero confianza. Mis pacientes llegan informados y decididos.', name: 'Dra. Reyes', role: 'Endodoncista', location: 'Valparaiso' },
-  { quote: 'El odontograma digital y el dashboard me dan una vision completa de mi practica.', name: 'Dr. Torres', role: 'Implantologo', location: 'Concepcion' },
+  { quote: 'Me dolía una muela un domingo. En 10 minutos tenía la orden de radiografía y al día siguiente ya estaba agendada.', name: 'María P.', role: 'Paciente', location: 'Santiago' },
+  { quote: 'La IA detectó un problema que yo no había notado. Mi dentista confirmó el diagnóstico. Impresionante.', name: 'Carlos R.', role: 'Paciente', location: 'Valparaíso' },
+  { quote: 'Me ahorré días de búsqueda. Vi precios claros, leí reseñas reales y reservé en menos de un minuto.', name: 'Antonia M.', role: 'Paciente', location: 'Concepción' },
 ];
 
 const faqItems = [
@@ -619,6 +619,32 @@ const HomePage = () => {
                 <Link to="/dentistas" className="flex items-center gap-2">Ver todos los dentistas <ArrowRight className="w-5 h-5" /></Link>
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* ═══════════ 7.5 TRUST STRIP — Compliance + origen ═══════════ */}
+        <section className="py-12 bg-white border-y border-slate-100">
+          <div className="container mx-auto px-4">
+            <motion.div
+              variants={container}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto"
+            >
+              {[
+                { title: 'Hecho en Chile', desc: 'Para pacientes chilenos', icon: <span className="text-2xl">🇨🇱</span> },
+                { title: 'Datos protegidos', desc: 'Ley 21.719 — privacidad respetada', icon: <Lock className="w-6 h-6 text-primary" /> },
+                { title: 'Dentistas verificados', desc: 'Profesionales con título validado', icon: <CheckCircle className="w-6 h-6 text-primary" /> },
+                { title: 'Reseñas reales', desc: 'Solo de pacientes que reservaron', icon: <Star className="w-6 h-6 text-primary" /> },
+              ].map((item, i) => (
+                <motion.div key={i} variants={fadeUp} className="text-center px-2">
+                  <div className="flex justify-center mb-3">{item.icon}</div>
+                  <p className="text-sm font-bold text-slate-800 mb-1">{item.title}</p>
+                  <p className="text-xs text-slate-500 leading-snug">{item.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         </section>
 
