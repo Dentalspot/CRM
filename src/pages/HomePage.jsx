@@ -236,6 +236,36 @@ const HomePage = () => {
                   ))}
                 </motion.div>
 
+                {/* Sugerencias rápidas — chips clickeables que pre-llenan el input.
+                    Reduce fricción para users que no saben qué escribir. */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 }}
+                  className="flex flex-wrap justify-center lg:justify-start gap-2 mb-4 max-w-xl mx-auto lg:mx-0"
+                >
+                  <span className="text-[10px] uppercase tracking-wider text-white/40 font-semibold self-center mr-1">Pruebá con</span>
+                  {[
+                    'Me duele una muela',
+                    'Quiero una limpieza',
+                    'Necesito brackets',
+                    'Diente roto',
+                    'Sangrado de encías',
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => {
+                        setSymptomInput(suggestion);
+                        trackEvent('patient_hero_suggestion_click', { suggestion });
+                      }}
+                      className="px-3 py-1.5 text-xs text-white/80 bg-white/5 hover:bg-white/15 border border-white/15 hover:border-primary/40 rounded-full transition-all"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </motion.div>
+
                 {/* Input + CTA — paciente describe síntoma → flujo IA */}
                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
                   className="flex flex-col sm:flex-row items-stretch justify-center lg:justify-start gap-3 mb-8 max-w-xl mx-auto lg:mx-0">
