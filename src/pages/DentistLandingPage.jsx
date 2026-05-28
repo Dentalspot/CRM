@@ -22,11 +22,11 @@
  * Analytics: page view + scroll depth + time on page + section visible +
  * faq open + CTA clicks. Ver contracts/analytics-events.md.
  */
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import {
   ArrowRight, Calendar, Users, DollarSign, MessageCircle,
   Stethoscope, FileText, BarChart3, Sparkles, CheckCircle,
@@ -62,11 +62,44 @@ const slideInRight = {
 // ── Data ────────────────────────────────────────────────────────────────
 // NOTA: stats son placeholders Fase 1 — números mockeados realistas.
 // Cuando lleguen métricas reales (Fase 2), reemplazar este array.
+// Formato: { target, suffix, label } — target es número parseable para AnimatedCounter
 const STATS = [
-  { value: '200+', label: 'Dentistas activos en Chile' },
-  { value: '5.000+', label: 'Citas agendadas este mes' },
-  { value: '4.8 ★', label: 'Satisfacción promedio del paciente' },
+  { target: 200, suffix: '+', label: 'Dentistas activos en Chile' },
+  { target: 5000, suffix: '+', label: 'Citas agendadas este mes' },
+  { target: '4.8 ★', suffix: '', label: 'Satisfacción promedio del paciente' },
 ];
+
+// AnimatedCounter — anima desde 0 hasta target cuando entra al viewport
+const AnimatedCounter = ({ target, suffix = '', duration = 2 }) => {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-50px' });
+  useEffect(() => {
+    if (!inView) return;
+    const num = typeof target === 'number' ? target : parseInt(target, 10);
+    if (isNaN(num)) {
+      setCount(target);
+      return;
+    }
+    let start = 0;
+    const step = Math.max(1, Math.ceil(num / (duration * 60)));
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= num) {
+        setCount(num);
+        clearInterval(timer);
+      } else {
+        setCount(start);
+      }
+    }, 1000 / 60);
+    return () => clearInterval(timer);
+  }, [inView, target, duration]);
+  return (
+    <span ref={ref} className="tabular-nums">
+      {typeof count === 'number' ? count.toLocaleString('es-CL') : count}{suffix}
+    </span>
+  );
+};
 
 const PROBLEMS = [
   {
@@ -399,6 +432,15 @@ const DentistLandingPage = () => {
     })),
   };
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://dentalspot.cl/' },
+      { '@type': 'ListItem', position: 2, name: 'Para Profesionales', item: 'https://dentalspot.cl/para-dentistas' },
+    ],
+  };
+
   return (
     <>
       <Helmet>
@@ -423,6 +465,7 @@ const DentistLandingPage = () => {
         <script type="application/ld+json">{JSON.stringify(softwareSchema)}</script>
         <script type="application/ld+json">{JSON.stringify(orgSchema)}</script>
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(breadcrumbSchema)}</script>
       </Helmet>
 
       <div className="overflow-hidden">
@@ -498,7 +541,11 @@ const DentistLandingPage = () => {
             >
               {STATS.map((stat) => (
                 <motion.div key={stat.label} variants={fadeUpItem} className="text-center">
-                  <div className="text-3xl md:text-4xl font-extrabold text-primary mb-2">{stat.value}</div>
+                  <div className="text-3xl md:text-4xl font-extrabold text-primary mb-2">
+                    {typeof stat.target === 'number'
+                      ? <AnimatedCounter target={stat.target} suffix={stat.suffix} />
+                      : stat.target}
+                  </div>
                   <div className="text-sm text-slate-500">{stat.label}</div>
                 </motion.div>
               ))}
@@ -543,6 +590,83 @@ const DentistLandingPage = () => {
                   <p className="text-sm text-slate-500 leading-relaxed">{item.description}</p>
                 </motion.div>
               ))}
+            </motion.div>
+          </div>
+        </TrackedSection>
+
+        {/* ═══════════ 3.5 COMPARISON TABLE — Sin vs Con DentalSpot ═══════════ */}
+        <TrackedSection sectionName="comparison" className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-2xl mx-auto mb-12">
+              <p className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">Antes y después</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+                La diferencia se siente desde el día uno
+              </h2>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.5 }}
+              className="max-w-4xl mx-auto bg-slate-50 rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Sin DentalSpot */}
+                <div className="bg-white rounded-2xl p-6 border-2 border-red-100">
+                  <div className="flex items-center gap-2 mb-5 pb-3 border-b border-slate-100">
+                    <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center text-lg">😩</div>
+                    <div>
+                      <p className="text-xs font-semibold text-red-400 uppercase">Sin DentalSpot</p>
+                      <p className="text-base font-bold text-slate-700">Excel + cuaderno + WhatsApp</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-2.5">
+                    {[
+                      'Agenda en cuaderno o Excel disperso',
+                      'Llamadas perdidas fuera del horario',
+                      'Fichas de pacientes en papel o Word',
+                      'Sumas mensuales manuales y propensas a error',
+                      'Sin reseñas verificadas → confiás en boca a boca',
+                      'Riesgo de incumplir Ley 21.719 (datos en papel)',
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                        <span className="text-red-400 flex-shrink-0 mt-0.5">✗</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Con DentalSpot */}
+                <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-2xl p-6 border-2 border-primary/20 relative overflow-hidden">
+                  <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-primary/10 pointer-events-none" />
+                  <div className="relative">
+                    <div className="flex items-center gap-2 mb-5 pb-3 border-b border-primary/20">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-lg">🎯</div>
+                      <div>
+                        <p className="text-xs font-semibold text-primary uppercase">Con DentalSpot</p>
+                        <p className="text-base font-bold text-slate-900">Una plataforma, todo organizado</p>
+                      </div>
+                    </div>
+                    <ul className="space-y-2.5">
+                      {[
+                        'Agenda inteligente multi-box, drag-and-drop',
+                        'Asistente IA 24/7 vía chat y WhatsApp',
+                        'Ficha clínica digital con odontograma + radiografías',
+                        'Ingresos y comisiones calculados automáticamente',
+                        'Perfil público con reseñas verificadas',
+                        'Compliance Ley 21.719 y 20.584 desde el día 0',
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </div>
         </TrackedSection>
