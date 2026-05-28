@@ -30,7 +30,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight, Calendar, Users, DollarSign, MessageCircle,
   Stethoscope, FileText, BarChart3, Sparkles, CheckCircle,
-  Building2, TrendingUp, Clock,
+  Building2, TrendingUp, Clock, Shield,
 } from 'lucide-react';
 import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
@@ -613,7 +613,120 @@ const DentistLandingPage = () => {
           </div>
         </TrackedSection>
 
-        {/* ═══════════ 5. PRICING PLACEHOLDER ═══════════ */}
+        {/* ═══════════ 5. CÓMO EMPEZAR — 3 pasos de onboarding ═══════════ */}
+        <TrackedSection sectionName="como_empezar" className="py-20 bg-slate-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-2xl mx-auto mb-14">
+              <p className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">En menos de 10 minutos</p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+                Cómo empezar
+              </h2>
+              <p className="text-base text-slate-500">
+                Sin instalaciones, sin contratos, sin compromiso. Listo para usar desde el día uno.
+              </p>
+            </div>
+
+            <motion.div
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-80px' }}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto"
+            >
+              {[
+                {
+                  step: '1',
+                  title: 'Creá tu cuenta gratis',
+                  desc: 'Email + RUT + datos de tu clínica. Sin tarjeta de crédito, sin compromiso. 30 segundos.',
+                  icon: <Users className="w-6 h-6" />,
+                },
+                {
+                  step: '2',
+                  title: 'Configurá tu clínica',
+                  desc: 'Cargá tus boxes, tus horarios y tu equipo. Importá pacientes desde Excel si los tenés.',
+                  icon: <Building2 className="w-6 h-6" />,
+                },
+                {
+                  step: '3',
+                  title: 'Recibí tus primeros pacientes',
+                  desc: 'Activá reserva online y compartí tu perfil público. Los pacientes te encuentran y reservan solos.',
+                  icon: <Calendar className="w-6 h-6" />,
+                },
+              ].map((s, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUpItem}
+                  className="relative bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-lg transition-shadow"
+                >
+                  {/* Step number — gigante decorativo en background */}
+                  <div className="absolute top-3 right-4 text-7xl font-black text-primary/8 leading-none select-none pointer-events-none">
+                    {s.step}
+                  </div>
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                      {s.icon}
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">{s.title}</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed">{s.desc}</p>
+                  </div>
+                  {i < 2 && (
+                    <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
+                      <ArrowRight className="w-6 h-6 text-slate-300" />
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </TrackedSection>
+
+        {/* ═══════════ 6. TRUST STRIP — Hecho en Chile + compliance ═══════════ */}
+        <TrackedSection sectionName="trust" className="py-12 bg-white border-y border-slate-100">
+          <div className="container mx-auto px-4">
+            <motion.div
+              variants={fadeUpStagger}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto"
+            >
+              {[
+                {
+                  title: 'Hecho en Chile',
+                  desc: 'Diseñado con dentistas chilenos para clínicas chilenas',
+                  icon: <span className="text-2xl">🇨🇱</span>,
+                },
+                {
+                  title: 'Ley 21.719',
+                  desc: 'Protección de datos personales — compliance desde el día 0',
+                  icon: <Shield className="w-6 h-6 text-primary" />,
+                },
+                {
+                  title: 'Ley 20.584',
+                  desc: 'Derechos del paciente respetados — audit log clínico',
+                  icon: <FileText className="w-6 h-6 text-primary" />,
+                },
+                {
+                  title: 'Datos encriptados',
+                  desc: 'TLS en tránsito, encriptación en reposo, RLS database-level',
+                  icon: <CheckCircle className="w-6 h-6 text-primary" />,
+                },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  variants={fadeUpItem}
+                  className="text-center px-2"
+                >
+                  <div className="flex justify-center mb-3">{item.icon}</div>
+                  <p className="text-sm font-bold text-slate-800 mb-1">{item.title}</p>
+                  <p className="text-xs text-slate-500 leading-snug">{item.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </TrackedSection>
+
+        {/* ═══════════ 7. PRICING PLACEHOLDER ═══════════ */}
         <TrackedSection id="pricing" sectionName="pricing" className="scroll-mt-24 py-20 bg-gradient-to-br from-slate-50 to-white">
           <div className="container mx-auto px-4">
             <div className="text-center max-w-2xl mx-auto">
