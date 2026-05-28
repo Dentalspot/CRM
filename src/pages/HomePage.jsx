@@ -19,6 +19,7 @@ import {
   Accordion, AccordionItem, AccordionTrigger, AccordionContent,
 } from '@/components/ui/accordion';
 import FeaturedProfessionalsCarousel from '@/components/home/FeaturedProfessionalsCarousel';
+import ScrollProgressBar from '@/components/shared/ScrollProgressBar';
 
 // ─── ANIMATIONS ──────────────────────────────────────────────────────────────
 const container = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } };
@@ -80,12 +81,15 @@ const testimonials = [
 ];
 
 const faqItems = [
-  { question: 'Que es DentalSpot y como funciona?', answer: 'DentalSpot conecta pacientes con dentistas cercanos usando inteligencia artificial. Describes tu sintoma, obtienes una orden de radiografia, la IA analiza la imagen y te muestra los profesionales mas adecuados con precios transparentes.' },
-  { question: 'El diagnostico de la IA reemplaza al dentista?', answer: 'No. Es una orientacion preliminar para reducir incertidumbre. Siempre necesitaras la evaluacion presencial de un profesional.' },
-  { question: 'Como sube el laboratorio mi radiografia?', answer: 'El laboratorio sube tu radiografia directamente a tu perfil mediante un formulario simple o por correo y el sistema la asocia automaticamente.' },
-  { question: 'Cuanto cuesta usar DentalSpot?', answer: 'Para pacientes, describir tu sintoma es gratuito. El analisis IA tiene un costo accesible. Los dentistas pagan suscripcion mensual.' },
-  { question: 'Como se eligen los dentistas?', answer: 'El ranking se basa en cercania, disponibilidad, precio y resenas reales. No hay pago por posicionamiento.' },
-  { question: 'Cumple con la normativa chilena?', answer: 'Si. Cumple con Ley 19.628 y Ley 20.584. Radiografias e informacion clinica se almacenan encriptadas.' },
+  { question: '¿Qué es DentalSpot y cómo funciona?', answer: 'DentalSpot conecta pacientes con dentistas cercanos usando inteligencia artificial. Describes tu síntoma, obtienes una orden de radiografía, la IA analiza la imagen y te muestra los profesionales más adecuados con precios transparentes.' },
+  { question: '¿El diagnóstico de la IA reemplaza al dentista?', answer: 'No. Es una orientación preliminar para reducir incertidumbre. Siempre necesitarás la evaluación presencial de un profesional.' },
+  { question: '¿Cómo sube el laboratorio mi radiografía?', answer: 'El laboratorio sube tu radiografía directamente a tu perfil mediante un formulario simple o por correo y el sistema la asocia automáticamente.' },
+  { question: '¿Cuánto cuesta usar DentalSpot?', answer: 'Para pacientes, describir tu síntoma es gratuito. El análisis IA tiene un costo accesible. Los dentistas pagan suscripción mensual.' },
+  { question: '¿Cómo se eligen los dentistas?', answer: 'El ranking se basa en cercanía, disponibilidad, precio y reseñas reales. No hay pago por posicionamiento.' },
+  { question: '¿Cumple con la normativa chilena?', answer: 'Sí. Cumple con Ley 21.719 (protección de datos personales) y Ley 20.584 (derechos del paciente). Radiografías e información clínica se almacenan encriptadas.' },
+  { question: '¿Qué pasa si no estoy en Santiago?', answer: 'DentalSpot funciona en todo Chile. Estamos expandiendo nuestra red de dentistas a Valparaíso, Concepción, Temuco, Antofagasta, Puerto Montt, La Serena y otras ciudades. Si en tu zona aún no hay dentistas verificados, te notificamos cuando se sumen.' },
+  { question: '¿Cómo sé que el dentista es de confianza?', answer: 'Todos los dentistas en DentalSpot tienen su título validado y RUT verificado. Además, las reseñas son de pacientes reales que efectivamente reservaron y asistieron. No aceptamos reseñas anónimas ni pagadas.' },
+  { question: '¿Puedo cancelar o reprogramar mi cita?', answer: 'Sí. Desde tu cuenta podés reprogramar o cancelar tu cita con anticipación (cada dentista define su política de cancelación). Si cancelás dentro del plazo, no pagás multa.' },
 ];
 
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
@@ -166,6 +170,7 @@ const HomePage = () => {
 
   return (
     <>
+      <ScrollProgressBar />
       <Helmet>
         <title>DentalSpot | Encuentra un dentista en minutos</title>
         <meta name="description" content="Conectamos pacientes con dentistas cercanos usando IA. Describe tu sintoma, obtiene diagnostico preliminar y agenda con el profesional ideal." />

@@ -39,6 +39,7 @@ import { trackEvent, trackPageView } from '@/lib/analytics';
 import useScrollDepth from '@/hooks/useScrollDepth';
 import useSectionVisible from '@/hooks/useSectionVisible';
 import useTimeOnPage from '@/hooks/useTimeOnPage';
+import ScrollProgressBar from '@/components/shared/ScrollProgressBar';
 
 // ── Animations ──────────────────────────────────────────────────────────
 const fadeUp = { hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
@@ -200,6 +201,21 @@ const FAQ_ITEMS = [
     id: 'soporte',
     question: '¿Qué tipo de soporte ofrecen?',
     answer: 'Soporte por chat en horario hábil chileno y respuesta por email en menos de 24h. Onboarding personalizado para clínicas con más de 3 dentistas. Centro de ayuda y videotutoriales disponibles 24/7.',
+  },
+  {
+    id: 'setup_time',
+    question: '¿Cuánto tarda en estar listo el setup de mi clínica?',
+    answer: 'Menos de 10 minutos para una clínica con 1 dentista y 1 box. Para clínicas con varios dentistas, boxes o turnos rotativos, suele tomar 30-40 min completar la configuración. Si ya tenés tus pacientes en Excel, el importador los carga en 2-3 minutos.',
+  },
+  {
+    id: 'multi_clinica',
+    question: '¿Puedo usar DentalSpot si tengo varias clínicas?',
+    answer: 'Sí. DentalSpot soporta múltiples sucursales bajo una misma cuenta, cada una con sus boxes, dentistas y agendas independientes. Los reportes de ingresos pueden verse globales o filtrados por sucursal.',
+  },
+  {
+    id: 'app_movil',
+    question: '¿Hay aplicación móvil?',
+    answer: 'Por ahora DentalSpot funciona en web (mobile-responsive, accesible desde cualquier celular o tablet via browser). La app móvil dedicada está en roadmap para 2026 Q3.',
   },
 ];
 
@@ -466,6 +482,7 @@ const DentistLandingPage = () => {
 
   return (
     <>
+      <ScrollProgressBar />
       <Helmet>
         <title>DentalSpot para Profesionales | Software para clínicas dentales</title>
         <meta

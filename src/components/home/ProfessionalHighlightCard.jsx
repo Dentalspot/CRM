@@ -78,7 +78,7 @@ const ProfessionalHighlightCard = ({
         <div className="relative">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center overflow-hidden border-2 border-white shadow-lg group-hover:shadow-primary/20 transition-shadow">
             {imageUrl ? (
-              <img src={imageUrl} alt={`Foto de ${name}`} className="w-full h-full object-cover" />
+              <img src={imageUrl} alt={`Foto de ${name}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             ) : (
               <User className="w-10 h-10 text-primary" aria-hidden="true" />
             )}
