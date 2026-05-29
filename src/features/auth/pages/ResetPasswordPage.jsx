@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import logger from '@/lib/utils/logger';
 import { motion, AnimatePresence } from 'framer-motion';
+import AuthBackground from '@/features/auth/components/AuthBackground';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -153,16 +154,16 @@ const ResetPasswordPage = () => {
   // Loading State for Token Check
   if (tokenChecking) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary via-accent to-primary">
-        <Loader2 className="h-12 w-12 animate-spin text-white" />
-      </div>
+      <AuthBackground showLogo={false}>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </AuthBackground>
     );
   }
 
   // Invalid Token State
   if (!validToken) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary via-accent to-primary p-4">
+      <AuthBackground logoSize="medium">
         <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-xl border-0">
           <CardHeader className="text-center pb-2">
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -179,19 +180,19 @@ const ResetPasswordPage = () => {
             </Button>
           </CardFooter>
         </Card>
-      </div>
+      </AuthBackground>
     );
   }
 
   // Success State
   if (success) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-primary via-accent to-primary p-4">
+      <AuthBackground logoSize="medium">
         <Card className="w-full max-w-md bg-white/95 backdrop-blur-sm shadow-xl border-0">
           <CardContent className="pt-10 pb-10 flex flex-col items-center text-center">
-            <motion.div 
-              initial={{ scale: 0 }} 
-              animate={{ scale: 1 }} 
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
               type="spring"
               className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6"
             >
@@ -205,18 +206,16 @@ const ResetPasswordPage = () => {
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
           </CardContent>
         </Card>
-      </div>
+      </AuthBackground>
     );
   }
 
   // Main Form
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-primary via-accent to-primary p-4 font-sans">
-      
-      <div className="w-full max-w-md mb-8 text-center text-white">
-        <img src="/logo-dentalspot-full.png" alt="DentalSpot" className="h-12 w-auto mx-auto mb-3" />
-        <h1 className="text-3xl font-bold tracking-tight">Restablecer Contraseña</h1>
-        <p className="text-white/80 mt-2">Crea una nueva clave segura para tu cuenta</p>
+    <AuthBackground logoSize="medium">
+      <div className="w-full max-w-md mb-6 text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Restablecer Contraseña</h1>
+        <p className="text-gray-600 mt-2">Crea una nueva clave segura para tu cuenta</p>
       </div>
 
       <Card className="w-full max-w-lg bg-white/95 backdrop-blur-xl shadow-2xl border-0 overflow-hidden">
@@ -327,7 +326,7 @@ const ResetPasswordPage = () => {
           </form>
         </CardContent>
         <CardFooter className="bg-gray-50/50 py-4 flex justify-center border-t border-gray-100">
-          <button 
+          <button
             onClick={() => navigate('/auth/login')}
             className="text-sm text-gray-500 hover:text-primary transition-colors flex items-center"
           >
@@ -335,7 +334,7 @@ const ResetPasswordPage = () => {
           </button>
         </CardFooter>
       </Card>
-    </div>
+    </AuthBackground>
   );
 };
 

@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthForm from '@/features/auth/components/AuthForm';
 import RolePicker from '@/features/auth/components/RolePicker';
+import AuthBackground from '@/features/auth/components/AuthBackground';
 import { getPublicRoles, USER_ROLES } from '@/constants/roles';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMetaTracking } from '@/hooks/useMetaTracking';
@@ -210,7 +211,7 @@ export default function AuthPage() {
         <Helmet>
           <title>Iniciar Sesión | DentalSpot</title>
         </Helmet>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-primary to-teal-100 p-4">
+        <AuthBackground logoSize="medium">
           <div className="w-full max-w-md">
             <button
               type="button"
@@ -226,7 +227,7 @@ export default function AuthPage() {
               initialEmail={initialEmail}
             />
           </div>
-        </div>
+        </AuthBackground>
       </>
     );
   }
@@ -279,8 +280,8 @@ export default function AuthPage() {
         {/* Header */}
         <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="/" className="text-2xl font-bold">
-              <span className="text-primary">DENTAL</span><span className="text-teal-500">SPOT</span>
+            <a href="/" className="inline-block hover:opacity-90 transition-opacity">
+              <img src="/logo-dentalspot-full.png" alt="DentalSpot" className="h-10 w-auto" />
             </a>
             <div className="flex items-center gap-3 text-sm">
               <span className="text-gray-500 hidden sm:block">¿Ya tienes una cuenta?</span>
