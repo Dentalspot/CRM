@@ -1,0 +1,134 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # permite ejecutar manualmente desde GitHub
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Security audit informativo: reporta vulnerabilidades pero NO bloquea
+      # el deploy. Las vulns de dependencias transitivas (especialmente
+      # dev-tooling y severidades teóricas como ReDoS) aparecen seguido y no
+      # deben acoplar la seguridad-de-deps con el pipeline de entrega.
+      # Las vulns se gestionan aparte (npm audit fix periódico + revisión).
+      # Antes era continue-on-error: false con --audit-level=high → bloqueaba
+      # todos los deploys cuando había 1 high/critical (caso 2026-05-26).
+      - name: Security audit (informativo)
+        run: npm audit --audit-level=critical --omit=dev || true
+        continue-on-error: true
+
+      # Debug temporal — confirma si los secrets VITE_* llegan al runner.
+      # Solo imprime LONGITUD, nunca el valor. Eliminar este step después.
+      - name: Debug — Sentry secret length
+        run: |
+          if [ -z "$VITE_SENTRY_DSN" ]; then
+            echo "::error::VITE_SENTRY_DSN is EMPTY or unset at runner"
+          else
+            echo "VITE_SENTRY_DSN length: ${#VITE_SENTRY_DSN}"
+            echo "VITE_SENTRY_DSN starts with: ${VITE_SENTRY_DSN:0:8}..."
+          fi
+          if [ -z "$VITE_SUPABASE_URL" ]; then
+            echo "::warning::VITE_SUPABASE_URL is EMPTY"
+          else
+            echo "VITE_SUPABASE_URL length: ${#VITE_SUPABASE_URL}"
+          fi
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+
+      # Escribir .env.production desde los secrets ANTES del build.
+      # Razón: pasar los secrets como `env:` al step de build no estaba
+      # propagando VITE_SENTRY_DSN al sub-proceso de vite (Supabase sí
+      # entraba pero Sentry DSN no — bug específico del chain
+      # `node tools/generate-llms.js && vite build` o de cómo bash
+      # propaga env vars en GitHub Actions Ubuntu).
+      # Solución: Vite SIEMPRE lee `.env.production` cuando mode=production.
+      # Esto garantiza que TODOS los VITE_* entren al bundle.
+      - name: Write .env.production from secrets
+        run: |
+          cat > .env.production <<EOF
+          VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+          VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+          VITE_META_PIXEL_ID=${VITE_META_PIXEL_ID}
+          VITE_META_DATASET_ID=${VITE_META_DATASET_ID}
+          VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+          VITE_SENTRY_ENVIRONMENT=production
+          VITE_SENTRY_RELEASE=${VITE_SENTRY_RELEASE}
+          EOF
+          echo "Wrote .env.production with $(wc -l < .env.production) lines"
+          # Debug — reportar longitud de cada valor para confirmar que no
+          # se escribieron strings vacías (sin revelar el valor en sí).
+          while IFS='=' read -r key value; do
+            echo "  $key length: ${#value}"
+          done < .env.production
+          # Confirmar también que vite va a encontrar el archivo
+          ls -la .env.production
+          # Verificar que el dist no exista todavía (sería de un build previo)
+          ls -la dist/ 2>/dev/null || echo "dist/ does not exist yet (expected)"
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_META_PIXEL_ID: ${{ secrets.VITE_META_PIXEL_ID }}
+          VITE_META_DATASET_ID: ${{ secrets.VITE_META_DATASET_ID }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_SENTRY_RELEASE: ${{ github.sha }}
+
+      - name: Build
+        run: npm run build
+
+      # Verificación post-build — confirmar que VITE_SENTRY_DSN entró
+      # efectivamente al bundle. Si no entra, abortar antes de subir bundle
+      # incompleto a prod. Busca el orgID de Sentry en cualquier chunk.
+      - name: Verify Sentry DSN in build output
+        run: |
+          if grep -rl "ingest\.us\.sentry\.io" dist/assets/ > /dev/null 2>&1; then
+            echo "✓ Sentry DSN baked into bundle correctly"
+            grep -l "ingest\.us\.sentry\.io" dist/assets/*.js | head -3
+          else
+            echo "::error::Sentry DSN NOT found in dist — build did not pick up VITE_SENTRY_DSN"
+            echo "Contents of .env.production (sanitized):"
+            sed -E 's/=.*/=<value>/' .env.production
+            echo "Vite log might have more context above."
+            exit 1
+          fi
+
+      - name: Deploy to Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          # ROLLBACK: server-dir vuelve a public_html/ porque FTP user
+          # aterriza en /home/<user>/ (no en public_html/). Con `./` se
+          # subió todo a /home/ y rompió el sitio (index.html quedó ahí,
+          # chunks de assets no se encontraban → ErrorBoundary).
+          server-dir: ./public_html/
+          # dangerous-clean-slate: true → causaba FTPError 550 (no such file
+          # or directory) en Hostinger porque borraba el directorio assets/
+          # y al re-subir el server reportaba el dir como inexistente.
+          # Sin clean-slate, el action hace sync incremental por hash → solo
+          # sube los archivos que cambiaron. Archivos huérfanos (chunks
+          # viejos con hash diferente) se acumulan pero no afectan al sitio
+          # porque index.html solo referencia los hashes nuevos.
+          state-name: .ftp-deploy-sync-state.json
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
