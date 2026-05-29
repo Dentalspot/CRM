@@ -33,6 +33,26 @@ export const getClinicColor = (clinicId, clinics) => {
   return CLINIC_COLORS[idx % CLINIC_COLORS.length];
 };
 
+// Spec 028 US5 FR-005/FR-006: paleta para diferenciar dentistas en chips del
+// calendario. Mismo dentista = mismo color consistente (índice determinístico
+// por orden alfabético, ver getOrgDentists con .sort en org.api.js).
+// LEGACY NAMING: el prop sigue siendo "dentistId" en JS; en DB es therapist_id.
+const DENTIST_COLORS = [
+  { border: 'border-l-teal-500', text: 'text-teal-700' },
+  { border: 'border-l-pink-500', text: 'text-pink-700' },
+  { border: 'border-l-amber-500', text: 'text-amber-700' },
+  { border: 'border-l-violet-500', text: 'text-violet-700' },
+  { border: 'border-l-cyan-500', text: 'text-cyan-700' },
+  { border: 'border-l-rose-500', text: 'text-rose-700' },
+];
+
+export const getDentistColor = (dentistId, dentists) => {
+  if (!dentistId || !dentists?.length) return null;
+  const idx = dentists.findIndex((d) => d.id === dentistId);
+  if (idx < 0) return null;
+  return DENTIST_COLORS[idx % DENTIST_COLORS.length];
+};
+
 const WeeklyAgendaView = ({
   currentWeek,
   appointments = [],
@@ -40,6 +60,7 @@ const WeeklyAgendaView = ({
   availabilityData = [],
   clinics = [],
   selectedClinic = 'all',
+  dentists = [],
   startHour = 8,
   endHour = 20,
   slotMinutes = 30,
@@ -383,6 +404,15 @@ const WeeklyAgendaView = ({
     const isOnline = apt.modality_patient === 'online';
     const isDraggingThis = draggedApt?.id === apt.id;
 
+    // Spec 028 US5 FR-005/006: color de borde lateral por dentista responsable.
+    // El border-left COLOR (border-l-{color}) sobrescribe el border-color del
+    // status (border-{color}) sólo para el lado izquierdo — los otros 3 lados
+    // quedan con el color del status (verde=completada, azul=confirmada, etc.).
+    // LEGACY NAMING: apt.therapist_id semánticamente = dentista responsable.
+    const dentistColor = getDentistColor(apt.therapist_id, dentists);
+    const dentistName = dentists.find((d) => d.id === apt.therapist_id)?.full_name || '';
+    const dentistLastName = dentistName.split(' ').slice(-1)[0] || dentistName;
+
     const duration = apt.duration_minutes || 60;
     const heightSlots = Math.ceil(duration / slotMinutes);
     // z-index 10: por encima del bg del slot pero por debajo de la columna
@@ -446,7 +476,10 @@ const WeeklyAgendaView = ({
                 "hover:brightness-95 hover:shadow-md overflow-hidden",
                 "border-l-4 shadow-sm group",
                 isDraggingThis ? "opacity-40" : "opacity-100",
-                colorClasses
+                colorClasses,
+                // Spec 028 US5: override del color del borde IZQUIERDO por dentista
+                // (los otros 3 lados quedan con el color del status).
+                dentistColor?.border
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -482,6 +515,13 @@ const WeeklyAgendaView = ({
                   <span className="truncate">Nota</span>
                 </div>
               )}
+              {/* Spec 028 US5 FR-005: footer con apellido del dentista responsable.
+                  Solo se muestra si hay más de un dentista en la org (sino es ruido). */}
+              {!apt.block_type && dentists.length > 1 && dentistLastName && (
+                <div className={cn("text-[10px] mt-0.5 truncate font-medium", dentistColor?.text || 'text-gray-600')}>
+                  Dr. {dentistLastName}
+                </div>
+              )}
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-xs">
@@ -495,6 +535,12 @@ const WeeklyAgendaView = ({
               </p>
             )}
             {apt.clinic_id && <p className="text-xs text-muted-foreground">{getClinicName(apt.clinic_id)}</p>}
+            {/* Spec 028 US5: dentista responsable en el tooltip */}
+            {!apt.block_type && dentistName && (
+              <p className="text-xs">
+                <span className="font-medium">Dentista:</span> Dr. {dentistName}
+              </p>
+            )}
             {!apt.block_type && apt.notes && apt.notes.trim().length > 0 && (
               <div className="mt-2 pt-2 border-t border-border">
                 <p className="text-xs font-medium flex items-center gap-1">

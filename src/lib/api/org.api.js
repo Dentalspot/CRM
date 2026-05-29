@@ -77,16 +77,18 @@ export async function getOrgClinics(organizationId) {
 }
 
 /**
- * Lista citas de un dentista específico en un rango de fechas.
- * RLS (spec 023 — appt_assistant_select) enforces que solo miembros de la org ven estas citas.
+ * Lista citas de la organización en un rango de fechas.
+ * RLS (spec 023 — appt_assistant_select / appt_admin_select) enforces que solo
+ * miembros de la org ven estas citas.
  *
  * @param {string} organizationId
- * @param {string} therapistId - user_id del dentista seleccionado
+ * @param {string|null} therapistId - user_id del dentista, o `null` para todas
+ *   las citas de la org (modo "Todos los dentistas" — spec 028 FR-009).
  * @param {string} startDate - 'yyyy-MM-dd'
  * @param {string} endDate - 'yyyy-MM-dd'
  */
 export async function getOrgAppointments(organizationId, therapistId, startDate, endDate) {
-  const { data, error } = await supabase
+  let query = supabase
     .from('appointments')
     .select(`
       id, organization_id, clinic_id, therapist_id, patient_id, service_id,
@@ -97,11 +99,15 @@ export async function getOrgAppointments(organizationId, therapistId, startDate,
       therapist:profiles!appointments_therapist_id_fkey(id, full_name)
     `)
     .eq('organization_id', organizationId)
-    .eq('therapist_id', therapistId)
     .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date')
-    .order('start_time');
+    .lte('date', endDate);
+
+  // Spec 028 FR-009: null = todas las citas de la org (todos los dentistas).
+  if (therapistId) {
+    query = query.eq('therapist_id', therapistId);
+  }
+
+  const { data, error } = await query.order('date').order('start_time');
 
   if (error) {
     logger.warn('getOrgAppointments failed:', error.message);
