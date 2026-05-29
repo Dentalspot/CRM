@@ -12,6 +12,7 @@ import {
   Mail, Inbox, AlertTriangle, CheckCircle2, RefreshCw,
   ArrowRight, Star, Shield, Loader2
 } from 'lucide-react';
+import AuthBackground from '@/features/auth/components/AuthBackground';
 
 const BRAND = {
   primary: '#00BCB5',
@@ -60,15 +61,8 @@ export default function ConfirmEmailPage() {
     : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: BRAND.bg }}>
+    <AuthBackground logoSize="medium">
       <div className="w-full max-w-lg">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="text-2xl font-extrabold" style={{ color: BRAND.primary }}>
-            DentalSpot
-          </Link>
-        </div>
-
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           {/* Top banner */}
@@ -200,6 +194,6 @@ export default function ConfirmEmailPage() {
           <span>Confirmamos tu email para proteger tu cuenta y asegurar la entrega de notificaciones.</span>
         </div>
       </div>
-    </div>
+    </AuthBackground>
   );
 }
