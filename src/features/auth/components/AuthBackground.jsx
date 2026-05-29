@@ -17,15 +17,21 @@
  */
 import React from 'react';
 
+// Logo sizes — usan max-w + max-h + h-auto + w-full + object-contain.
+// La imagen se contiene preservando aspect ratio SIN desbordar el container.
+// 'large' es ligeramente más chico que la Opción A del comparison
+// (A era h-20 sm:h-28 = 80-112px). Acá h-16 sm:h-24 = 64-96px.
 const LOGO_SIZES = {
-  large: 'h-48 sm:h-60',
-  medium: 'h-32 sm:h-40',
-  small: 'h-20 sm:h-24',
+  large: 'max-w-md max-h-16 sm:max-h-24 h-auto w-full',
+  medium: 'max-w-sm max-h-14 sm:max-h-20 h-auto w-full',
+  small: 'max-w-xs max-h-12 sm:max-h-16 h-auto w-full',
 };
 
 const AuthBackground = ({ children, logoSize = 'large', showLogo = true }) => {
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center bg-white p-4 overflow-hidden">
+    // justify-start + pt-{N} → logo queda levemente más abajo del top
+    // (no centrado verticalmente). Más natural para landing-style auth.
+    <div className="relative min-h-screen flex flex-col items-center justify-start pt-20 sm:pt-28 pb-12 bg-white p-4 overflow-hidden">
       {/* ── Aurora blobs ─────────────────────────────────────────────── */}
       <div
         className="absolute top-[-150px] left-[-100px] w-[500px] h-[500px] rounded-full bg-primary/40 blur-[100px] pointer-events-none"
@@ -46,11 +52,11 @@ const AuthBackground = ({ children, logoSize = 'large', showLogo = true }) => {
 
       {/* ── Logo arriba ──────────────────────────────────────────────── */}
       {showLogo && (
-        <a href="/" className="relative z-10 mb-8 inline-block hover:opacity-90 transition-opacity">
+        <a href="/" className="relative z-10 mb-8 inline-flex justify-center hover:opacity-90 transition-opacity px-4">
           <img
             src="/logo-dentalspot-full.png"
             alt="DentalSpot"
-            className={`${LOGO_SIZES[logoSize] || LOGO_SIZES.large} w-auto`}
+            className={`${LOGO_SIZES[logoSize] || LOGO_SIZES.large} object-contain`}
           />
         </a>
       )}
