@@ -44,6 +44,8 @@ import { logClinicalAccess } from '@/lib/audit/clinicalAuditLogger';
 import logger from '@/lib/utils/logger';
 import BoxSelector from '@/components/calendar/BoxSelector';
 import TimePicker from '@/components/ui/time-picker';
+// Spec 028 US2: default smart por rol (dentista=self, admin/asistente=vacío).
+import useUserRoleInOrg from '@/hooks/useUserRoleInOrg';
 
 import {
   createOrgAppointment,
@@ -71,11 +73,15 @@ const AssistantAppointmentModal = ({
   appointmentId = null,     // presente si estamos en edit mode
   organizationId,
   clinicId,
+  dentists = [],            // Spec 028: lista de dentistas activos de la org
   onCreated,
   onUpdated,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  // Spec 028 US2: detectar si el user logueado es dentista de esta org
+  // (puede ser dentist puro o admin+dentist combinado).
+  const { isDentist } = useUserRoleInOrg(organizationId);
 
   const isEditMode = Boolean(appointmentId);
 
@@ -107,6 +113,9 @@ const AssistantAppointmentModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingAppointment, setLoadingAppointment] = useState(false);
   const [originalStatus, setOriginalStatus] = useState(null); // para detectar cancel en edit
+  // Spec 028 US4: para detectar reasignación de dentista en edit mode y emitir
+  // audit log con action='appointment_reassigned' + reason 'from:X;to:Y'.
+  const [originalTherapistId, setOriginalTherapistId] = useState(null);
 
   // Initialize desde prefilledSlot o appointmentId
   useEffect(() => {
@@ -139,6 +148,7 @@ const AssistantAppointmentModal = ({
           setStartTime(data.start_time?.slice(0, 5) || '');
           setEndTime(data.end_time?.slice(0, 5) || '');
           setTherapistId(data.therapist_id);
+          setOriginalTherapistId(data.therapist_id); // Spec 028 US4
           setStatus(data.status || 'scheduled');
           setOriginalStatus(data.status || 'scheduled');
           setNotes(data.notes || '');
@@ -160,7 +170,15 @@ const AssistantAppointmentModal = ({
       setDate(prefilledSlot.date);
       setStartTime(prefilledSlot.startTime);
       setEndTime(prefilledSlot.endTime);
-      setTherapistId(prefilledSlot.therapistId);
+      // Spec 028 US2 default smart:
+      //   1. Si vino prefilledSlot.therapistId del drag (asistente ya eligió dentista
+      //      en el filtro del calendario), respetarlo.
+      //   2. Sino, si el user logueado es dentista (admin+dentista), auto-self.
+      //   3. Sino (admin/asistente puro), dejar vacío con placeholder.
+      const defaultTherapist = prefilledSlot.therapistId
+        || (isDentist && user?.id ? user.id : '');
+      setTherapistId(defaultTherapist);
+      setOriginalTherapistId(null);
       setStatus('scheduled');
       setOriginalStatus(null);
       setNotes('');
@@ -170,7 +188,7 @@ const AssistantAppointmentModal = ({
       setSearchTerm('');
       setSearchResults([]);
     }
-  }, [isOpen, isEditMode, appointmentId, prefilledSlot, toast, onClose]);
+  }, [isOpen, isEditMode, appointmentId, prefilledSlot, toast, onClose, isDentist, user?.id]);
 
   // Fetch servicios del dentista cuando cambia therapistId
   useEffect(() => {
@@ -250,7 +268,7 @@ const AssistantAppointmentModal = ({
 
     try {
       if (isEditMode) {
-        // EDIT: update appointment
+        // EDIT: update appointment + spec 028 US4 incluye therapist_id en payload.
         const changes = {
           date,
           start_time: `${startTime}:00`,
@@ -260,13 +278,21 @@ const AssistantAppointmentModal = ({
           service_id: selectedServiceId || null,
           box_id: boxId || null,
           patient_id: selectedPatient.id,
+          therapist_id: therapistId, // Spec 028 US4
         };
         const updated = await updateOrgAppointment(appointmentId, changes);
 
-        // Audit log: edit o cancel según cambio
-        const action = status !== originalStatus && status === 'cancelled'
-          ? 'cancel'
-          : 'update';
+        // Spec 028 US4 FR-015/017: detectar reasignación de dentista.
+        // Si therapist_id cambió → action='appointment_reassigned' + reason from/to.
+        // Sino, mantener la lógica original (cancel si status='cancelled', sino update).
+        const isReassign = originalTherapistId
+          && therapistId !== originalTherapistId;
+        const action = isReassign
+          ? 'appointment_reassigned'
+          : (status !== originalStatus && status === 'cancelled' ? 'cancel' : 'update');
+        const reason = isReassign
+          ? `from:${originalTherapistId};to:${therapistId}`
+          : null;
         await logClinicalAccess({
           organization_id: organizationId,
           user_id: user.id,
@@ -275,7 +301,7 @@ const AssistantAppointmentModal = ({
           resource_type: 'appointment',
           resource_id: appointmentId,
           grant_id: null,
-          reason: null,
+          reason,
           ip_address: null,
         });
 
@@ -376,6 +402,43 @@ const AssistantAppointmentModal = ({
               <Label className="text-xs">Hasta</Label>
               <TimePicker value={endTime} onChange={setEndTime} />
             </div>
+          </div>
+
+          {/* Spec 028 US1 FR-001/FR-002 + US4 FR-013/FR-014:
+              Dentista responsable obligatorio. En edit mode, un dentista que NO
+              es el dueño actual no puede reasignar la cita (UI gate; RLS + trigger
+              DB son el verdadero enforcement). */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Dentista *</Label>
+            <Select
+              value={therapistId || ''}
+              onValueChange={setTherapistId}
+              disabled={
+                isEditMode
+                  && isDentist
+                  && originalTherapistId
+                  && originalTherapistId !== user?.id
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar dentista" />
+              </SelectTrigger>
+              <SelectContent>
+                {dentists.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    Dr. {d.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {isEditMode
+              && originalTherapistId
+              && therapistId
+              && therapistId !== originalTherapistId && (
+              <p className="text-xs text-amber-600">
+                Esta cita se reasignará a otro dentista. La acción quedará registrada.
+              </p>
+            )}
           </div>
 
           {/* Paciente */}

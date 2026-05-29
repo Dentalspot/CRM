@@ -25,6 +25,11 @@ import PatientModal from '@/features/patients/components/PatientModal';
 import logger from '@/lib/utils/logger';
 import useCurrentOrganization from '@/hooks/useCurrentOrganization';
 import useTherapistClinics from '@/hooks/useTherapistClinics';
+// Spec 028: selector explícito de dentista responsable + audit log.
+// LEGACY NAMING: therapist_id semánticamente = "dentista responsable" en DentalSpot.
+// Nombre heredado del ecosistema Communicare (FONOKIT). Ver ecosystem-communicare.md.
+import { getOrgDentists } from '@/lib/api/org.api';
+import { logClinicalAccess } from '@/lib/audit/clinicalAuditLogger';
 
 const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: propSelectedClinic, selectedBoxId, onAppointmentCreated, onAppointmentUpdated, onSessionCompleted }) => {
   const { toast } = useToast();
@@ -49,6 +54,10 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [services, setServices] = useState([]);
   const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
+  // Spec 028 US1: lista de dentistas activos de la org para el Select.
+  const [dentists, setDentists] = useState([]);
+  // Spec 028 US4: para detectar reasignación en edit mode + audit appointment_reassigned.
+  const [originalTherapistId, setOriginalTherapistId] = useState(null);
 
   const isEditing = slotInfo?.isEditing;
 
@@ -63,6 +72,7 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     box_id: null,
     notes: '',
     status: 'scheduled',
+    therapist_id: '', // Spec 028 US1: dentista responsable (obligatorio)
   });
 
   // Fetch services (clínicas vienen via useTherapistClinics arriba).
@@ -72,6 +82,14 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         .then(({data}) => setServices(data || []));
     }
   }, [isOpen, user]);
+
+  // Spec 028 US1: fetch de dentistas activos de la org actual para el Select.
+  useEffect(() => {
+    if (!isOpen || !currentOrganizationId) return;
+    getOrgDentists(currentOrganizationId)
+      .then(setDentists)
+      .catch((err) => logger.warn('AppointmentModal getOrgDentists failed:', err.message));
+  }, [isOpen, currentOrganizationId]);
 
   // Reset appointmentData cuando cambia la cita (evita stale state cuando
   // user abre un modal A, lo cierra, y abre uno B — ambos coexisten en el
@@ -132,6 +150,8 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         // (para campos no presentes en slotInfo). Esto evita que el
         // form quede vacío mientras se espera el fetch.
         const src = appointmentData || {};
+        // Spec 028 US1/US4: precargar therapist_id y guardar original para detectar reassign.
+        const editTherapistId = src.therapist_id || slotInfo?.therapistId || user?.id || '';
         const nextFormData = {
           date: src.date || slotInfo?.date || '',
           start_time: normalizeTime(src.start_time || slotInfo?.startTime),
@@ -146,8 +166,10 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           box_id: src.box_id || null,
           notes: src.notes || slotInfo?.notes || '',
           status: src.status || slotInfo?.status || 'scheduled',
+          therapist_id: editTherapistId,
         };
         setFormData(nextFormData);
+        if (src.therapist_id) setOriginalTherapistId(src.therapist_id);
       } else if (!isEditing && slotInfo) {
         // Auto-select clinic: si hay una sola clinic del user, usarla por
         // default. Si hay múltiples, dejar que elija. slotInfo.clinicId
@@ -169,8 +191,13 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
           patient_id: slotInfo.patientId || '',
           service_id: '',
           box_id: selectedBoxId || null,
-          notes: ''
+          notes: '',
+          // Spec 028 US2 default smart: el dentista logueado se auto-asigna a sí mismo.
+          // Esta página solo la usan dentistas (RoleGuard), así que user.id siempre es dentista.
+          therapist_id: user?.id || '',
+          status: 'scheduled',
         });
+        setOriginalTherapistId(null);
       }
     }
   }, [isOpen, isEditing, appointmentData, slotInfo, propSelectedClinic, selectedBoxId, clinics]);
@@ -254,6 +281,21 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         .update({ status: 'cancelled' })
         .eq('id', slotInfo.id);
       if (error) throw error;
+      // Spec 028 FR-016: audit log de cancelación.
+      const patientId = appointmentData?.patient_id || slotInfo?.patientId || formData.patient_id;
+      if (patientId && currentOrganizationId && user?.id) {
+        logClinicalAccess({
+          organization_id: currentOrganizationId,
+          user_id: user.id,
+          patient_id: patientId,
+          action: 'cancel',
+          resource_type: 'appointment',
+          resource_id: slotInfo.id,
+          grant_id: null,
+          reason: null,
+          ip_address: null,
+        }).catch((err) => logger.warn('audit log cancel failed:', err?.message));
+      }
       toast({ title: 'Cita cancelada' });
       onAppointmentUpdated?.();
       onOpenChange(false);
@@ -316,8 +358,18 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         return;
       }
 
+      // Spec 028 US1 FR-001: pre-validación cliente — mejor UX que esperar el
+      // error del trigger DB. El Select required y canSubmit lo cubren en UI,
+      // esto es defense in depth si alguien manipula el form.
+      const selectedTherapistId = formData.therapist_id || user?.id;
+      if (!selectedTherapistId) {
+        toast({ variant: 'destructive', title: 'Falta dentista', description: 'Selecciona un dentista responsable.' });
+        setIsSubmitting(false);
+        return;
+      }
+
       const payload = {
-        therapist_id: user.id,
+        therapist_id: selectedTherapistId,
         patient_id: formData.patient_id,
         date: formData.date,
         start_time: formData.start_time,
@@ -362,6 +414,33 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         const { data, error } = await supabase.from('appointments').insert(payload).select().single();
         if (error) throw new Error(mapBoxError(error.message));
         savedApt = data;
+      }
+
+      // Spec 028 R-08 + FR-016/017: audit log post-success.
+      // Detecta reasignación en edit mode → action='appointment_reassigned'.
+      // En create mode → action='create'. Best-effort: si falla el log, la cita
+      // ya quedó guardada — `clinicalAuditLogger` swallowea el error con warn.
+      if (savedApt?.patient_id) {
+        const isReassign = isEditing
+          && originalTherapistId
+          && selectedTherapistId !== originalTherapistId;
+        const auditAction = isReassign
+          ? 'appointment_reassigned'
+          : (isEditing ? 'update' : 'create');
+        const auditReason = isReassign
+          ? `from:${originalTherapistId};to:${selectedTherapistId}`
+          : null;
+        logClinicalAccess({
+          organization_id: currentOrganizationId,
+          user_id: user.id,
+          patient_id: savedApt.patient_id,
+          action: auditAction,
+          resource_type: 'appointment',
+          resource_id: savedApt.id,
+          grant_id: null,
+          reason: auditReason,
+          ip_address: null,
+        }).catch((err) => logger.warn('audit log appointment failed:', err?.message));
       }
 
       await handleSuccess(savedApt);
@@ -437,6 +516,45 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
             {clinics.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Spec 028 US1 FR-001/FR-002: Dentista responsable (obligatorio).
+          Default smart US2: pre-seleccionado al dentista logueado (auto-self).
+          US4 FR-014: si dentista no es el dueño actual, no puede reasignar (disabled). */}
+      <div className="space-y-2">
+        <Label>Dentista *</Label>
+        <Select
+          value={formData.therapist_id || ''}
+          onValueChange={(v) => setFormData({ ...formData, therapist_id: v })}
+          required
+          disabled={
+            isEditing
+              && originalTherapistId
+              && originalTherapistId !== user?.id
+              /* Si la cita la dueña otro dentista, este user (dentista) no puede reasignar.
+                 Para clinic_admin esto NO bloquea porque el modal de admin usa
+                 AssistantAppointmentModal (vista OrgCalendarView). */
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Seleccionar dentista" />
+          </SelectTrigger>
+          <SelectContent>
+            {dentists.map((d) => (
+              <SelectItem key={d.id} value={d.id}>
+                Dr. {d.full_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isEditing
+          && originalTherapistId
+          && formData.therapist_id
+          && formData.therapist_id !== originalTherapistId && (
+          <p className="text-xs text-amber-600">
+            Esta cita se reasignará a otro dentista. La acción quedará registrada.
+          </p>
+        )}
       </div>
 
       {clinics.find(c => c.id === formData.clinic_id)?.type === 'colegio' && (
