@@ -66,6 +66,17 @@ const CLINIC_STATS = [
   { value: 'Multi-dentista', label: 'Equipo ilimitado' },
 ];
 
+// Contenido orientado al ASISTENTE invitado por una clínica.
+// El asistente es invite-only (no se auto-registra desde búsqueda).
+// Por eso NO mostramos stats de marketing ("46+ profesionales registrados"
+// no aplica) ni testimonial (no es un funnel de adquisición).
+const ASSISTANT_BENEFITS = [
+  { icon: Calendar, text: 'Gestionás la agenda de los dentistas de tu clínica' },
+  { icon: Users, text: 'Coordinás pacientes, reservas y recordatorios' },
+  { icon: Bell, text: 'Enviás confirmaciones automáticas vía email y WhatsApp' },
+  { icon: Shield, text: 'Trazabilidad completa de tus acciones (Ley 20.584)' },
+];
+
 // Exit-intent popup
 const ExitIntentPopup = ({ onClose }) => (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
@@ -159,20 +170,23 @@ export default function AuthPage() {
   }, [user, action, isLogin, trackEvent]);
 
   // Exit-intent detection (mouse leaves viewport top).
-  // Solo se dispara en registro profesional (dentista/clínica/asistente).
+  // Solo se dispara en registro profesional NO invitado (dentista solo / clínica).
   // Para paciente no tiene sentido — el registro es simple y gratuito.
+  // Para asistente tampoco — viene de invitación, no es funnel de adquisición.
   const isPatientRegister = !isLogin && roleParam === USER_ROLES.PATIENT;
+  const isAssistantRegister = !isLogin && roleParam === USER_ROLES.ASSISTANT;
+  const skipExitIntent = isPatientRegister || isAssistantRegister;
 
   const handleMouseLeave = useCallback((e) => {
-    if (isLogin || exitPopupShown || user || isPatientRegister) return;
+    if (isLogin || exitPopupShown || user || skipExitIntent) return;
     if (e.clientY <= 0) {
       setShowExitPopup(true);
       setExitPopupShown(true);
     }
-  }, [isLogin, exitPopupShown, user, isPatientRegister]);
+  }, [isLogin, exitPopupShown, user, skipExitIntent]);
 
   useEffect(() => {
-    if (isLogin || user || isPatientRegister) return;
+    if (isLogin || user || skipExitIntent) return;
     // Desktop: mouse leave detection
     document.addEventListener('mouseleave', handleMouseLeave);
     // Mobile fallback: show after 45 seconds
@@ -186,7 +200,7 @@ export default function AuthPage() {
       document.removeEventListener('mouseleave', handleMouseLeave);
       clearTimeout(timer);
     };
-  }, [handleMouseLeave, isLogin, user, exitPopupShown, isPatientRegister]);
+  }, [handleMouseLeave, isLogin, user, exitPopupShown, skipExitIntent]);
 
   if (authLoading || user) return null;
 
@@ -234,17 +248,20 @@ export default function AuthPage() {
 
   // Register: two-column Doctoralia-style layout.
   // El contenido del panel izquierdo cambia según el rol elegido:
-  //   - PATIENT → orientado al paciente (buscar dentistas, reservar)
-  //   - CLINIC  → orientado a la clínica (equipo, agenda unificada, reportes)
-  //   - default → dentista individual
-  // ASSISTANT no se expone en register (invite-only via organization_members),
-  // por eso no tiene rama propia aquí.
+  //   - PATIENT   → orientado al paciente (buscar dentistas, reservar)
+  //   - CLINIC    → orientado a la clínica (equipo, agenda unificada, reportes)
+  //   - ASSISTANT → orientado al asistente invitado (sin stats ni testimonial,
+  //                 porque no es un funnel de adquisición — es invite-only).
+  //   - default   → dentista individual
   const isPatientView = selectedRole === USER_ROLES.PATIENT;
   const isClinicView = selectedRole === USER_ROLES.CLINIC;
+  const isAssistantView = selectedRole === USER_ROLES.ASSISTANT;
   const activeBenefits = isPatientView
     ? PATIENT_BENEFITS
     : isClinicView
     ? CLINIC_BENEFITS
+    : isAssistantView
+    ? ASSISTANT_BENEFITS
     : THERAPIST_BENEFITS;
   const activeStats = isPatientView
     ? PATIENT_STATS
@@ -261,6 +278,8 @@ export default function AuthPage() {
             ? 'Regístrate Gratis — Paciente'
             : isClinicView
             ? 'Registra tu Clínica Dental'
+            : isAssistantView
+            ? 'Únete a tu Clínica — Asistente'
             : 'Regístrate Gratis'}{' '}
           | DentalSpot
         </title>
@@ -271,6 +290,8 @@ export default function AuthPage() {
               ? 'Regístrate gratis en DentalSpot. Busca dentistas cerca de ti, reserva citas online y accedé a tu ficha clínica desde donde estés.'
               : isClinicView
               ? 'Registra tu clínica dental en DentalSpot. Centraliza agenda, equipo y fichas clínicas. Haz crecer tu clínica con pacientes que te encuentran online.'
+              : isAssistantView
+              ? 'Acepta tu invitación al equipo de la clínica. Vas a gestionar agenda, pacientes y recordatorios desde el panel del asistente.'
               : 'Crea tu perfil profesional gratuito en DentalSpot. Aparece en las búsquedas y recibe pacientes.'
           }
         />
@@ -320,6 +341,17 @@ export default function AuthPage() {
                       pacientes que te encuentran online.
                     </p>
                   </>
+                ) : isAssistantView ? (
+                  <>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
+                      Te uniste al equipo
+                      <span className="block text-teal-600">de tu clínica</span>
+                    </h1>
+                    <p className="mt-4 text-lg text-gray-500 leading-relaxed">
+                      Completa tu cuenta para empezar a gestionar la agenda y los pacientes
+                      desde el panel de tu clínica.
+                    </p>
+                  </>
                 ) : (
                   <>
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
@@ -346,34 +378,38 @@ export default function AuthPage() {
                 ))}
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                {activeStats.map((s, i) => (
-                  <div key={i} className="text-center">
-                    <p className="text-2xl font-bold text-teal-600">{s.value}</p>
-                    <p className="text-xs text-gray-500 mt-1">{s.label}</p>
-                  </div>
-                ))}
-              </div>
+              {/* Stats — ocultos para asistente porque no es funnel de adquisición */}
+              {!isAssistantView && (
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                  {activeStats.map((s, i) => (
+                    <div key={i} className="text-center">
+                      <p className="text-2xl font-bold text-teal-600">{s.value}</p>
+                      <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-              {/* Testimonial */}
-              <div className="bg-gray-50 rounded-xl p-5 border">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-600">
-                    {activeTestimonial.initials}
+              {/* Testimonial — ocultos para asistente (no aplica) */}
+              {!isAssistantView && (
+                <div className="bg-gray-50 rounded-xl p-5 border">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-10 w-10 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-600">
+                      {activeTestimonial.initials}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">{activeTestimonial.name}</p>
+                      <p className="text-xs text-gray-500">{activeTestimonial.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">{activeTestimonial.name}</p>
-                    <p className="text-xs text-gray-500">{activeTestimonial.role}</p>
+                  <p className="text-sm text-gray-600 italic">
+                    {activeTestimonial.quote}
+                  </p>
+                  <div className="flex gap-0.5 mt-2">
+                    {[1,2,3,4,5].map(s => <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 italic">
-                  {activeTestimonial.quote}
-                </p>
-                <div className="flex gap-0.5 mt-2">
-                  {[1,2,3,4,5].map(s => <Star key={s} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Right: Registration form */}

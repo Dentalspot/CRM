@@ -553,9 +553,10 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
               </AlertDescription>
             </Alert>
           ) : (
-            // Código de descuento solo para profesionales (dentista/clínica/asistente).
-            // Para paciente el registro es siempre gratis → no mostrar el campo.
-            initialRole !== 'patient' && (
+            // Código de descuento solo para profesionales que PAGAN (dentista/clínica).
+            // Para paciente: registro siempre gratis → no mostrar.
+            // Para asistente: viene invitado por la clínica, no paga plan propio → no mostrar.
+            initialRole !== 'patient' && initialRole !== 'assistant' && (
               <Collapsible className="mb-4 bg-primary/5 p-3 rounded-lg border border-primary/10">
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full justify-start text-slate-600 font-normal hover:bg-transparent p-0 h-auto">
