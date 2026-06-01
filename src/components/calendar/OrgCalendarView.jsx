@@ -331,8 +331,8 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     if (!selectedDentistId) {
       toast({
         variant: 'destructive',
-        title: 'Filtrá por dentista primero',
-        description: 'Para bloquear una hora elegí qué dentista en el filtro.',
+        title: 'Filtra por dentista primero',
+        description: 'Para bloquear una hora elige qué dentista en el filtro.',
       });
       return;
     }
@@ -450,7 +450,7 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
         <h2 className="text-xl font-semibold mb-2">Sin dentistas asociados</h2>
         <p className="text-muted-foreground max-w-md">
-          Esta clínica aún no tiene dentistas asociados. Contactá al administrador
+          Esta clínica aún no tiene dentistas asociados. Contacta al administrador
           para que invite al primer dentista desde Gestión de Personal.
         </p>
       </div>

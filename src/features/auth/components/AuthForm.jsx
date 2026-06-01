@@ -165,7 +165,7 @@ const AuthForm = ({ isLogin, initialRole = null, invitationToken = null, initial
         toast({
           variant: 'destructive',
           title: 'Error aceptando invitación',
-          description: acceptRes?.message || acceptErr?.message || 'No pudimos completar la invitación. Contactá a quien te invitó.',
+          description: acceptRes?.message || acceptErr?.message || 'No pudimos completar la invitación. Contacta a quien te invitó.',
         });
         // Navegar igual al dashboard genérico — el user quedó autenticado
         navigate('/dashboard', { replace: true });

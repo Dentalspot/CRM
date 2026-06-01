@@ -71,9 +71,9 @@ const CLINIC_STATS = [
 // Por eso NO mostramos stats de marketing ("46+ profesionales registrados"
 // no aplica) ni testimonial (no es un funnel de adquisición).
 const ASSISTANT_BENEFITS = [
-  { icon: Calendar, text: 'Gestionás la agenda de los dentistas de tu clínica' },
-  { icon: Users, text: 'Coordinás pacientes, reservas y recordatorios' },
-  { icon: Bell, text: 'Enviás confirmaciones automáticas vía email y WhatsApp' },
+  { icon: Calendar, text: 'Gestionas la agenda de los dentistas de tu clínica' },
+  { icon: Users, text: 'Coordinas pacientes, reservas y recordatorios' },
+  { icon: Bell, text: 'Envías confirmaciones automáticas vía email y WhatsApp' },
   { icon: Shield, text: 'Trazabilidad completa de tus acciones (Ley 20.584)' },
 ];
 
