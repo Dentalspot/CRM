@@ -34,13 +34,17 @@ const AssistantDashboard = () => {
       setLoading(true);
 
       const [appointmentsRes, patientsRes, completedRes] = await Promise.all([
-        // Citas del día de toda la org
+        // Citas del día de toda la org.
+        // patient.full_name es la columna DENORMALIZADA — pacientes "sin cuenta"
+        // (sin profile asociado) llevan el nombre acá. Para los que SÍ tienen
+        // profile, profile.full_name es la fuente de verdad. Render usa fallback.
         supabase
           .from('appointments')
           .select(`
             id, date, start_time, end_time, status,
             patient:patients!appointments_patient_id_fkey(
-              id, profile:profiles!patients_profile_id_fkey(full_name)
+              id, full_name,
+              profile:profiles!patients_profile_id_fkey(full_name)
             ),
             dentist:profiles!appointments_therapist_id_fkey(full_name)
           `)
@@ -56,13 +60,15 @@ const AssistantDashboard = () => {
           .order('created_at', { ascending: false })
           .limit(5),
 
-        // Citas completadas recientes sin pago (últimos 30 días)
+        // Citas completadas recientes sin pago (últimos 30 días).
+        // Mismo fallback que arriba: patient.full_name para pacientes sin cuenta.
         supabase
           .from('appointments')
           .select(`
             id, date,
             patient:patients!appointments_patient_id_fkey(
-              id, profile:profiles!patients_profile_id_fkey(full_name)
+              id, full_name,
+              profile:profiles!patients_profile_id_fkey(full_name)
             )
           `)
           .eq('organization_id', currentOrganizationId)
@@ -238,7 +244,7 @@ const AssistantDashboard = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {apt.patient?.profile?.full_name || 'Sin paciente'}
+                            {apt.patient?.profile?.full_name || apt.patient?.full_name || 'Sin paciente'}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
                             Dr. {apt.dentist?.full_name || '—'}
@@ -277,7 +283,7 @@ const AssistantDashboard = () => {
                     <div key={apt.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-50 border border-amber-100">
                       <div>
                         <p className="text-sm font-medium">
-                          {apt.patient?.profile?.full_name || 'Paciente'}
+                          {apt.patient?.profile?.full_name || apt.patient?.full_name || 'Paciente'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Cita del {format(new Date(apt.date), 'd MMM', { locale: es })}
