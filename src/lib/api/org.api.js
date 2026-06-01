@@ -169,6 +169,17 @@ export async function getOrgAvailability(organizationId, therapistId, startDate,
 /**
  * Autocomplete de pacientes de una organización.
  * Retorna solo datos administrativos (nombre, email, phone) — compliance Ley 21.719.
+ *
+ * Pacientes pueden estar en dos estados:
+ *  - "con cuenta": tienen profile_id y los datos viven en profiles.
+ *  - "sin cuenta": profile_id es NULL, datos viven en patients (columnas denorm).
+ *
+ * Se hacen 2 búsquedas en paralelo:
+ *  - Search A (denorm): patients.full_name / patients.email ILIKE
+ *  - Search B (con cuenta): profiles ILIKE → in patients.profile_id
+ *
+ * Luego se mergean y deduplican por patients.id. La cascade de fallback en el
+ * mapping prioriza profile (fuente de verdad si tiene cuenta) sobre denorm.
  */
 export async function searchOrgPatients(organizationId, term) {
   if (!term || term.length < 2) return [];
@@ -176,48 +187,73 @@ export async function searchOrgPatients(organizationId, term) {
   const cleanTerm = String(term).trim().replace(/[%_]/g, '');
   if (!cleanTerm) return [];
 
-  // Dos queries — evita complicaciones de PostgREST con filter OR sobre embed aliased.
-  // Query 1: buscar profiles que matcheen el término (via RLS "Org assistants can view patient profiles"
-  // el asistente puede ver profiles de pacientes de su org).
-  const { data: profileMatches, error: profErr } = await supabase
-    .from('profiles')
-    .select('id')
-    .or(`full_name.ilike.%${cleanTerm}%,email.ilike.%${cleanTerm}%`)
-    .limit(50);
+  const patientSelect = `
+    id, profile_id, full_name, email, phone,
+    profile:profiles!patients_profile_id_fkey(full_name, email, phone)
+  `;
 
-  if (profErr) {
-    logger.warn('searchOrgPatients (profiles step) failed:', profErr.message);
-    throw profErr;
-  }
-
-  const profileIds = (profileMatches || []).map((p) => p.id);
-  if (profileIds.length === 0) return [];
-
-  // Query 2: patients scoped a la org, con esos profile_ids
-  const { data, error } = await supabase
+  // Search A: pacientes "sin cuenta" — match contra patients.full_name / email denorm.
+  // (También captura matches de pacientes con cuenta si tienen denorm sincronizado).
+  const searchA = supabase
     .from('patients')
-    .select(`
-      id,
-      profile_id,
-      profile:profiles!patients_profile_id_fkey(full_name, email, phone)
-    `)
+    .select(patientSelect)
     .eq('organization_id', organizationId)
     .eq('is_blacklisted', false)
-    .in('profile_id', profileIds)
+    .or(`full_name.ilike.%${cleanTerm}%,email.ilike.%${cleanTerm}%`)
     .limit(20);
 
-  if (error) {
-    logger.warn('searchOrgPatients (patients step) failed:', error.message);
-    throw error;
+  // Search B: pacientes "con cuenta" — match contra profiles (fuente de verdad).
+  // Primero busca profile IDs, luego patients que los referencien.
+  const searchB = (async () => {
+    const { data: profileMatches, error: profErr } = await supabase
+      .from('profiles')
+      .select('id')
+      .or(`full_name.ilike.%${cleanTerm}%,email.ilike.%${cleanTerm}%`)
+      .limit(50);
+
+    if (profErr) return { data: [], error: profErr };
+
+    const profileIds = (profileMatches || []).map((p) => p.id);
+    if (profileIds.length === 0) return { data: [], error: null };
+
+    return supabase
+      .from('patients')
+      .select(patientSelect)
+      .eq('organization_id', organizationId)
+      .eq('is_blacklisted', false)
+      .in('profile_id', profileIds)
+      .limit(20);
+  })();
+
+  const [resA, resB] = await Promise.all([searchA, searchB]);
+
+  if (resA.error) {
+    logger.warn('searchOrgPatients (denorm search) failed:', resA.error.message);
+    throw resA.error;
+  }
+  if (resB.error) {
+    logger.warn('searchOrgPatients (profile search) failed:', resB.error.message);
+    throw resB.error;
   }
 
-  return (data || []).map((p) => ({
-    id: p.id,
-    profile_id: p.profile_id,
-    full_name: p.profile?.full_name || 'Sin nombre',
-    email: p.profile?.email || null,
-    phone: p.profile?.phone || null,
-  }));
+  // Merge + dedupe por patients.id. Search A primero (pacientes sin cuenta tienen
+  // prioridad porque su denorm es la única fuente). Search B agrega los demás.
+  const seen = new Set();
+  const merged = [];
+  for (const p of [...(resA.data || []), ...(resB.data || [])]) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    merged.push({
+      id: p.id,
+      profile_id: p.profile_id,
+      // Cascade: profile (con cuenta) → denorm (sin cuenta) → fallback genérico
+      full_name: p.profile?.full_name || p.full_name || 'Sin nombre',
+      email: p.profile?.email || p.email || null,
+      phone: p.profile?.phone || p.phone || null,
+    });
+  }
+
+  return merged.slice(0, 20);
 }
 
 /**
