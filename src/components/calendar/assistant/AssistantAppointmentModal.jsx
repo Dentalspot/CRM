@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Search, User, Phone, Mail, AlertTriangle, Save } from 'lucide-react';
+import { Loader2, Search, User, UserPlus, Phone, Mail, AlertTriangle, Save } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import useDebounce from '@/hooks/useDebounce';
@@ -46,6 +46,8 @@ import BoxSelector from '@/components/calendar/BoxSelector';
 import TimePicker from '@/components/ui/time-picker';
 // Spec 028 US2: default smart por rol (dentista=self, admin/asistente=vacío).
 import useUserRoleInOrg from '@/hooks/useUserRoleInOrg';
+// "Crear paciente nuevo" desde el modal — mismo patrón que AppointmentModal del dentista.
+import PatientModal from '@/features/patients/components/PatientModal';
 
 import {
   createOrgAppointment,
@@ -113,6 +115,8 @@ const AssistantAppointmentModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingAppointment, setLoadingAppointment] = useState(false);
   const [originalStatus, setOriginalStatus] = useState(null); // para detectar cancel en edit
+  // Modal de "crear paciente nuevo" — abierto cuando el user clickea el botón "+".
+  const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState(false);
   // Spec 028 US4: para detectar reasignación de dentista en edit mode y emitir
   // audit log con action='appointment_reassigned' + reason 'from:X;to:Y'.
   const [originalTherapistId, setOriginalTherapistId] = useState(null);
@@ -462,39 +466,62 @@ const AssistantAppointmentModal = ({
                 </Button>
               </div>
             ) : (
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre o email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                  autoComplete="off"
-                />
-                {showDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
-                    {isSearching ? (
-                      <div className="p-3 text-sm text-muted-foreground text-center">Buscando...</div>
-                    ) : searchResults.length === 0 ? (
-                      <div className="p-3 text-sm text-muted-foreground text-center">Sin resultados</div>
-                    ) : (
-                      searchResults.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => handleSelectPatient(p)}
-                          className="w-full text-left p-2.5 hover:bg-slate-50 border-b last:border-b-0"
-                        >
-                          <div className="text-sm font-medium">{p.full_name}</div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-2">
-                            {p.email && <><Mail className="h-3 w-3" />{p.email}</>}
-                            {p.phone && <><Phone className="h-3 w-3" />{p.phone}</>}
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre o email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                    autoComplete="off"
+                  />
+                  {showDropdown && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto">
+                      {isSearching ? (
+                        <div className="p-3 text-sm text-muted-foreground text-center">Buscando...</div>
+                      ) : searchResults.length === 0 ? (
+                        <div className="p-3 text-sm text-muted-foreground text-center">
+                          Sin resultados.{' '}
+                          <button
+                            type="button"
+                            onClick={() => setIsNewPatientModalOpen(true)}
+                            className="text-primary font-medium hover:underline"
+                          >
+                            Crear paciente nuevo
+                          </button>
+                        </div>
+                      ) : (
+                        searchResults.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => handleSelectPatient(p)}
+                            className="w-full text-left p-2.5 hover:bg-slate-50 border-b last:border-b-0"
+                          >
+                            <div className="text-sm font-medium">{p.full_name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-2">
+                              {p.email && <><Mail className="h-3 w-3" />{p.email}</>}
+                              {p.phone && <><Phone className="h-3 w-3" />{p.phone}</>}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* Botón "+" — crea paciente nuevo via PatientModal.
+                    Mismo patrón que AppointmentModal del dentista. */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  title="Nuevo paciente"
+                  onClick={() => setIsNewPatientModalOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span className="sr-only">Nuevo paciente</span>
+                </Button>
               </div>
             )}
           </div>
@@ -582,6 +609,33 @@ const AssistantAppointmentModal = ({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {/* Modal para crear paciente nuevo. defaultClinicId pre-selecciona la
+          clínica de la cita para que la asistente no tenga que re-elegirla.
+          Al guardar → auto-selecciona el recién creado en el form de la cita. */}
+      <PatientModal
+        isOpen={isNewPatientModalOpen}
+        onOpenChange={setIsNewPatientModalOpen}
+        defaultClinicId={clinicId || null}
+        onSave={(newPatient) => {
+          setIsNewPatientModalOpen(false);
+          if (newPatient?.id) {
+            setSelectedPatient({
+              id: newPatient.id,
+              profile_id: newPatient.profile_id || null,
+              // patient.full_name es denorm — para pacientes sin cuenta es la única fuente.
+              // Para los que tienen profile, también se sincroniza (ver hooks/usePatients).
+              full_name: newPatient.full_name || 'Sin nombre',
+              email: newPatient.email || null,
+              phone: newPatient.phone || null,
+            });
+            // Limpiar search term + dropdown si quedaban abiertos.
+            setSearchTerm('');
+            setShowDropdown(false);
+            setSearchResults([]);
+          }
+        }}
+      />
     </Dialog>
   );
 };
