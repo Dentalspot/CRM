@@ -65,7 +65,7 @@ export async function getOrgDentists(organizationId) {
 export async function getOrgClinics(organizationId) {
   const { data, error } = await supabase
     .from('clinics')
-    .select('id, name, address, business_hours, schedule_text')
+    .select('id, name, address, business_hours, schedule_text, calendar_start_hour, calendar_end_hour, calendar_slot_minutes')
     .eq('organization_id', organizationId);
 
   if (error) {
@@ -91,7 +91,7 @@ export async function getOrgAppointments(organizationId, therapistId, startDate,
   let query = supabase
     .from('appointments')
     .select(`
-      id, organization_id, clinic_id, therapist_id, patient_id, service_id,
+      id, organization_id, clinic_id, therapist_id, patient_id, service_id, box_id,
       date, start_time, end_time, status, notes, created_at, updated_at,
       patient:patients!appointments_patient_id_fkey(
         id, full_name,
@@ -118,14 +118,42 @@ export async function getOrgAppointments(organizationId, therapistId, startDate,
 }
 
 /**
- * Lista bloqueos horarios del dentista en un rango.
+ * Lista bloqueos horarios de la organización en un rango.
  * RLS (blocked_times_assistant_select — migration 20260424000001) enforces scope.
  *
  * Schema real de blocked_times (verificado 2026-04-24):
  *   - start_time timestamptz, end_time timestamptz (NO hay columna date separada)
- * Se sigue el mismo pattern que therapist.api.js::getTherapistBlockedTimes.
+ *
+ * @param {string} organizationId
+ * @param {string|string[]|null} therapistId
+ *   - string: bloqueos de UN dentista (modo legacy + filtro single).
+ *   - array: bloqueos de los dentistas listados (modo "Todos" en OrgCalendarView).
+ *   - null: equivalente a array vacío → retorna [] sin pegarle a la DB.
+ * @param {string} startDate ISO range start
+ * @param {string} endDate ISO range end
  */
 export async function getOrgBlockedTimes(organizationId, therapistId, startDate, endDate) {
+  // Modo array (varios dentistas) → usar IN.
+  if (Array.isArray(therapistId)) {
+    if (therapistId.length === 0) return [];
+    const { data, error } = await supabase
+      .from('blocked_times')
+      .select('*')
+      .in('therapist_id', therapistId)
+      .gte('start_time', startDate)
+      .lte('end_time', endDate)
+      .order('start_time');
+    if (error) {
+      logger.warn('getOrgBlockedTimes (multi) failed:', error.message);
+      throw error;
+    }
+    return data || [];
+  }
+
+  // Null/undefined → sin dentistas filtrados, retornar vacío.
+  if (!therapistId) return [];
+
+  // Modo single (legacy + filtro single-dentista).
   const { data, error } = await supabase
     .from('blocked_times')
     .select('*')
@@ -300,7 +328,7 @@ export async function createOrgAppointment(payload) {
     .from('appointments')
     .insert(insertPayload)
     .select(`
-      id, organization_id, clinic_id, therapist_id, patient_id, service_id,
+      id, organization_id, clinic_id, therapist_id, patient_id, service_id, box_id,
       date, start_time, end_time, status, notes, created_at, updated_at,
       patient:patients!appointments_patient_id_fkey(
         id, full_name,
@@ -331,7 +359,7 @@ export async function updateOrgAppointment(id, changes) {
     .update(changes)
     .eq('id', id)
     .select(`
-      id, organization_id, clinic_id, therapist_id, patient_id, service_id,
+      id, organization_id, clinic_id, therapist_id, patient_id, service_id, box_id,
       date, start_time, end_time, status, notes, created_at, updated_at,
       patient:patients!appointments_patient_id_fkey(
         id, full_name,

@@ -76,6 +76,12 @@ const AssistantAppointmentModal = ({
   organizationId,
   clinicId,
   dentists = [],            // Spec 028: lista de dentistas activos de la org
+  // Bloqueos del calendario para detectar conflictos preventivamente
+  // (warning amber antes de submit). El trigger DB es defense in depth.
+  blockedTimes = [],
+  // Boxes activos de la clínica. Si length > 0 → box es OBLIGATORIO.
+  // Si la clínica no tiene boxes configurados, no se valida.
+  availableBoxes = [],
   onCreated,
   onUpdated,
 }) => {
@@ -256,16 +262,34 @@ const AssistantAppointmentModal = ({
     setShowDropdown(false);
   }, []);
 
+  // Detección preventiva de bloqueo conflictivo del dentista seleccionado.
+  // Si el dentista tiene un blocked_time que solapa con date+startTime+endTime,
+  // mostrar warning amber. El trigger DB rechaza igual al submit (defense in depth).
+  const conflictingBlock = useMemo(() => {
+    if (!therapistId || !date || !startTime || !endTime) return null;
+    const slotStart = new Date(`${date}T${startTime}:00`);
+    const slotEnd = new Date(`${date}T${endTime}:00`);
+    return blockedTimes.find((b) => {
+      if (b.therapist_id !== therapistId) return false;
+      const bStart = new Date(b.start_time);
+      const bEnd = new Date(b.end_time);
+      return !(slotEnd <= bStart || slotStart >= bEnd);
+    }) || null;
+  }, [therapistId, date, startTime, endTime, blockedTimes]);
+
   // Validaciones
   // Nota: el warning de "sin servicios" NO bloquea submit — service_id es nullable
   // en DB y es un caso de uso real crear cita con "Sin servicio asignado" (ej:
   // cita de control, urgencia, evaluación inicial sin categorizar).
   const hasNoServices = services.length === 0 && !loadingServices && therapistId;
+  // Box es required si la clínica tiene boxes configurados.
+  const boxRequired = availableBoxes.length > 0;
   const canSubmit = useMemo(() => {
     if (!selectedPatient || !date || !startTime || !endTime || !therapistId) return false;
+    if (boxRequired && !boxId) return false;
     if (endTime <= startTime) return false;
     return !isSubmitting;
-  }, [selectedPatient, date, startTime, endTime, therapistId, isSubmitting]);
+  }, [selectedPatient, date, startTime, endTime, therapistId, boxRequired, boxId, isSubmitting]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -445,6 +469,19 @@ const AssistantAppointmentModal = ({
                 Esta cita se reasignará a otro dentista. La acción quedará registrada.
               </p>
             )}
+            {/* Warning preventivo si el dentista tiene bloqueo en este horario.
+                No bloquea submit en UI — el trigger DB es la última palabra.
+                Le permite a la asistente cambiar de dentista antes de intentar. */}
+            {conflictingBlock && (
+              <div className="flex items-start gap-2 p-2.5 rounded-md border border-amber-200 bg-amber-50 text-xs">
+                <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-amber-800">
+                  Este dentista tiene un bloqueo en este horario
+                  {conflictingBlock.reason && <>: <strong>{conflictingBlock.reason}</strong></>}.
+                  Elige otro dentista o cambia el horario para evitar el conflicto.
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Paciente */}
@@ -553,11 +590,13 @@ const AssistantAppointmentModal = ({
             )}
           </div>
 
-          {/* Box / Sala (opcional) — trigger DB valida overlap */}
+          {/* Box / Sala — required si la clínica tiene boxes configurados.
+              Trigger DB valida overlap + box pertenece a la clínica + box activo. */}
           <BoxSelector
             clinicId={clinicId}
             value={boxId}
             onChange={setBoxId}
+            required={boxRequired}
           />
 
           {/* Estado (solo en edit) */}

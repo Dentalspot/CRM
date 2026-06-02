@@ -41,7 +41,7 @@ const BOX_TYPE_LABELS = {
   otro: 'Otro',
 };
 
-const BoxSelector = ({ clinicId, value, onChange, disabled = false, label = 'Box' }) => {
+const BoxSelector = ({ clinicId, value, onChange, disabled = false, label = 'Box', required = false }) => {
   const [boxes, setBoxes] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -101,12 +101,14 @@ const BoxSelector = ({ clinicId, value, onChange, disabled = false, label = 'Box
     );
   }
 
-  const selectValue = value || NO_BOX_VALUE;
+  // Si required y no hay valor → marcar como vacío para que el placeholder se vea destacado.
+  // Si no required → fallback a NO_BOX_VALUE para mantener la opción "Sin box específico".
+  const selectValue = value || (required ? '' : NO_BOX_VALUE);
 
   return (
     <div className="space-y-1">
       <Label className="text-sm flex items-center gap-1">
-        <Settings className="h-3 w-3" /> {label}
+        <Settings className="h-3 w-3" /> {label}{required && ' *'}
       </Label>
       <Select
         value={selectValue}
@@ -114,12 +116,14 @@ const BoxSelector = ({ clinicId, value, onChange, disabled = false, label = 'Box
         disabled={disabled}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Sin box específico" />
+          <SelectValue placeholder={required ? 'Seleccionar box' : 'Sin box específico'} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={NO_BOX_VALUE}>
-            <span className="text-muted-foreground italic">Sin box específico</span>
-          </SelectItem>
+          {!required && (
+            <SelectItem value={NO_BOX_VALUE}>
+              <span className="text-muted-foreground italic">Sin box específico</span>
+            </SelectItem>
+          )}
           {boxes.map((b) => (
             <SelectItem key={b.id} value={b.id}>
               {b.name}

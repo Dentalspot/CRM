@@ -217,11 +217,17 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         setBlockedTimes(blocks);
         setAvailabilityData(availability);
       } else {
-        // Modo "Todos los dentistas": solo citas (blocks + availability son
-        // por-dentista, no tiene sentido mezclar).
-        const apts = await getOrgAppointments(organizationId, null, weekStart, weekEnd);
+        // Modo "Todos los dentistas": citas + bloqueos de todos los dentistas.
+        // (availability shading no se mezcla — cada dentista tiene su horario
+        // distinto). Los bloqueos sí porque la asistente necesita ver que ese
+        // dentista no está disponible aunque otros sí.
+        const allDentistIds = dentists.map((d) => d.id);
+        const [apts, blocks] = await Promise.all([
+          getOrgAppointments(organizationId, null, weekStart, weekEnd),
+          getOrgBlockedTimes(organizationId, allDentistIds, weekStart, weekEnd),
+        ]);
         setAppointments(apts);
-        setBlockedTimes([]);
+        setBlockedTimes(blocks);
         setAvailabilityData([]);
       }
     } catch (err) {
@@ -234,30 +240,39 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     } finally {
       setLoadingAgenda(false);
     }
-  }, [organizationId, selectedDentistId, currentWeek, clinics, toast]);
+  }, [organizationId, selectedDentistId, currentWeek, clinics, dentists, toast]);
 
   useEffect(() => {
     fetchAgendaData();
   }, [fetchAgendaData]);
 
   // Filtrar citas por estado + box.
-  // Box: si está seleccionado, mostrar solo citas de ese box (las sin box_id quedan visibles).
+  // Box: filtro ESTRICTO — solo citas con box_id == selectedBoxId.
+  // Las sin box_id (legacy) NO aparecen en ningún box → la asistente debe
+  // editarlas y asignarles box. Ver `appointmentsWithoutBox` para el badge
+  // que las cuenta.
   const filteredAppointments = useMemo(() => {
     let list = appointments;
     if (statusFilter !== 'all') {
       list = list.filter((a) => a.status === statusFilter);
     }
     if (selectedBoxId) {
-      list = list.filter((a) => !a.box_id || a.box_id === selectedBoxId);
+      list = list.filter((a) => a.box_id === selectedBoxId);
     }
     return list;
   }, [appointments, statusFilter, selectedBoxId]);
 
-  // Bloqueos también filtrados por box (mismo patrón que filteredAppointments).
+  // Bloqueos también filtrados estrictos por box.
   const filteredBlockedTimes = useMemo(() => {
     if (!selectedBoxId) return blockedTimes;
-    return blockedTimes.filter((bt) => !bt.box_id || bt.box_id === selectedBoxId);
+    return blockedTimes.filter((bt) => bt.box_id === selectedBoxId);
   }, [blockedTimes, selectedBoxId]);
+
+  // Contador de citas sin box asignado (legacy data) — informativo para que
+  // la asistente sepa que tiene data que limpiar.
+  const appointmentsWithoutBoxCount = useMemo(() => {
+    return appointments.filter((a) => !a.box_id).length;
+  }, [appointments]);
 
   // Datos del dentista seleccionado (para header + "clinic virtual" para color coding)
   const selectedDentist = useMemo(
@@ -496,6 +511,38 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
   }, []);
 
+  // Cambio rápido de estado desde el badge "Citas de Hoy" del sidebar.
+  // El asistente/admin clickea el badge → dropdown con opciones → onStatusChange dispara.
+  // Audit: si el nuevo status es 'cancelled' usamos action='cancel', sino 'update'.
+  const handleAppointmentStatusChange = useCallback(async (apptId, newStatus) => {
+    const apt = appointments.find((a) => a.id === apptId);
+    if (!apt || apt.status === newStatus) return;
+    try {
+      const updated = await updateOrgAppointment(apptId, { status: newStatus });
+      setAppointments((prev) => prev.map((a) => (a.id === apptId ? { ...a, ...updated } : a)));
+      const auditAction = newStatus === 'cancelled' ? 'cancel' : 'update';
+      logClinicalAccess({
+        organization_id: organizationId,
+        user_id: user?.id,
+        patient_id: apt.patient?.id || apt.patient_id,
+        action: auditAction,
+        resource_type: 'appointment',
+        resource_id: apptId,
+        grant_id: null,
+        reason: `status:${apt.status}→${newStatus}`,
+        ip_address: null,
+      }).catch((err) => logger.warn('audit log status change failed:', err?.message));
+      toast({ title: '✅ Estado actualizado' });
+    } catch (err) {
+      logger.error('Error updating appointment status:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error al cambiar estado',
+        description: err.message || 'No se pudo actualizar la cita.',
+      });
+    }
+  }, [appointments, organizationId, user?.id, toast]);
+
   // Render: loading inicial
   if (loadingDentists) {
     return (
@@ -567,6 +614,7 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
             onDentistChange={setSelectedDentistId}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
+            onStatusChange={handleAppointmentStatusChange}
           />
         </div>
         <div className="lg:col-span-4 space-y-4">
@@ -604,8 +652,9 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
                   clinics={virtualClinics}
                   selectedClinic={selectedDentistId || 'all'}
                   dentists={dentists}
-                  startHour={8}
-                  endHour={20}
+                  startHour={clinics[0]?.calendar_start_hour ?? 8}
+                  endHour={clinics[0]?.calendar_end_hour ?? 20}
+                  slotMinutes={clinics[0]?.calendar_slot_minutes ?? 30}
                   onSlotClick={handleSlotClick}
                   onAppointmentClick={handleAppointmentClick}
                   onBlockedTimeClick={handleBlockedTimeClick}
@@ -632,6 +681,8 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         organizationId={organizationId}
         clinicId={clinics[0]?.id || null}
         dentists={dentists}
+        blockedTimes={blockedTimes}
+        availableBoxes={boxesForClinic}
         onCreated={handleAppointmentCreated}
         onUpdated={handleAppointmentUpdated}
       />

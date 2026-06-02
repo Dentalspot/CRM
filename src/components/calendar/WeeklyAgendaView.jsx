@@ -212,7 +212,11 @@ const WeeklyAgendaView = ({
   const handleSlotMouseDown = useCallback((e, dateStr, timeStr) => {
     if (e.button !== 0) return;
     if (getAppointmentForSlot(dateStr, timeStr)) return;
-    if (getBlockedTimeForSlot(dateStr, timeStr)) return;
+    // Spec 028 multi-dentista: en modo "Todos", permitir drag-to-block sobre slots
+    // que tienen bloqueo de otro dentista (la asistente puede bloquear para Pablo
+    // un horario donde Cristobal ya está bloqueado).
+    const isMultiMode = selectedClinic === 'all';
+    if (getBlockedTimeForSlot(dateStr, timeStr) && !isMultiMode) return;
 
     dragAnchor.current = { date: dateStr, time: timeStr };
     isSelectingBlock.current = true;
@@ -272,7 +276,11 @@ const WeeklyAgendaView = ({
     // El guard de availability solo aplica al self-booking del paciente
     // (feature futura, no en este flow).
     if (getAppointmentForSlot(dateStr, timeStr)) return;
-    if (getBlockedTimeForSlot(dateStr, timeStr)) return;
+    // Spec 028 multi-dentista: en modo "Todos los dentistas", un bloqueo de un
+    // dentista NO debe impedir agendar con otro. El modal valida el conflicto
+    // específico por dentista (warning amber + trigger DB).
+    const isMultiMode = selectedClinic === 'all';
+    if (getBlockedTimeForSlot(dateStr, timeStr) && !isMultiMode) return;
 
     const [hour, minute] = timeStr.split(':').map(Number);
     const startDate = new Date();
@@ -411,7 +419,12 @@ const WeeklyAgendaView = ({
     // LEGACY NAMING: apt.therapist_id semánticamente = dentista responsable.
     const dentistColor = getDentistColor(apt.therapist_id, dentists);
     const dentistName = dentists.find((d) => d.id === apt.therapist_id)?.full_name || '';
-    const dentistLastName = dentistName.split(' ').slice(-1)[0] || dentistName;
+    // Convención chilena: tomamos el APELLIDO PATERNO (segundo token del nombre completo,
+    // ej. "Cristobal Tagle Morales" → "Tagle"). Si solo hay 2 tokens (nombre + paterno),
+    // también funciona. Edge case: nombres compuestos como "Maria José" → tomaría "José",
+    // aceptable como tradeoff vs el bug de "Dr. Morales" (apellido materno).
+    const nameTokens = dentistName.split(' ').filter(Boolean);
+    const dentistLastName = nameTokens[1] || nameTokens[0] || dentistName;
 
     const duration = apt.duration_minutes || 60;
     const heightSlots = Math.ceil(duration / slotMinutes);
@@ -565,9 +578,58 @@ const WeeklyAgendaView = ({
     const end = parseISO(block.end_time);
     const diffMins = (end - start) / 60000;
     const heightSlots = Math.ceil(diffMins / slotMinutes);
-    const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
     const isDraggingThis = draggedBlock?.id === block.id;
 
+    // Spec 028 multi-dentista: detectar modo "Todos los dentistas".
+    // En ese modo el bloqueo se renderiza como banda LATERAL FINA con color del
+    // dentista propietario. El slot queda clickable para agendar con OTRO dentista.
+    // En modo single-dentista (filtro activo), el bloqueo ocupa todo el slot (legacy).
+    const isMultiMode = selectedClinic === 'all';
+    const dentistColor = isMultiMode ? getDentistColor(block.therapist_id, dentists) : null;
+    const dentistName = isMultiMode
+      ? (dentists.find((d) => d.id === block.therapist_id)?.full_name || '')
+      : '';
+    // Convención chilena: tomamos el APELLIDO PATERNO (segundo token del nombre completo,
+    // ej. "Cristobal Tagle Morales" → "Tagle"). Si solo hay 2 tokens (nombre + paterno),
+    // también funciona. Edge case: nombres compuestos como "Maria José" → tomaría "José",
+    // aceptable como tradeoff vs el bug de "Dr. Morales" (apellido materno).
+    const nameTokens = dentistName.split(' ').filter(Boolean);
+    const dentistLastName = nameTokens[1] || nameTokens[0] || dentistName;
+
+    const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
+
+    if (isMultiMode) {
+      // Modo Todos: banda lateral 6px ancho. Slot CLICKABLE (parent maneja click cita).
+      // pointer-events-none → el slot subyacente recibe el click.
+      return (
+        <TooltipProvider key={block.id}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                style={style}
+                className={cn(
+                  "absolute left-0 top-0 w-1.5 rounded-r pointer-events-auto cursor-help",
+                  dentistColor?.border?.replace('border-l-', 'bg-') || 'bg-red-400'
+                )}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p className="font-semibold text-red-600 flex items-center gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5" />
+                Bloqueado — Dr. {dentistLastName}
+              </p>
+              <p className="text-xs mt-1">{block.reason || 'Sin motivo especificado'}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Podés agendar con otro dentista en este horario.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    // Modo single-dentista (filtro activo): comportamiento legacy. Ocupa todo el slot.
     return (
       <TooltipProvider key={block.id}>
         <Tooltip>
@@ -769,10 +831,14 @@ const WeeklyAgendaView = ({
                   const appointment = getAppointmentForSlot(dateStr, timeStr);
                   const blockedTime = getBlockedTimeForSlot(dateStr, timeStr);
                   const isHalfHour = idx % 2 === 1;
-                  // Slot clickeable: cualquier slot vacío (sin cita ni bloqueo).
-                  // Antes excluíamos slots fuera del horario configurado, pero
-                  // dejaba al dentista/admin sin poder agendar excepciones.
-                  const isClickable = !appointment && !blockedTime;
+                  // Slot clickeable: sin cita siempre. Si hay bloqueo:
+                  //  - modo single-dentista (filtro activo): bloqueo ocupa todo
+                  //    el slot → NO clickable (legacy).
+                  //  - modo "Todos los dentistas": bloqueo es banda lateral →
+                  //    slot SIGUE clickable (la asistente puede agendar con
+                  //    otro dentista que no esté bloqueado).
+                  const isMultiMode = selectedClinic === 'all';
+                  const isClickable = !appointment && (!blockedTime || isMultiMode);
 
                   const isDragOver = dragOverSlot?.date === dateStr && dragOverSlot?.time === timeStr;
                   const draggedItem = draggedApt || draggedBlock;
