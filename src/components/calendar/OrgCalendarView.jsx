@@ -62,6 +62,8 @@ import {
 } from '@/lib/api/org.api';
 import { logClinicalAccess } from '@/lib/audit/clinicalAuditLogger';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
+import AgendaSidebar from '@/components/calendar/AgendaSidebar';
 
 import logger from '@/lib/utils/logger';
 
@@ -94,6 +96,15 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
   const [appointments, setAppointments] = useState([]);
   const [blockedTimes, setBlockedTimes] = useState([]);
   const [availabilityData, setAvailabilityData] = useState([]);
+
+  // Box selector — equivalente al patrón de CalendarPage del dentista.
+  // selectedBoxId = null → ver todas las citas de la org sin filtrar por box.
+  // selectedBoxId = uuid → filtrar a citas de ese box (las sin box quedan visibles).
+  const [boxesForClinic, setBoxesForClinic] = useState([]);
+  const [selectedBoxId, setSelectedBoxId] = useState(null);
+  // Clínica seleccionada — en Fase 1 hay 1 clínica por org (la asistente ve esa),
+  // pero el state existe para soportar multi-sucursal futura.
+  const [selectedClinicId, setSelectedClinicId] = useState(null);
 
   // State: loading
   const [loadingDentists, setLoadingDentists] = useState(true);
@@ -149,6 +160,42 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     if (!exists) setSelectedDentistId(null);
   }, [selectedDentistId, dentists, setSelectedDentistId]);
 
+  // Auto-select primer clinic cuando se cargan (Fase 1: 1 clínica por org).
+  useEffect(() => {
+    if (clinics.length > 0 && !selectedClinicId) {
+      setSelectedClinicId(clinics[0].id);
+    }
+  }, [clinics, selectedClinicId]);
+
+  // Fetch boxes de la clínica seleccionada + auto-select primer box.
+  // Mismo patrón que CalendarPage del dentista (line 85-100).
+  useEffect(() => {
+    const loadBoxes = async () => {
+      if (!selectedClinicId) {
+        setBoxesForClinic([]);
+        setSelectedBoxId(null);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('clinic_boxes')
+        .select('id, name, box_type')
+        .eq('clinic_id', selectedClinicId)
+        .eq('is_active', true)
+        .order('name');
+      if (error) {
+        logger.warn('[OrgCalendarView] load boxes:', error.message);
+        setBoxesForClinic([]);
+        return;
+      }
+      setBoxesForClinic(data || []);
+      // Auto-select primer box solo si no hay uno seleccionado
+      if (data && data.length > 0 && !selectedBoxId) {
+        setSelectedBoxId(data[0].id);
+      }
+    };
+    loadBoxes();
+  }, [selectedClinicId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fetch agenda data cuando cambia dentista seleccionado o semana.
   // Spec 028 US3: dos modos según selectedDentistId.
   const fetchAgendaData = useCallback(async () => {
@@ -193,11 +240,24 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     fetchAgendaData();
   }, [fetchAgendaData]);
 
-  // Filtrar citas por estado
+  // Filtrar citas por estado + box.
+  // Box: si está seleccionado, mostrar solo citas de ese box (las sin box_id quedan visibles).
   const filteredAppointments = useMemo(() => {
-    if (statusFilter === 'all') return appointments;
-    return appointments.filter((a) => a.status === statusFilter);
-  }, [appointments, statusFilter]);
+    let list = appointments;
+    if (statusFilter !== 'all') {
+      list = list.filter((a) => a.status === statusFilter);
+    }
+    if (selectedBoxId) {
+      list = list.filter((a) => !a.box_id || a.box_id === selectedBoxId);
+    }
+    return list;
+  }, [appointments, statusFilter, selectedBoxId]);
+
+  // Bloqueos también filtrados por box (mismo patrón que filteredAppointments).
+  const filteredBlockedTimes = useMemo(() => {
+    if (!selectedBoxId) return blockedTimes;
+    return blockedTimes.filter((bt) => !bt.box_id || bt.box_id === selectedBoxId);
+  }, [blockedTimes, selectedBoxId]);
 
   // Datos del dentista seleccionado (para header + "clinic virtual" para color coding)
   const selectedDentist = useMemo(
@@ -275,11 +335,13 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
 
     // Abrir modal de nueva cita. therapistId puede ser null (todos-mode);
     // el modal usa default smart (US2): self si user es dentista, sino vacío.
+    // boxId hereda del filtro del sidebar (la cita se crea para el box visible).
     setPrefilledSlot({
       date,
       startTime,
       endTime,
       therapistId: selectedDentistId,
+      boxId: selectedBoxId,
     });
     setEditingAppointmentId(null);
     setAppointmentModalOpen(true);
@@ -483,115 +545,79 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         </div>
       </div>
 
-      {/* Spec 028 US3 FR-008: Card teal "Ubicación" con filtro de dentista,
-          siguiendo el estilo de AgendaSidebar del dentista para consistencia.
-          Contiene: clínica (display), box (placeholder fase 2), dentista (filtro). */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="shadow-sm border-2 border-primary bg-primary text-white">
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold mb-1">
-              <MapPin className="h-4 w-4" />
-              Ubicación
-            </div>
-            {/* Clínica — display only en Fase 1 (asume 1 clínica por org). */}
-            <div className="bg-white text-slate-900 rounded-md px-3 py-2 text-sm border border-white">
-              {clinic?.name || 'Sin clínica'}
-            </div>
-            {/* Box — TODO Fase 2 cuando soportemos clinic_box_dentists. */}
-            {/* Spec 028 US3 FR-008/009: filtro de dentista, default "Todos los dentistas". */}
-            <Select
-              value={selectedDentistId || 'all'}
-              onValueChange={(v) => setSelectedDentistId(v === 'all' ? null : v)}
-            >
-              <SelectTrigger className="bg-white text-slate-900 border-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los dentistas</SelectItem>
-                {dentists.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    Dr. {d.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex justify-between items-center text-sm pt-1">
-              <span className="text-white/80">
-                {selectedDentistId
-                  ? (dentists.find((d) => d.id === selectedDentistId)?.full_name?.split(' ')?.[0] || 'Dentista')
-                  : 'Todos los dentistas'}
-              </span>
-              <span className="font-semibold text-white">
-                {filteredAppointments.length} cita{filteredAppointments.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card de navegación semanal + filtro de estado */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 justify-center">
-                <Button variant="outline" size="icon" onClick={handlePreviousWeek}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="font-mono text-sm px-3 min-w-[180px] text-center">
-                  {format(currentWeek, "d MMM", { locale: es })} — {format(addDays(currentWeek, 6), "d MMM yyyy", { locale: es })}
-                </div>
-                <Button variant="outline" size="icon" onClick={handleNextWeek}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleToday}>
-                  Hoy
-                </Button>
+      {/* Layout 2-column: sidebar a la izquierda (Ubicación + Estado + mini calendar
+          + Citas de Hoy) + grid semanal a la derecha. Mismo pattern que CalendarPage
+          del dentista para consistencia. */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-1">
+          <AgendaSidebar
+            clinics={clinics}
+            selectedClinicId={selectedClinicId}
+            onClinicChange={setSelectedClinicId}
+            appointments={filteredAppointments}
+            currentWeek={currentWeek}
+            onWeekChange={setCurrentWeek}
+            organizationId={organizationId}
+            userId={user?.id}
+            boxes={boxesForClinic}
+            selectedBoxId={selectedBoxId}
+            onBoxChange={setSelectedBoxId}
+            dentists={dentists}
+            selectedDentistId={selectedDentistId}
+            onDentistChange={setSelectedDentistId}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+          />
+        </div>
+        <div className="lg:col-span-4 space-y-4">
+          {/* Navegación semanal arriba del grid */}
+          <Card>
+            <CardContent className="pt-4 flex items-center gap-2 justify-center">
+              <Button variant="outline" size="icon" onClick={handlePreviousWeek}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="font-mono text-sm px-3 min-w-[180px] text-center">
+                {format(currentWeek, "d MMM", { locale: es })} — {format(addDays(currentWeek, 6), "d MMM yyyy", { locale: es })}
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="scheduled">Agendadas</SelectItem>
-                  <SelectItem value="confirmed">Confirmadas</SelectItem>
-                  <SelectItem value="completed">Completadas</SelectItem>
-                  <SelectItem value="cancelled">Canceladas</SelectItem>
-                  <SelectItem value="no-show">Ausentes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              <Button variant="outline" size="icon" onClick={handleNextWeek}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleToday}>
+                Hoy
+              </Button>
+            </CardContent>
+          </Card>
 
-      {/* Grid semanal */}
-      <Card>
-        <CardContent className="p-0 overflow-hidden">
-          {loadingAgenda ? (
-            <div className="flex items-center justify-center py-24">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <WeeklyAgendaView
-              currentWeek={currentWeek}
-              appointments={filteredAppointments}
-              blockedTimes={blockedTimes}
-              availabilityData={availabilityData}
-              clinics={virtualClinics}
-              selectedClinic={selectedDentistId || 'all'}
-              dentists={dentists}
-              startHour={8}
-              endHour={20}
-              onSlotClick={handleSlotClick}
-              onAppointmentClick={handleAppointmentClick}
-              onBlockedTimeClick={handleBlockedTimeClick}
-              onBlockDragCreate={handleBlockDragCreate}
-              onAppointmentMove={handleAppointmentMove}
-              loading={loadingAgenda}
-            />
-          )}
-        </CardContent>
-      </Card>
+          {/* Grid semanal */}
+          <Card>
+            <CardContent className="p-0 overflow-hidden">
+              {loadingAgenda ? (
+                <div className="flex items-center justify-center py-24">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <WeeklyAgendaView
+                  currentWeek={currentWeek}
+                  appointments={filteredAppointments}
+                  blockedTimes={filteredBlockedTimes}
+                  availabilityData={availabilityData}
+                  clinics={virtualClinics}
+                  selectedClinic={selectedDentistId || 'all'}
+                  dentists={dentists}
+                  startHour={8}
+                  endHour={20}
+                  onSlotClick={handleSlotClick}
+                  onAppointmentClick={handleAppointmentClick}
+                  onBlockedTimeClick={handleBlockedTimeClick}
+                  onBlockDragCreate={handleBlockDragCreate}
+                  onAppointmentMove={handleAppointmentMove}
+                  loading={loadingAgenda}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Modal crear/editar cita */}
       <AssistantAppointmentModal

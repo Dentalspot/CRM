@@ -3,7 +3,7 @@
  *
  * Modal para crear/editar citas desde la vista del asistente.
  * Soporta dos modos:
- * - CREATE: prefilledSlot tiene {date, startTime, endTime, therapistId} desde drag
+ * - CREATE: prefilledSlot tiene {date, startTime, endTime, therapistId, boxId} desde drag/click
  * - EDIT: appointmentId tiene id de cita existente, pre-carga datos
  *
  * Side effects:
@@ -69,7 +69,7 @@ const STATUS_OPTIONS = [
 const AssistantAppointmentModal = ({
   isOpen,
   onClose,
-  prefilledSlot = null,     // { date, startTime, endTime, therapistId }
+  prefilledSlot = null,     // { date, startTime, endTime, therapistId, boxId }
   appointmentId = null,     // presente si estamos en edit mode
   organizationId,
   clinicId,
@@ -184,7 +184,9 @@ const AssistantAppointmentModal = ({
       setNotes('');
       setSelectedPatient(null);
       setSelectedServiceId('');
-      setBoxId(null);
+      // Heredar boxId del filtro del sidebar (si la asistente está viendo Box 1,
+       // la cita se crea para Box 1 por default). El user puede cambiar en el modal.
+      setBoxId(prefilledSlot.boxId || null);
       setSearchTerm('');
       setSearchResults([]);
     }

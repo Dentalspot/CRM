@@ -65,6 +65,16 @@ const AgendaSidebar = ({
   boxes = [],
   selectedBoxId = 'all',
   onBoxChange,
+  // Spec 028 + asistente UX: filtro de dentista (org views asistente/admin).
+  // Si dentists está vacío o onDentistChange es undefined, NO se renderiza el dropdown
+  // (vista dentista no lo necesita — solo ve sus propias citas vía RLS).
+  dentists = [],
+  selectedDentistId = null,
+  onDentistChange,
+  // Filtro de estado opcional. Si se provee, se renderiza una card "Estado" debajo de Ubicación.
+  // Valores: 'all' | 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show'
+  statusFilter,
+  onStatusFilterChange,
   className
 }) => {
   const navigate = useNavigate();
@@ -183,6 +193,28 @@ const AgendaSidebar = ({
               </Select>
             )}
 
+            {/* Dentista selector (asistente + admin views, spec 028 FR-008).
+                Solo se renderiza si el caller pasa dentists + handler.
+                Vista dentista no lo usa — solo ve sus propias citas vía RLS. */}
+            {onDentistChange && dentists.length > 0 && (
+              <Select
+                value={selectedDentistId || 'all'}
+                onValueChange={(v) => onDentistChange(v === 'all' ? null : v)}
+              >
+                <SelectTrigger className="bg-white text-slate-900 border-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los dentistas</SelectItem>
+                  {dentists.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      Dr. {d.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <div className="flex justify-between items-center text-sm pt-1">
               <span className="text-white/80">Esta semana</span>
               <span className="font-semibold text-white">{weekAppointmentsCount} citas</span>
@@ -190,6 +222,33 @@ const AgendaSidebar = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Filtro de estado (asistente + admin views). Card neutra debajo de Ubicación.
+          Solo se renderiza si el caller pasa onStatusFilterChange. */}
+      {onStatusFilterChange && (
+        <Card className="order-1 lg:order-1 shadow-sm">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-sm font-semibold text-gray-700">
+              Estado de citas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <Select value={statusFilter || 'all'} onValueChange={onStatusFilterChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="scheduled">Agendadas</SelectItem>
+                <SelectItem value="confirmed">Confirmadas</SelectItem>
+                <SelectItem value="completed">Completadas</SelectItem>
+                <SelectItem value="cancelled">Canceladas</SelectItem>
+                <SelectItem value="no-show">Ausentes</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 0) Today's appointments card. Desktop order 2 (después de Ubicación). */}
       <Card className="order-2 lg:order-2 shadow-sm border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
