@@ -76,8 +76,14 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
   const [clinics, setClinics] = useState([]);
   // Spec 028 US3 FR-009/010: filtro de dentista persistido en URL.
   // null = "Todos los dentistas" (default). uuid = filtro single-dentista.
+  // Validamos formato UUID antes de aceptarlo — un valor random tipo
+  // "yyyy" rompería el query de Postgres con "invalid input syntax".
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const [searchParams, setSearchParams] = useSearchParams();
-  const selectedDentistId = searchParams.get('dentist') || null;
+  const rawDentistParam = searchParams.get('dentist');
+  const selectedDentistId = rawDentistParam && UUID_REGEX.test(rawDentistParam)
+    ? rawDentistParam
+    : null;
   const setSelectedDentistId = useCallback(
     (id) => {
       if (!id || id === 'all') {
@@ -151,14 +157,20 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     return () => { mounted = false; };
   }, [organizationId, toast]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Spec 028 US3 FR-011: si el URL trae un dentist_id que no pertenece a la
-  // org actual (ej. la usuaria pegó un link viejo de otra clínica), limpiar
-  // silenciosamente — sin mostrar error al usuario.
+  // Spec 028 US3 FR-011: si el URL trae un dentist_id inválido (formato malo
+  // o uuid que no pertenece a la org actual), limpiar silenciosamente — sin
+  // mostrar error al usuario.
   useEffect(() => {
+    // Caso 1: formato UUID inválido (rawDentistParam existe pero no matchea regex).
+    if (rawDentistParam && !UUID_REGEX.test(rawDentistParam)) {
+      setSelectedDentistId(null);
+      return;
+    }
+    // Caso 2: UUID válido pero no es de esta org.
     if (!selectedDentistId || dentists.length === 0) return;
     const exists = dentists.some((d) => d.id === selectedDentistId);
     if (!exists) setSelectedDentistId(null);
-  }, [selectedDentistId, dentists, setSelectedDentistId]);
+  }, [rawDentistParam, selectedDentistId, dentists, setSelectedDentistId]);
 
   // Auto-select primer clinic cuando se cargan (Fase 1: 1 clínica por org).
   useEffect(() => {

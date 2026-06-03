@@ -87,9 +87,11 @@ const AssistantAppointmentModal = ({
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  // Spec 028 US2: detectar si el user logueado es dentista de esta org
-  // (puede ser dentist puro o admin+dentist combinado).
-  const { isDentist } = useUserRoleInOrg(organizationId);
+  // Spec 028 US2 + US4: detectar roles del user logueado en la org.
+  //  - isDentist + !isClinicAdmin = dentista PURO → no puede reasignar citas ajenas
+  //  - isClinicAdmin = puede reasignar cualquier cita (FR-013)
+  //  - Asistente puro = puede reasignar también (siempre FR-013)
+  const { isDentist, isClinicAdmin } = useUserRoleInOrg(organizationId);
 
   const isEditMode = Boolean(appointmentId);
 
@@ -139,7 +141,8 @@ const AssistantAppointmentModal = ({
         .select(`
           id, therapist_id, patient_id, service_id, box_id, date, start_time, end_time, status, notes,
           patient:patients!appointments_patient_id_fkey(
-            id, profile_id, profile:profiles!patients_profile_id_fkey(full_name, email, phone)
+            id, profile_id, full_name, email, phone,
+            profile:profiles!patients_profile_id_fkey(full_name, email, phone)
           )
         `)
         .eq('id', appointmentId)
@@ -168,9 +171,10 @@ const AssistantAppointmentModal = ({
             setSelectedPatient({
               id: data.patient.id,
               profile_id: data.patient.profile_id,
-              full_name: data.patient.profile?.full_name || 'Sin nombre',
-              email: data.patient.profile?.email,
-              phone: data.patient.profile?.phone,
+              // Cascade: profile (paciente con cuenta) → denorm patients (sin cuenta) → fallback
+              full_name: data.patient.profile?.full_name || data.patient.full_name || 'Sin nombre',
+              email: data.patient.profile?.email || data.patient.email,
+              phone: data.patient.profile?.phone || data.patient.phone,
             });
           }
         })
@@ -444,8 +448,12 @@ const AssistantAppointmentModal = ({
               value={therapistId || ''}
               onValueChange={setTherapistId}
               disabled={
+                /* FR-014: dentista PURO (no admin) que NO es el dueño actual
+                   no puede reasignar a otro. Admin+dentista SÍ puede (FR-013).
+                   Asistente también puede siempre. */
                 isEditMode
                   && isDentist
+                  && !isClinicAdmin
                   && originalTherapistId
                   && originalTherapistId !== user?.id
               }
