@@ -139,9 +139,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   // asistentes profile.role='patient' (asistencia es rol de organización,
   // no de perfil) → sin esta capa el sidebar mostraría items de paciente.
   // Derivamos del set GLOBAL de roles (userOrgRoles), no solo de la org actual.
+  // Prioridad: clinic_admin > dentist > assistant. Consistente con
+  // OrganizationContext::effectiveRole y RoleLandingRedirect post-login.
   const fallbackFromOrgRoles =
-    userOrgRoles.includes('dentist') ? USER_ROLES.THERAPIST :
     userOrgRoles.includes('clinic_admin') ? USER_ROLES.CLINIC :
+    userOrgRoles.includes('dentist') ? USER_ROLES.THERAPIST :
     userOrgRoles.includes('assistant') ? USER_ROLES.ASSISTANT :
     null;
 

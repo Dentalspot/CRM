@@ -405,6 +405,42 @@ const WeeklyAgendaView = ({
     const aptStart = apt.start_time?.substring(0, 5);
     if (timeStr !== aptStart) return null;
 
+    // Opción B (spec 028 + multi-dentista): citas de OTROS dentistas en el
+    // mismo box se renderizan como placeholder gris read-only "Ocupado por
+    // Dr. X" — sin info de paciente (privacidad). Vía RPC SECURITY DEFINER.
+    if (apt.isReadOnlyOtherDentist) {
+      const duration = apt.end_time && apt.start_time
+        ? ((new Date(`2000-01-01T${apt.end_time}`) - new Date(`2000-01-01T${apt.start_time}`)) / 60000)
+        : 30;
+      const heightSlots = Math.ceil(duration / slotMinutes);
+      const style = { height: `${heightSlots * 32}px`, zIndex: 9 };
+      return (
+        <TooltipProvider key={apt.id}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                style={style}
+                className="absolute inset-x-1 rounded-md text-xs p-1.5 bg-slate-100 border border-slate-300 border-dashed text-slate-600 cursor-not-allowed select-none"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="font-medium text-[10px] truncate opacity-80">
+                  {apt.patient?.full_name || 'Ocupado'}
+                </div>
+                <div className="text-[9px] opacity-60 italic mt-0.5">No disponible</div>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">
+                Este horario ya tiene una cita de otro dentista en este box.
+                <br />
+                Elegí otro horario o cambiá de box.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
     const patientName = apt.patient?.profile?.full_name
       || apt.patient?.full_name
       || 'Paciente';

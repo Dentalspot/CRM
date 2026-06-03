@@ -42,12 +42,26 @@ import logger from '@/lib/utils/logger';
 import { searchPatientsForAgenda } from '@/lib/patientApi';
 import { usePendingOnlineBookings } from '@/hooks/usePendingOnlineBookings';
 import { CalendarClock, Check, ChevronDown, ChevronUp } from 'lucide-react';
+// Admin+dentista redirige a vista admin (ve toda la org, evita doble-booking).
+import useUserRoleInOrg from '@/hooks/useUserRoleInOrg';
 
 const CalendarPage = () => {
   const { user } = useAuth();
   const { currentOrganizationId } = useCurrentOrganization();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isClinicAdmin, isDentist, loading: roleLoading } = useUserRoleInOrg(currentOrganizationId);
+
+  // Cristobal-case: admin + dentista en la misma cuenta. Le redirigimos a la
+  // vista admin (/dashboard/clinic/agendas) que muestra TODA la org → puede
+  // ver citas de otros dentistas y evita doble-booking accidental.
+  // Dentista PURO (Pablo) se queda en su vista.
+  useEffect(() => {
+    if (roleLoading) return;
+    if (isClinicAdmin && isDentist) {
+      navigate('/dashboard/clinic/agendas', { replace: true });
+    }
+  }, [roleLoading, isClinicAdmin, isDentist, navigate]);
 
   // State
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -271,21 +285,52 @@ const CalendarPage = () => {
         selectedClinic !== 'all' ? selectedClinic : null,
         currentOrganizationId
       );
-      
+
       // Merge appointments with reminders
       const enhancedAppointments = (data || []).map(apt => {
         const aptReminders = reminders.filter(r => r.appointment_id === apt.id);
         return {
           ...apt,
-          reminders: aptReminders 
+          reminders: aptReminders
         };
       });
 
-      setAppointments(enhancedAppointments);
+      // Opción B (2026-06-02): citas de OTROS dentistas en el mismo box →
+      // se muestran como "Ocupado por Dr. X" sin info de paciente.
+      // Vía RPC SECURITY DEFINER para bypass RLS de forma controlada (sin leak
+      // de patient_id, notes, etc.). Solo activa si hay box seleccionado y org.
+      let othersAppointments = [];
+      if (selectedBoxId && currentOrganizationId) {
+        try {
+          const { data: occupancy, error: occErr } = await supabase.rpc('get_box_occupancy_for_org', {
+            p_organization_id: currentOrganizationId,
+            p_box_id: selectedBoxId,
+            p_start_date: weekStart,
+            p_end_date: weekEnd,
+          });
+          if (occErr) {
+            logger.warn('[CalendarPage] box occupancy RPC failed:', occErr.message);
+          } else {
+            othersAppointments = (occupancy || []).map((o) => ({
+              ...o,
+              // Marca para que WeeklyAgendaView lo renderice diferente.
+              isReadOnlyOtherDentist: true,
+              // Patient sintético solo para el render (no se filtra/se busca).
+              patient: { full_name: `Ocupado por ${o.dentist_name || 'otro dentista'}` },
+              // status fake — solo para que filtros existentes no lo escondan.
+              status: 'scheduled',
+            }));
+          }
+        } catch (err) {
+          logger.warn('[CalendarPage] box occupancy threw:', err?.message);
+        }
+      }
+
+      setAppointments([...enhancedAppointments, ...othersAppointments]);
     } catch (error) {
       logger.error('Error al cargar citas:', error);
     }
-  }, [user, currentWeek, selectedClinic, reminders, currentOrganizationId]);
+  }, [user, currentWeek, selectedClinic, selectedBoxId, reminders, currentOrganizationId]);
 
   const fetchBlockedTimes = useCallback(async () => {
     if (!user) return;

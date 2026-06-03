@@ -126,11 +126,16 @@ export const OrganizationProvider = ({ children }) => {
     ? (rolesByOrg[currentOrganizationId] || [])
     : userOrgRoles; // si no hay org seleccionada, fallback a todos
 
-  // Rol operativo efectivo: dentist > clinic_admin > assistant (basado en la org actual)
-  const effectiveRole = currentOrgRoles.includes('dentist')
-    ? 'therapist'
-    : currentOrgRoles.includes('clinic_admin')
-      ? 'clinic'
+  // Rol operativo efectivo: clinic_admin > dentist > assistant (basado en la org actual).
+  // Cambio 2026-06-02: admin+dentista (Cristobal en Los Álamos) → sidebar muestra
+  // menu CLINIC con vista admin de toda la org. Evita doble-booking y desambigua
+  // qué es "Dashboard" vs "Agenda" (siempre = vista admin). Si la cuenta es
+  // dentista PURA, el menu therapist sigue mostrándose como antes.
+  // Mismo cambio que en RoleLandingRedirect.jsx para consistencia post-login.
+  const effectiveRole = currentOrgRoles.includes('clinic_admin')
+    ? 'clinic'
+    : currentOrgRoles.includes('dentist')
+      ? 'therapist'
       : currentOrgRoles.includes('assistant')
         ? 'assistant'
         : null;

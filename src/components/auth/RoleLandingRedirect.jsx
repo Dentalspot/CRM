@@ -83,11 +83,14 @@ const RoleLandingRedirect = () => {
 
         const roles = (data || []).map(r => r.role);
 
-        // Prioridad explícita: dentist > clinic_admin > assistant
-        if (roles.includes('dentist')) {
-          setOrgRole(USER_ROLES.THERAPIST);
-        } else if (roles.includes('clinic_admin')) {
+        // Prioridad explícita: clinic_admin > dentist > assistant.
+        // Cambio 2026-06-02: admin+dentista aterrizan en vista admin para ver
+        // toda la org y evitar doble-booking (caso Cristobal en Los Álamos).
+        // Dentista PURO sigue yendo a su vista propia.
+        if (roles.includes('clinic_admin')) {
           setOrgRole(USER_ROLES.CLINIC);
+        } else if (roles.includes('dentist')) {
+          setOrgRole(USER_ROLES.THERAPIST);
         } else if (roles.includes('assistant')) {
           setOrgRole(USER_ROLES.ASSISTANT);
         } else {
