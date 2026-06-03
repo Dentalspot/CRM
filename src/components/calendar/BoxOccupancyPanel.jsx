@@ -172,7 +172,7 @@ const BoxOccupancyPanel = ({ organizationId, currentWeek, userId }) => {
             onValueChange={(v) => setSelectedBoxId(v || null)}
           >
             <SelectTrigger className="h-9 text-sm">
-              <SelectValue placeholder="Elegí un box..." />
+              <SelectValue placeholder="Elige un box..." />
             </SelectTrigger>
             <SelectContent>
               {boxes.map((b) => (

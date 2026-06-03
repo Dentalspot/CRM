@@ -433,7 +433,7 @@ const WeeklyAgendaView = ({
               <p className="text-xs">
                 Este horario ya tiene una cita de otro dentista en este box.
                 <br />
-                Elegí otro horario o cambiá de box.
+                Elige otro horario o cambia de box.
               </p>
             </TooltipContent>
           </Tooltip>

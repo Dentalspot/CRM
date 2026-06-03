@@ -1065,7 +1065,7 @@ const DentistLandingPage = () => {
             className="container mx-auto px-4 relative z-10"
           >
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-5 leading-tight max-w-2xl mx-auto">
-              Empezá gratis y descubrí cómo se siente tener tu clínica al día
+              Empieza gratis y descubre cómo se siente tener tu clínica al día
             </h2>
             <p className="text-base text-white/80 max-w-lg mx-auto mb-10">
               Sin tarjeta de crédito. Sin compromiso. Configura tu clínica en menos de 10 minutos.
@@ -1082,7 +1082,7 @@ const DentistLandingPage = () => {
                 className="h-14 px-10 bg-white text-primary hover:bg-white/90 rounded-2xl font-bold shadow-xl text-base"
               >
                 <Link to="/auth/register" className="flex items-center gap-2">
-                  Empezá gratis 30 días <ArrowRight className="w-5 h-5" />
+                  Empieza gratis 30 días <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
             </motion.div>

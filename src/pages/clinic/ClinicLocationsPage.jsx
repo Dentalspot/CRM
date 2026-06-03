@@ -177,7 +177,7 @@ const ClinicLocationsPage = () => {
       toast({
         variant: 'destructive',
         title: 'Límite del plan alcanzado',
-        description: `Tu plan permite máximo ${maxClinics} sucursal${maxClinics !== 1 ? 'es' : ''}. Hacé upgrade para agregar más.`,
+        description: `Tu plan permite máximo ${maxClinics} sucursal${maxClinics !== 1 ? 'es' : ''}. Mejora tu plan para agregar más.`,
       });
       return;
     }

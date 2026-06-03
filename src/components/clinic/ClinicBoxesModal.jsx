@@ -111,7 +111,7 @@ const ClinicBoxesModal = ({ isOpen, onClose, clinic, maxBoxes = null, onChanged 
       toast({
         variant: 'destructive',
         title: 'Límite del plan alcanzado',
-        description: `Tu plan permite máximo ${maxBoxes} box${maxBoxes !== 1 ? 'es' : ''}. Hacé upgrade para agregar más.`,
+        description: `Tu plan permite máximo ${maxBoxes} box${maxBoxes !== 1 ? 'es' : ''}. Mejora tu plan para agregar más.`,
       });
       return;
     }
