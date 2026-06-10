@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Search, User, UserPlus, Phone, Mail, AlertTriangle, Save } from 'lucide-react';
+import { Loader2, Search, User, UserPlus, Phone, Mail, AlertTriangle, Save, ExternalLink, Ban } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import useDebounce from '@/hooks/useDebounce';
@@ -84,6 +84,13 @@ const AssistantAppointmentModal = ({
   availableBoxes = [],
   onCreated,
   onUpdated,
+  // Spec 030: cuando una cita pasa de scheduled/confirmed a 'completed', el
+  // padre puede abrir el PostSessionModal. Si no se pasa, no se dispara nada.
+  onSessionCompleted,
+  // Spec 030 followup: callback para "mejor bloquear esta hora" desde el modal
+  // de nueva cita. El padre recibe {date, startTime, endTime, therapistId,
+  // boxId} y abre el modal de bloqueo. Solo visible en modo CREATE.
+  onSwitchToBlock,
 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -341,6 +348,14 @@ const AssistantAppointmentModal = ({
 
         toast({ title: '✅ Cita actualizada' });
         onUpdated?.(updated);
+
+        // Spec 030: si la cita acaba de pasar a 'completed', disparar PostSession.
+        // wasCompleted = status nuevo es completed Y status original NO era completed.
+        const wasCompleted = status === 'completed' && originalStatus !== 'completed';
+        if (wasCompleted && updated?.patient_id && onSessionCompleted) {
+          onSessionCompleted(updated);
+        }
+
         onClose();
       } else {
         // CREATE
@@ -378,9 +393,11 @@ const AssistantAppointmentModal = ({
       }
     } catch (err) {
       logger.error('Error submitting appointment:', err);
-      // Mapeo de códigos del trigger trg_check_appointment_box
+      // Mapeo de códigos del trigger trg_check_appointment_box + constraints DB
       let desc = err.message || 'Verifica los datos e intenta de nuevo.';
-      if (desc.includes('box_double_booking')) {
+      if (desc.includes('unique_appointment_slot')) {
+        desc = 'Ya hay una cita agendada en ese horario para este dentista. Revisá el calendario o probá otro horario.';
+      } else if (desc.includes('box_double_booking')) {
         desc = 'Ya hay una cita en ese box que se superpone con este horario.';
       } else if (desc.includes('box_inactive')) {
         desc = 'El box seleccionado está marcado como inactivo.';
@@ -413,12 +430,53 @@ const AssistantAppointmentModal = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Editar cita' : 'Nueva cita'}</DialogTitle>
-          <DialogDescription>
-            {isEditMode
-              ? 'Modifica los datos de la cita existente.'
-              : 'Completa los datos para agendar una nueva cita.'}
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <DialogTitle>{isEditMode ? 'Editar cita' : 'Nueva cita'}</DialogTitle>
+              <DialogDescription>
+                {isEditMode
+                  ? 'Modifica los datos de la cita existente.'
+                  : 'Completa los datos para agendar una nueva cita.'}
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2 mr-7 flex-shrink-0">
+              {/* Spec 030 followup: shortcut "mejor bloquear esta hora" en modo CREATE.
+                  Cierra este modal y abre el modal de bloqueo con la fecha+hora+
+                  dentista+box pre-cargados. */}
+              {!isEditMode && onSwitchToBlock && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitchToBlock({
+                      date,
+                      startTime,
+                      endTime,
+                      therapistId,
+                      boxId,
+                    });
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium transition-colors"
+                  title="Cerrar este modal y abrir el de bloqueo"
+                >
+                  <Ban className="h-3.5 w-3.5" />
+                  Bloquear horario
+                </button>
+              )}
+              {selectedPatient?.id && (
+                <a
+                  href={`/dashboard/patients/${selectedPatient.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-medium transition-colors"
+                  title="Abrir ficha del paciente en una nueva pestaña"
+                >
+                  <User className="h-3.5 w-3.5" />
+                  Ver ficha
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

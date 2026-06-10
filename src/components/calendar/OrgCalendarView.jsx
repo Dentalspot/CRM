@@ -49,6 +49,13 @@ import { useToast } from '@/components/ui/use-toast';
 
 import WeeklyAgendaView from '@/components/calendar/WeeklyAgendaView';
 import AssistantAppointmentModal from '@/components/calendar/assistant/AssistantAppointmentModal';
+// Spec 030: PostSession se dispara cuando una cita pasa a 'completed' desde el
+// modal del asistente/admin también, no solo desde el del dentista puro.
+import PostSessionModal from '@/features/post-session/components/PostSessionModal';
+// Spec 030 followup: modal completo de bloqueo (con date pickers + recurring).
+// Se abre desde el botón "Bloquear Horarios" del sidebar.
+import BlockTimeModal from '@/components/calendar/BlockTimeModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 import {
   getOrgDentists,
@@ -61,7 +68,6 @@ import {
   updateOrgAppointment,
 } from '@/lib/api/org.api';
 import { logClinicalAccess } from '@/lib/audit/clinicalAuditLogger';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import AgendaSidebar from '@/components/calendar/AgendaSidebar';
 
@@ -118,12 +124,23 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
 
   // State: modales
   const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
+  // Spec 030: cita recién marcada como completed → dispara PostSession.
+  const [completedAppointment, setCompletedAppointment] = useState(null);
   const [prefilledSlot, setPrefilledSlot] = useState(null);
   const [editingAppointmentId, setEditingAppointmentId] = useState(null);
 
   // State: block time dialog (crear)
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  // Spec 030 followup: modal completo de bloqueo (con date pickers + recurring)
+  // que se abre desde el botón "Bloquear Horarios" del sidebar O desde el
+  // shortcut "mejor bloquear esta hora" del modal de Nueva cita.
+  const [blockTimeModalOpen, setBlockTimeModalOpen] = useState(false);
+  const [blockTimePrefilledSlot, setBlockTimePrefilledSlot] = useState(null);
+  const [blockTimeTherapistId, setBlockTimeTherapistId] = useState(null);
   const [pendingBlock, setPendingBlock] = useState(null); // { date, startTime, endTime }
+  // Spec 030 followup: box donde aplica el bloqueo. 'all' = todos los boxes
+  // (NULL en DB). Default = box actual del calendario (o 'all' si vista global).
+  const [pendingBlockBoxId, setPendingBlockBoxId] = useState('all');
   const [blockReason, setBlockReason] = useState('');
   const [isSubmittingBlock, setIsSubmittingBlock] = useState(false);
 
@@ -274,10 +291,14 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     return list;
   }, [appointments, statusFilter, selectedBoxId]);
 
-  // Bloqueos también filtrados estrictos por box.
+  // Bloqueos filtrados por box. Un bloqueo SIN box_id = "el dentista no atiende
+  // este horario en ningun box" → debe verse en TODOS los boxes (no solo en
+  // alguno). Por eso el filtro acepta box_id matching O NULL.
   const filteredBlockedTimes = useMemo(() => {
     if (!selectedBoxId) return blockedTimes;
-    return blockedTimes.filter((bt) => bt.box_id === selectedBoxId);
+    return blockedTimes.filter(
+      (bt) => bt.box_id === selectedBoxId || bt.box_id == null
+    );
   }, [blockedTimes, selectedBoxId]);
 
   // Contador de citas sin box asignado (legacy data) — informativo para que
@@ -440,8 +461,10 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     // Abrir Dialog para confirmar + capturar razón
     setPendingBlock({ date, startTime, endTime });
     setBlockReason('');
+    // Default = box actual del calendario (heredado). Si vista global → 'all'.
+    setPendingBlockBoxId(selectedBoxId || 'all');
     setBlockDialogOpen(true);
-  }, [selectedDentistId, hasOverlap, toast]);
+  }, [selectedDentistId, hasOverlap, toast, selectedBoxId]);
 
   // Confirm del block dialog — crea el blocked_time
   const handleConfirmBlock = useCallback(async () => {
@@ -452,6 +475,7 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
       const created = await createOrgBlockedTime({
         therapist_id: selectedDentistId,
         clinic_id: clinic?.id || null,
+        box_id: pendingBlockBoxId === 'all' ? null : pendingBlockBoxId,
         date: pendingBlock.date,
         start_time: `${pendingBlock.startTime}:00`,
         end_time: `${pendingBlock.endTime}:00`,
@@ -472,7 +496,7 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
     } finally {
       setIsSubmittingBlock(false);
     }
-  }, [pendingBlock, selectedDentistId, clinics, blockReason, toast]);
+  }, [pendingBlock, selectedDentistId, clinics, blockReason, pendingBlockBoxId, toast]);
 
   // Drag-to-move de cita. WeeklyAgendaView dispara como args posicionales:
   //   onAppointmentMove(apptId, dateStr, timeStr, endTimeStr)
@@ -627,27 +651,79 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
             onStatusChange={handleAppointmentStatusChange}
+            onBlockTime={() => {
+              if (!selectedDentistId) {
+                toast({
+                  variant: 'destructive',
+                  title: 'Elegí un dentista primero',
+                  description: 'Los bloqueos son por dentista. Filtrá por uno en el sidebar.',
+                });
+                return;
+              }
+              setBlockTimeModalOpen(true);
+            }}
           />
         </div>
-        <div className="lg:col-span-4 space-y-4">
-          {/* Navegación semanal arriba del grid */}
-          <Card>
-            <CardContent className="pt-4 flex items-center gap-2 justify-center">
-              <Button variant="outline" size="icon" onClick={handlePreviousWeek}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="font-mono text-sm px-3 min-w-[180px] text-center">
-                {format(currentWeek, "d MMM", { locale: es })} — {format(addDays(currentWeek, 6), "d MMM yyyy", { locale: es })}
-              </div>
-              <Button variant="outline" size="icon" onClick={handleNextWeek}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleToday}>
-                Hoy
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="lg:col-span-4 space-y-2">
+          {/* Mini-header de navegación: flechas izquierda/derecha en los
+              extremos, rango de fechas + estado a la izquierda, botón
+              "Hoy {fecha}" centrado. Reemplaza el card grande original. */}
+          <div className="flex items-center gap-3 px-1">
+            {/* Flecha previa semana */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handlePreviousWeek}
+              className="h-8 w-8 flex-shrink-0"
+              title="Semana anterior"
+              aria-label="Semana anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
+            {/* Rango de fechas + estado de la semana */}
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              <span className="font-medium text-foreground">
+                {format(currentWeek, "d MMM", { locale: es })} – {format(addDays(currentWeek, 6), "d MMM yyyy", { locale: es })}
+              </span>
+              {' '}·{' '}
+              {(() => {
+                const today = new Date();
+                const isThisWeek = currentWeek <= today && addDays(currentWeek, 6) >= today;
+                return isThisWeek ? 'Esta semana' : 'Otra semana';
+              })()}
+            </span>
+
+            {/* Spacer flexible para empujar el botón Hoy al centro */}
+            <div className="flex-1" />
+
+            {/* Botón "Hoy {día} de {mes}" centrado */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleToday}
+              className="h-8 text-xs whitespace-nowrap"
+            >
+              <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+              Hoy {format(new Date(), "d 'de' MMMM", { locale: es })}
+            </Button>
+
+            <div className="flex-1" />
+
+            {/* Flecha siguiente semana */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleNextWeek}
+              className="h-8 w-8 flex-shrink-0"
+              title="Semana siguiente"
+              aria-label="Semana siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Grid semanal */}
           {/* Grid semanal */}
           <Card>
             <CardContent className="p-0 overflow-hidden">
@@ -697,6 +773,57 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
         availableBoxes={boxesForClinic}
         onCreated={handleAppointmentCreated}
         onUpdated={handleAppointmentUpdated}
+        onSessionCompleted={(apt) => setCompletedAppointment(apt)}
+        onSwitchToBlock={(slot) => {
+          // Cierra el modal de cita y abre el de bloqueo con fecha+hora+dentista+box
+          setAppointmentModalOpen(false);
+          setPrefilledSlot(null);
+          setEditingAppointmentId(null);
+          setBlockTimePrefilledSlot({
+            date: slot.date,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            clinicId: clinics[0]?.id || 'all',
+            boxId: slot.boxId,
+          });
+          setBlockTimeTherapistId(slot.therapistId);
+          setBlockTimeModalOpen(true);
+        }}
+      />
+
+      {/* Spec 030: PostSession se abre cuando se marca cita como completada.
+          El modal lista items pending del budget del paciente, permite tildar
+          los hechos y disparar el cobro contextual. */}
+      <PostSessionModal
+        isOpen={!!completedAppointment}
+        onClose={() => setCompletedAppointment(null)}
+        appointment={completedAppointment}
+        therapistId={completedAppointment?.therapist_id || user?.id}
+      />
+
+      {/* Spec 030 followup: modal completo de bloqueo desde sidebar.
+          Permite multi-día + recurring + selector de box obligatorio. */}
+      <BlockTimeModal
+        isOpen={blockTimeModalOpen}
+        onOpenChange={(open) => {
+          setBlockTimeModalOpen(open);
+          if (!open) {
+            setBlockTimePrefilledSlot(null);
+            setBlockTimeTherapistId(null);
+          }
+        }}
+        clinics={clinics}
+        selectedClinic={clinics[0]?.id || 'all'}
+        selectedBoxId={blockTimePrefilledSlot?.boxId || selectedBoxId}
+        availableBoxes={boxesForClinic}
+        slotInfo={blockTimePrefilledSlot}
+        therapistIdOverride={blockTimeTherapistId || selectedDentistId}
+        onSuccess={() => {
+          setBlockTimeModalOpen(false);
+          setBlockTimePrefilledSlot(null);
+          setBlockTimeTherapistId(null);
+          fetchAgendaData();
+        }}
       />
 
       {/* Dialog para bloquear hora con razón */}
@@ -727,27 +854,58 @@ const OrgCalendarView = ({ scope = 'assistant', organizationId }) => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
-            <Label htmlFor="block-reason" className="text-xs">
-              Razón (opcional)
-            </Label>
-            <Input
-              id="block-reason"
-              value={blockReason}
-              onChange={(e) => setBlockReason(e.target.value.slice(0, 200))}
-              placeholder="Ej: Almuerzo, Reunión, Vacaciones..."
-              maxLength={200}
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !isSubmittingBlock) {
-                  e.preventDefault();
-                  handleConfirmBlock();
-                }
-              }}
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {blockReason.length}/200
-            </p>
+          <div className="space-y-3">
+            {/* Spec 030 followup: selector de box. Empuja al dentista a
+                elegir conscientemente entre un box especifico O todos. Solo
+                aparece si la clinica tiene boxes configurados. */}
+            {boxesForClinic.length > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="block-box" className="text-xs">
+                  Box *
+                </Label>
+                <Select value={pendingBlockBoxId} onValueChange={setPendingBlockBoxId}>
+                  <SelectTrigger id="block-box">
+                    <SelectValue placeholder="Seleccionar box" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los boxes</SelectItem>
+                    {boxesForClinic.map((box) => (
+                      <SelectItem key={box.id} value={box.id}>
+                        {box.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {pendingBlockBoxId === 'all'
+                    ? 'Bloquea al dentista en todos los boxes.'
+                    : 'Bloquea solo este box (los otros boxes quedan libres).'}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="block-reason" className="text-xs">
+                Razón (opcional)
+              </Label>
+              <Input
+                id="block-reason"
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value.slice(0, 200))}
+                placeholder="Ej: Almuerzo, Reunión, Vacaciones..."
+                maxLength={200}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isSubmittingBlock) {
+                    e.preventDefault();
+                    handleConfirmBlock();
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {blockReason.length}/200
+              </p>
+            </div>
           </div>
 
           <DialogFooter className="gap-2">

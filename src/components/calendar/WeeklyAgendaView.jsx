@@ -401,6 +401,20 @@ const WeeklyAgendaView = ({
     return clinic?.name || '';
   };
 
+  // Helper para calcular la duración REAL de una cita en minutos. Source of
+  // truth = (end_time - start_time). NO usar duration_minutes porque puede
+  // estar stale en DB (bug reportado 2026-06-09: cita 09:30-10:00 con
+  // duration_minutes=40 → ocupaba 2 slots visuales en lugar de 1).
+  const getActualDurationMinutes = (apt) => {
+    if (apt.end_time && apt.start_time) {
+      const start = new Date(`2000-01-01T${apt.start_time}`);
+      const end = new Date(`2000-01-01T${apt.end_time}`);
+      const mins = (end - start) / 60000;
+      if (mins > 0) return mins;
+    }
+    return apt.duration_minutes || slotMinutes;
+  };
+
   const renderAppointment = (apt, dateStr, timeStr) => {
     const aptStart = apt.start_time?.substring(0, 5);
     if (timeStr !== aptStart) return null;
@@ -409,11 +423,11 @@ const WeeklyAgendaView = ({
     // mismo box se renderizan como placeholder gris read-only "Ocupado por
     // Dr. X" — sin info de paciente (privacidad). Vía RPC SECURITY DEFINER.
     if (apt.isReadOnlyOtherDentist) {
-      const duration = apt.end_time && apt.start_time
-        ? ((new Date(`2000-01-01T${apt.end_time}`) - new Date(`2000-01-01T${apt.start_time}`)) / 60000)
-        : 30;
-      const heightSlots = Math.ceil(duration / slotMinutes);
-      const style = { height: `${heightSlots * 32}px`, zIndex: 9 };
+      const duration = getActualDurationMinutes(apt);
+      // Altura PROPORCIONAL exacta — no Math.ceil. Si la cita son 30 min y
+      // el slot son 30 min, ocupa 32px. Si son 15 min, ocupa 16px. etc.
+      const heightPx = (duration / slotMinutes) * 32;
+      const style = { height: `${heightPx}px`, zIndex: 9 };
       return (
         <TooltipProvider key={apt.id}>
           <Tooltip>
@@ -462,12 +476,14 @@ const WeeklyAgendaView = ({
     const nameTokens = dentistName.split(' ').filter(Boolean);
     const dentistLastName = nameTokens[1] || nameTokens[0] || dentistName;
 
-    const duration = apt.duration_minutes || 60;
-    const heightSlots = Math.ceil(duration / slotMinutes);
+    const duration = getActualDurationMinutes(apt);
+    // Altura PROPORCIONAL exacta — no Math.ceil. Source of truth = end_time -
+    // start_time. Evita que duration_minutes stale en DB rompa el layout.
+    const heightPx = (duration / slotMinutes) * 32;
     // z-index 10: por encima del bg del slot pero por debajo de la columna
     // de horas sticky (z-20), así no se ven los cards bajo las horas al
     // scrollear horizontal en mobile.
-    const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
+    const style = { height: `${heightPx}px`, zIndex: 10 };
 
     let colorClasses = "";
     let blockLabel = "";
@@ -613,7 +629,8 @@ const WeeklyAgendaView = ({
     const start = parseISO(block.start_time);
     const end = parseISO(block.end_time);
     const diffMins = (end - start) / 60000;
-    const heightSlots = Math.ceil(diffMins / slotMinutes);
+    // Altura PROPORCIONAL exacta — no Math.ceil (bug fix 2026-06-09).
+    const heightPx = (diffMins / slotMinutes) * 32;
     const isDraggingThis = draggedBlock?.id === block.id;
 
     // Spec 028 multi-dentista: detectar modo "Todos los dentistas".
@@ -632,7 +649,7 @@ const WeeklyAgendaView = ({
     const nameTokens = dentistName.split(' ').filter(Boolean);
     const dentistLastName = nameTokens[1] || nameTokens[0] || dentistName;
 
-    const style = { height: `${heightSlots * 32}px`, zIndex: 10 };
+    const style = { height: `${heightPx}px`, zIndex: 10 };
 
     if (isMultiMode) {
       // Modo Todos: banda lateral 6px ancho. Slot CLICKABLE (parent maneja click cita).

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Ban, Loader2, CheckCircle2, FileText, XCircle, Trash2 } from 'lucide-react';
+import { User, Ban, Loader2, CheckCircle2, FileText, XCircle, Trash2, ExternalLink } from 'lucide-react';
 import BoxSelector from '@/components/calendar/BoxSelector';
 import TimePicker from '@/components/ui/time-picker';
 import PatientCombobox from '@/components/ui/patient-combobox';
@@ -383,9 +383,11 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
         duration_minutes: calculateDuration(formData.start_time, formData.end_time)
       };
 
-      // Mapeo de errores del trigger trg_check_appointment_box
+      // Mapeo de errores del trigger trg_check_appointment_box + constraints DB
       const mapBoxError = (errMsg) => {
-        if (errMsg.includes('box_double_booking')) {
+        if (errMsg.includes('unique_appointment_slot')) {
+          return 'Ya hay una cita agendada en ese horario para este dentista. Revisá el calendario o probá otro horario.';
+        } else if (errMsg.includes('box_double_booking')) {
           return 'Ya hay una cita en ese box que se superpone con este horario.';
         } else if (errMsg.includes('box_inactive')) {
           return 'El box seleccionado está marcado como inactivo.';
@@ -644,10 +646,27 @@ const AppointmentModal = ({ isOpen, onOpenChange, slotInfo, selectedClinic: prop
     <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogContent className="max-w-lg p-0">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle>{getTitle()}</DialogTitle>
-          <DialogDescription>
-            {dateFormatted} • {timeFormatted}
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <DialogTitle>{getTitle()}</DialogTitle>
+              <DialogDescription>
+                {dateFormatted} • {timeFormatted}
+              </DialogDescription>
+            </div>
+            {(appointmentData?.patient_id || slotInfo?.patientId || formData.patient_id) && (
+              <a
+                href={`/dashboard/patients/${appointmentData?.patient_id || slotInfo?.patientId || formData.patient_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-medium transition-colors mr-7 flex-shrink-0"
+                title="Abrir ficha del paciente en una nueva pestaña"
+              >
+                <User className="h-3.5 w-3.5" />
+                Ver ficha
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
         </DialogHeader>
 
         <AnimatePresence mode="wait">
