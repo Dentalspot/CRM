@@ -21,6 +21,8 @@ const FonoaudiologosSearchPage = lazy(() => import('@/pages/FonoaudiologosSearch
 const LeadCapturePage = lazy(() => import('@/pages/LeadCapturePage'));
 const ConfirmEmailPage = lazy(() => import('@/features/auth/pages/ConfirmEmailPage'));
 const PendingApprovalPage = lazy(() => import('@/pages/PendingApprovalPage'));
+// Spec 030 followup: página de aceptación de invitación de paciente
+const AcceptPatientInvitationPage = lazy(() => import('@/features/auth/pages/AcceptPatientInvitationPage'));
 const PublicConsultaPage = lazy(() => import('@/features/symptom-flow/pages/PublicConsultaPage'));
 
 const PageLoader = () => (
@@ -37,6 +39,8 @@ const PublicRouter = () => {
         <Route path="/auth">
           <Route path="confirm-email" element={<ConfirmEmailPage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />
+          {/* Spec 030 followup: accept-invitation — DEBE ir antes de :action. */}
+          <Route path="accept-invitation" element={<AcceptPatientInvitationPage />} />
           {/* Pending approval — destino del RoleGuard para pros no aprobados.
               IMPORTANTE: debe ir ANTES de :action (catch-all). */}
           <Route path="pending-approval" element={<PendingApprovalPage />} />

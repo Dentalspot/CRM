@@ -68,10 +68,10 @@ import {
   Plus,
   Shield,
   UserCog,
+  User,
+  ExternalLink,
   X,
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import logger from '@/lib/utils/logger';
 import ClinicPatientCreateModal from './ClinicPatientCreateModal';
 import { useDentistList } from '@/features/patients/hooks/useDentistList';
@@ -152,6 +152,21 @@ const ClinicPatientsPage = () => {
         profilesById = (profileRows || []).reduce((acc, p) => { acc[p.id] = p; return acc; }, {});
       }
 
+      // Spec 030 followup: calcular si cada paciente tiene deuda activa
+      // (suma de balance_due > 0 sobre todos sus budgets en v_budget_balance).
+      const patientIds = patientList.map((p) => p.id);
+      let debtByPatient = {};
+      if (patientIds.length > 0) {
+        const { data: balanceRows } = await supabase
+          .from('v_budget_balance')
+          .select('patient_id, balance_due')
+          .in('patient_id', patientIds);
+        (balanceRows || []).forEach((b) => {
+          const due = Number(b.balance_due) || 0;
+          debtByPatient[b.patient_id] = (debtByPatient[b.patient_id] || 0) + due;
+        });
+      }
+
       // Fallback al campo denormalizado en `patients` cuando no hay profile.
       const enriched = patientList.map(p => ({
         ...p,
@@ -160,6 +175,8 @@ const ClinicPatientsPage = () => {
         phone: profilesById[p.profile_id]?.phone || p.phone || '',
         rut: p.rut || '',
         therapist: p.therapist_id ? profilesById[p.therapist_id] || null : null,
+        debt_amount: debtByPatient[p.id] || 0,
+        has_debt: (debtByPatient[p.id] || 0) > 0,
       }));
 
       setPatients(enriched);
@@ -457,17 +474,16 @@ const ClinicPatientsPage = () => {
                       />
                     </TableHead>
                     <TableHead>Paciente</TableHead>
-                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
                     <TableHead className="hidden lg:table-cell">Dentista asignado</TableHead>
-                    <TableHead className="hidden lg:table-cell">Última cita</TableHead>
-                    <TableHead>Estado</TableHead>
+                    <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                    <TableHead>Presenta deuda</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPatients.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                         {patients.length === 0
                           ? 'Aún no hay pacientes en la clínica.'
                           : 'No se encontraron pacientes con los filtros aplicados.'}
@@ -487,15 +503,28 @@ const ClinicPatientsPage = () => {
                           />
                         </TableCell>
                         <TableCell className="font-medium">
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center">
-                              <Users className="h-4 w-4 text-slate-400" />
+                          {/* Spec 030 followup: click sobre el nombre del paciente
+                              navega a su ficha (misma pestaña, comportamiento
+                              estándar de tabla). El botón "Ver ficha" en la
+                              columna acciones abre en pestaña nueva. */}
+                          <a
+                            href={`/dashboard/patients/${p.id}`}
+                            className="flex items-center gap-3 group cursor-pointer"
+                            title="Ver ficha clínica"
+                          >
+                            <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-teal-100 transition-colors">
+                              <Users className="h-4 w-4 text-slate-400 group-hover:text-teal-600 transition-colors" />
                             </div>
                             <div>
-                              <div className="text-sm font-semibold">{p.full_name || 'Sin Nombre'}</div>
+                              <div className="text-sm font-semibold text-gray-900 group-hover:text-teal-700 transition-colors">
+                                {p.full_name || 'Sin Nombre'}
+                              </div>
                               <div className="text-xs text-muted-foreground md:hidden">{p.email}</div>
                             </div>
-                          </div>
+                          </a>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-gray-600 whitespace-nowrap">
+                          {p.therapist?.full_name || <span className="italic text-gray-400">Sin asignar</span>}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           <div className="text-sm space-y-0.5">
@@ -511,37 +540,50 @@ const ClinicPatientsPage = () => {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell text-sm text-gray-600">
-                          {p.therapist?.full_name || <span className="italic text-gray-400">Sin asignar</span>}
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell text-sm text-gray-600">
-                          {p.last_appointment_date
-                            ? format(new Date(p.last_appointment_date), "d MMM yyyy", { locale: es })
-                            : <span className="italic text-gray-400">—</span>}
-                        </TableCell>
                         <TableCell>
+                          {/* Spec 030 followup: Sí/No de balance_due > 0 en
+                              cualquier budget activo del paciente. */}
                           <Badge
                             className={
-                              p.status === 'active'
-                                ? 'bg-green-100 text-green-700 border-0'
-                                : 'bg-gray-100 text-gray-700 border-0'
+                              p.has_debt
+                                ? 'bg-amber-100 text-amber-700 border-0'
+                                : 'bg-gray-100 text-gray-600 border-0'
                             }
+                            title={p.has_debt ? `Saldo pendiente: $${p.debt_amount.toLocaleString('es-CL')}` : 'Sin saldo pendiente'}
                           >
-                            {p.status === 'active' ? 'Activo' : (p.status || 'Inactivo')}
+                            {p.has_debt ? 'Sí' : 'No'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toast({
-                              title: 'Agendar cita — próximamente',
-                              description: 'La integración con el formulario de citas llega en la próxima iteración.',
-                            })}
-                          >
-                            <CalendarPlus className="h-4 w-4 mr-1" />
-                            <span className="hidden sm:inline">Agendar</span>
-                          </Button>
+                          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                            {/* Spec 030 followup: shortcut a la ficha clínica
+                                desde el listado admin. RoleGuard de
+                                /dashboard/patients/:id ya permite CLINIC +
+                                ASSISTANT (fix anterior). Abre en pestaña
+                                nueva para no perder el contexto del listado. */}
+                            <a
+                              href={`/dashboard/patients/${p.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-medium transition-colors whitespace-nowrap"
+                              title="Abrir ficha clínica en una nueva pestaña"
+                            >
+                              <User className="h-4 w-4" />
+                              <span className="hidden sm:inline">Ver ficha</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toast({
+                                title: 'Agendar cita — próximamente',
+                                description: 'La integración con el formulario de citas llega en la próxima iteración.',
+                              })}
+                            >
+                              <CalendarPlus className="h-4 w-4 mr-1" />
+                              <span className="hidden sm:inline">Agendar</span>
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

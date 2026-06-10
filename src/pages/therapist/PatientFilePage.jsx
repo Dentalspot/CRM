@@ -17,7 +17,6 @@ import Odontogram from '@/features/odontogram/components/Odontogram';
 import ConsentRequiredBanner from '@/components/shared/ConsentRequiredBanner';
 import PatientDataTab from '@/features/patient-file/components/PatientDataTab';
 import ClinicalHistoryTab from '@/features/patient-file/components/ClinicalHistoryTab';
-import PlanningTab from '@/features/patient-file/components/PlanningTab';
 import PaymentStatusTab from '@/features/patient-file/components/PaymentStatusTab';
 import BudgetsTab from '@/features/budgets/components/BudgetsTab';
 
@@ -41,32 +40,23 @@ const PatientFilePage = () => {
   const [activeTab, setActiveTab] = useState('datos');
   const [odontogramMode, setOdontogramMode] = useState('diagnostico');
 
-  // Planning and payments are core features available to all paid plans
-  const canAccessPlanning = !isFreePlan;
+  // Payments are core feature available to all paid plans
   const canAccessPayments = !isFreePlan;
 
   const isPie = FEATURE_FLAGS.PIE_ESCOLAR && patientData?.patient?.attention_type === 'pie_escolar';
 
   useEffect(() => {
     if (isPie) {
-       // Reset tab logic for PIE mode
-       if (!['datos_pie', 'paci', 'sesiones_pie', 'informes_pie'].includes(activeTab)) {
-           setActiveTab('datos_pie');
-       }
-    } else {
-        if (location.pathname.includes('/planning')) {
-          if (canAccessPlanning) {
-            setActiveTab('planificar');
-          } else {
-            navigate(`/dashboard/patients/${id}`, { replace: true });
-          }
-        } else {
-          if (activeTab === 'planificar' && !location.pathname.includes('/planning')) {
-            setActiveTab('datos');
-          }
-        }
+      // Reset tab logic for PIE mode
+      if (!['datos_pie', 'paci', 'sesiones_pie', 'informes_pie'].includes(activeTab)) {
+        setActiveTab('datos_pie');
+      }
+    } else if (location.pathname.includes('/planning')) {
+      // Spec 030 followup: tab 'planificar' eliminada → si entra por URL legacy,
+      // redirige a la ficha por defecto (datos del paciente).
+      navigate(`/dashboard/patients/${id}`, { replace: true });
     }
-  }, [location.pathname, canAccessPlanning, id, navigate, isPie]);
+  }, [location.pathname, id, navigate, isPie, activeTab]);
 
   const fetchTreatmentTemplates = async (userId) => {
     if (!userId) return { data: [] };
@@ -148,14 +138,6 @@ const PatientFilePage = () => {
 
   const handleTabChange = (value) => {
     if (!isPie) {
-        if (value === 'planificar' && !canAccessPlanning) {
-          toast({
-            title: "Función bloqueada",
-            description: "La planificación está disponible desde el plan Individual.",
-            variant: "default"
-          });
-          return;
-        }
 
         if (value === 'pagos' && !canAccessPayments) {
           toast({
@@ -295,27 +277,25 @@ const PatientFilePage = () => {
               ) : (
                 // STANDARD TABS
                 <>
+                  {/* Spec 030 followup: tabs odontologicas. Orden:
+                      Datos → Historial → Odontograma → Presupuestos → Pagos.
+                      'Planificar' eliminado (concepto fonoaudiologico legacy). */}
                   <div className="overflow-x-auto scrollbar-hide -mx-2 px-2 mb-6">
                     <TabsList className="inline-flex w-auto sm:w-full justify-start bg-gray-100 p-1 rounded-lg min-w-max sm:min-w-0">
                       <TabsTrigger value="datos" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
-                        Datos
-                        <span className="hidden sm:inline"> del Paciente</span>
+                        Datos del paciente
                       </TabsTrigger>
                       <TabsTrigger value="historial" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
-                        Historial
-                        <span className="hidden sm:inline"> Clínico</span>
+                        Historial clínico
                       </TabsTrigger>
-                      <TabsTrigger value="planificar" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all gap-1 whitespace-nowrap" disabled={!canAccessPlanning}>
-                        Planificar {!canAccessPlanning && <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 ml-1" />}
+                      <TabsTrigger value="odontograma" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
+                        Odontograma
                       </TabsTrigger>
                       <TabsTrigger value="presupuestos" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
                         Presupuestos
                       </TabsTrigger>
                       <TabsTrigger value="pagos" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all gap-1 whitespace-nowrap" disabled={!canAccessPayments}>
                         Pagos {!canAccessPayments && <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 ml-1" />}
-                      </TabsTrigger>
-                      <TabsTrigger value="odontograma" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
-                        Odontograma
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -328,12 +308,11 @@ const PatientFilePage = () => {
                     <ClinicalHistoryTab patientId={id} appointments={appointments} clinicalHistory={clinicalHistory} evaluations={evaluations} documents={documents} onRefresh={handleRefresh} />
                   </TabsContent>
 
-                  <TabsContent value="planificar" className="mt-0">
-                    <PlanningTab patientId={id} goals={goals} plans={plans} templates={treatmentTemplates} onRefresh={handleRefresh} />
-                  </TabsContent>
-
                   <TabsContent value="presupuestos" className="mt-0">
-                    <BudgetsTab patientId={id} />
+                    <BudgetsTab
+                      patientId={id}
+                      onSwitchToOdontogram={() => setActiveTab('odontograma')}
+                    />
                   </TabsContent>
 
                   <TabsContent value="pagos" className="mt-0">
