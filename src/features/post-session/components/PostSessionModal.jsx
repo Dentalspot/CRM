@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
@@ -24,6 +24,7 @@ import {
   DollarSign,
   CalendarPlus,
   CheckCircle2,
+  CheckSquare,
   ChevronRight,
   Mic,
   Loader2,
@@ -32,6 +33,7 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  ListChecks,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -47,6 +49,8 @@ import {
   scheduleNextAppointment,
 } from '../api/postSessionApi';
 import NotizInlineWidget from './NotizInlineWidget';
+import BudgetItemsChecklistStep from './BudgetItemsChecklistStep';
+import { formatCurrency } from '@/lib/utils/formatters';
 
 const REFERRAL_TYPES = [
   { value: 'fonoaudiologo', label: 'Odontólogo/a' },
@@ -68,12 +72,13 @@ const PAYMENT_METHODS = [
   { value: 'mercadopago', label: 'Mercado Pago' },
 ];
 
-const STEPS = ['document', 'payment', 'schedule', 'done'];
+const STEPS = ['document', 'items', 'payment', 'schedule', 'done'];
 
 // ─── Step Indicator ───
 const StepIndicator = ({ currentStep, completed }) => {
   const stepsMeta = [
     { key: 'document', icon: FileText, label: 'Nota' },
+    { key: 'items', icon: ListChecks, label: 'Hecho' },
     { key: 'payment', icon: DollarSign, label: 'Pago' },
     { key: 'schedule', icon: CalendarPlus, label: 'Siguiente' },
   ];
@@ -134,9 +139,16 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState({
     document: false,
+    items: false,
     payment: false,
     schedule: false,
   });
+
+  // Spec 030: items tildados + budget activo → pre-rellenar pago
+  const [suggestedAmount, setSuggestedAmount] = useState(0);
+  const [activeBudgetId, setActiveBudgetId] = useState(null);
+  const [itemsMarkedCount, setItemsMarkedCount] = useState(0);
+  const [showSkipWarning, setShowSkipWarning] = useState(false);
 
   // Step 1 state
   const [sessionNotes, setSessionNotes] = useState('');
@@ -145,7 +157,10 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
 
   // Referral state
   const [showReferral, setShowReferral] = useState(false);
-  const [referralType, setReferralType] = useState('');
+  // Spec 030: derivación intra-clínica es siempre a otro dentista. Pre-cargado
+  // para evitar input innecesario. Si en futuro spec se permite cross-clínica
+  // o cross-disciplina, este state vuelve a 'string vacío' con dropdown.
+  const [referralType, setReferralType] = useState('odontologo');
   const [referralReason, setReferralReason] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -156,6 +171,11 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
   const [registerPayment, setRegisterPayment] = useState(true);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('transferencia');
+  // Spec 030: pago split en 2 métodos (ej. $50k transferencia + $55k efectivo).
+  // Toggle off por default → flow tradicional 1 método. On → muestra 2da fila.
+  const [splitPayment, setSplitPayment] = useState(false);
+  const [paymentAmount2, setPaymentAmount2] = useState('');
+  const [paymentMethod2, setPaymentMethod2] = useState('efectivo');
 
   // Step 3 state
   const [scheduleNext, setScheduleNext] = useState(true);
@@ -170,27 +190,73 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
     if (steps) setNextSteps(steps);
   };
 
-  // Search professionals in DentalSpot
-  const handleSearchProfessionals = useCallback(async (term) => {
-    setSearchTerm(term);
-    if (term.length < 2) { setSearchResults([]); return; }
+  // Spec 030: derivación intra-clínica. Cargar la lista de dentistas activos
+  // de la org del paciente cuando se expande la sección "Derivar". No hay
+  // input de búsqueda — clínica chica = pocos dentistas, dropdown directo.
+  // Cada item: nombre + chip especialidad (fallback "Dentista" si null/vacío).
+  useEffect(() => {
+    if (!showReferral) return;
+    const orgIdResolved =
+      appointment?.organization_id ||
+      appointment?.patient?.organization_id ||
+      null;
+    if (!orgIdResolved) {
+      setSearchResults([]);
+      return;
+    }
+
+    let cancelled = false;
     setSearching(true);
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, therapist_branding(avatar_url)')
-        .eq('role', 'therapist')
-        .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)
-        .limit(6);
-      setSearchResults((data || []).map(d => ({
-        therapist_id: d.id,
-        full_name: d.full_name,
-        email: d.email,
-        avatar_url: d.therapist_branding?.[0]?.avatar_url || d.therapist_branding?.avatar_url || null,
-      })));
-    } catch { setSearchResults([]); }
-    finally { setSearching(false); }
-  }, []);
+    (async () => {
+      try {
+        const { data: members } = await supabase
+          .from('organization_members')
+          .select('user_id')
+          .eq('organization_id', orgIdResolved)
+          .eq('role', 'dentist')
+          .eq('is_active', true);
+
+        const userIds = (members || [])
+          .map((m) => m.user_id)
+          .filter((id) => id !== therapistId);
+
+        if (userIds.length === 0) {
+          if (!cancelled) setSearchResults([]);
+          return;
+        }
+
+        // Lookup full_name + specialization_areas en v_therapist_full_profile
+        const { data: profiles } = await supabase
+          .from('v_therapist_full_profile')
+          .select('id, full_name, specialization_areas')
+          .in('id', userIds)
+          .order('full_name', { ascending: true });
+
+        if (!cancelled) {
+          setSearchResults((profiles || []).map((p) => ({
+            therapist_id: p.id,
+            full_name: p.full_name || 'Sin nombre',
+            specialty: Array.isArray(p.specialization_areas) && p.specialization_areas.length > 0
+              ? p.specialization_areas[0]
+              : 'Dentista',
+          })));
+        }
+      } catch {
+        if (!cancelled) setSearchResults([]);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showReferral,
+    appointment?.organization_id,
+    appointment?.patient?.organization_id,
+    therapistId,
+  ]);
 
   const patientId = appointment?.patient_id;
   const patientName =
@@ -216,12 +282,12 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
 
   const handleClose = () => {
     setStep('document');
-    setCompleted({ document: false, payment: false, schedule: false });
+    setCompleted({ document: false, items: false, payment: false, schedule: false });
     setSessionNotes('');
     setObjectives('');
     setNextSteps('');
     setShowReferral(false);
-    setReferralType('');
+    setReferralType('odontologo');
     setReferralReason('');
     setSearchTerm('');
     setSearchResults([]);
@@ -229,9 +295,16 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
     setRegisterPayment(true);
     setPaymentAmount('');
     setPaymentMethod('transferencia');
+    setSplitPayment(false);
+    setPaymentAmount2('');
+    setPaymentMethod2('efectivo');
     setScheduleNext(true);
     setNextDate('');
     setSaving(false);
+    setSuggestedAmount(0);
+    setActiveBudgetId(null);
+    setItemsMarkedCount(0);
+    setShowSkipWarning(false);
     onClose();
   };
 
@@ -270,12 +343,42 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
 
       setCompleted((prev) => ({ ...prev, document: true }));
       toast({ title: showReferral && referralType ? 'Nota y derivación guardadas' : 'Nota clínica guardada' });
-      goToStep('payment');
+      goToStep('items');
     } catch (err) {
       toast({ variant: 'destructive', title: 'Error', description: err.message });
     } finally {
       setSaving(false);
     }
+  };
+
+  // ─── Step 1.5: Items del presupuesto (Spec 030) ───
+  const handleItemsComplete = (amount, budgetId) => {
+    setSuggestedAmount(amount || 0);
+    setActiveBudgetId(budgetId || null);
+    setCompleted((prev) => ({ ...prev, items: true }));
+
+    if (amount && amount > 0) {
+      setPaymentAmount(String(amount));
+      setItemsMarkedCount((prev) => prev + 1);
+    }
+
+    goToStep('payment');
+  };
+
+  const handleItemsSkip = () => {
+    // Si saltea sin tildar nada, warning amable (FR-013)
+    if (itemsMarkedCount === 0 && !showSkipWarning) {
+      setShowSkipWarning(true);
+      return;
+    }
+    setShowSkipWarning(false);
+    goToStep('payment');
+  };
+
+  const confirmSkipItems = () => {
+    setShowSkipWarning(false);
+    setCompleted((prev) => ({ ...prev, items: false }));
+    goToStep('payment');
   };
 
   // ─── Step 2: Payment ───
@@ -291,18 +394,68 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
       return;
     }
 
+    // Spec 030: pago split en 2 métodos
+    const amount2 = splitPayment ? parseInt(paymentAmount2, 10) : 0;
+    if (splitPayment) {
+      if (!amount2 || amount2 <= 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Ingresa un monto válido para el segundo método de pago.',
+        });
+        return;
+      }
+      if (paymentMethod === paymentMethod2) {
+        toast({
+          variant: 'destructive',
+          title: 'Los métodos deben ser distintos',
+          description: 'Si es el mismo método, desactivá el pago combinado y sumá los montos.',
+        });
+        return;
+      }
+    }
+
     setSaving(true);
     try {
-      await registerSessionPayment({
+      // Pago 1
+      const payment = await registerSessionPayment({
         patientId,
         therapistId,
         appointmentId: appointment.id,
         amount,
         method: paymentMethod,
+        budgetId: activeBudgetId, // spec 030: vincula pago a budget si hay
       });
 
+      // UI Honesty §V: confirmar fila creada antes del toast verde
+      if (!payment?.id) {
+        throw new Error('El pago no se confirmó en el servidor');
+      }
+
+      // Pago 2 (si split). Si este falla, el primero ya está en DB — no rollback
+      // automático. El usuario va a ver toast de error pero el primer pago queda.
+      // Si esto se vuelve problema en producción, refactor a un RPC atómico.
+      let payment2 = null;
+      if (splitPayment) {
+        payment2 = await registerSessionPayment({
+          patientId,
+          therapistId,
+          appointmentId: appointment.id,
+          amount: amount2,
+          method: paymentMethod2,
+          budgetId: activeBudgetId,
+        });
+        if (!payment2?.id) {
+          throw new Error('El segundo pago no se confirmó. El primero quedó registrado.');
+        }
+      }
+
+      const totalAmount = amount + amount2;
       setCompleted((prev) => ({ ...prev, payment: true }));
-      toast({ title: 'Pago registrado' });
+      toast({
+        title: splitPayment
+          ? `2 pagos registrados — total ${formatCurrency(totalAmount)}`
+          : `Pago registrado — ${formatCurrency(amount)}`,
+      });
       goToStep('schedule');
     } catch (err) {
       toast({ variant: 'destructive', title: 'Error', description: err.message });
@@ -384,32 +537,26 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
         {step === 'document' && (
           <div className="space-y-4 py-2">
             <div>
-              <Label className="text-sm font-medium">Notas de sesión *</Label>
+              <Label className="text-sm font-medium">Nota de evolución *</Label>
               <Textarea
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
-                placeholder="Descripción de lo trabajado, observaciones, progreso..."
-                rows={3}
+                placeholder="Ej: Endodoncia diente 36 sin complicaciones. Anestesia 1 carpule de lidocaína 2%."
+                rows={2}
                 className="mt-1 resize-none"
               />
             </div>
             <div>
-              <Label className="text-sm font-medium">Objetivos trabajados</Label>
-              <Input
-                value={objectives}
-                onChange={(e) => setObjectives(e.target.value)}
-                placeholder="Ej: Articulación /r/, comprensión de instrucciones"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Próximos pasos</Label>
+              <Label className="text-sm font-medium">Indicaciones al paciente</Label>
               <Input
                 value={nextSteps}
                 onChange={(e) => setNextSteps(e.target.value)}
-                placeholder="Ej: Reforzar en casa con ejercicios de soplo"
+                placeholder="Ej: Evitar masticar de ese lado 24h, ibuprofeno 400mg c/8h si hay dolor"
                 className="mt-1"
               />
+              {/* TODO spec 030 Bloque 3 (futuro): exponer este campo al
+                  paciente en su vista (/dashboard/patient/my-treatment). Hoy
+                  queda solo en clinical_history (visible al dentista). */}
             </div>
 
             {FEATURE_FLAGS.NOTIZ && (
@@ -437,74 +584,75 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
 
               {showReferral && (
                 <div className="p-4 space-y-3 bg-white border-t">
-                  <div>
-                    <Label className="text-sm font-medium">Tipo de profesional</Label>
-                    <Select value={referralType} onValueChange={setReferralType}>
-                      <SelectTrigger className="mt-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                      <SelectContent>
-                        {REFERRAL_TYPES.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
+                  {/* Spec 030: derivación intra-clínica. Sin dropdown de tipo
+                      (siempre otro dentista) ni búsqueda global. Solo dentistas
+                      activos de la org del paciente. */}
                   <div>
                     <Label className="text-sm font-medium">Motivo de derivación</Label>
                     <Textarea
                       value={referralReason}
                       onChange={(e) => setReferralReason(e.target.value)}
-                      placeholder="Ej: Se requiere evaluación cognitiva mediante WISC..."
+                      placeholder="Ej: Necesita revisión de oclusión, no es mi área"
                       rows={2}
                       className="mt-1 resize-none"
                     />
                   </div>
 
-                  {/* Search DentalSpot professionals */}
+                  {/* Spec 030: dropdown directo con dentistas de la org del paciente.
+                      Cada item muestra nombre + chip de especialidad. */}
                   <div>
-                    <Label className="text-sm font-medium">Buscar profesional en DentalSpot</Label>
-                    <div className="relative mt-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        value={searchTerm}
-                        onChange={(e) => handleSearchProfessionals(e.target.value)}
-                        placeholder="Nombre del profesional..."
-                        className="pl-9"
-                      />
-                      {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />}
-                    </div>
-
-                    {searchResults.length > 0 && (
-                      <div className="mt-2 border rounded-lg divide-y max-h-[180px] overflow-y-auto">
-                        {searchResults.map(pro => (
-                          <button
-                            key={pro.therapist_id}
-                            type="button"
-                            onClick={() => { setSelectedProfessional(pro); setSearchTerm(pro.full_name); setSearchResults([]); }}
-                            className={`w-full flex items-center gap-3 p-2.5 text-left hover:bg-teal-50 transition-colors ${selectedProfessional?.therapist_id === pro.id ? 'bg-teal-50' : ''}`}
-                          >
-                            {pro.avatar_url ? (
-                              <img src={pro.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 text-xs font-bold">
-                                {(pro.full_name || '?')[0]}
-                              </div>
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">{pro.full_name}</p>
-                              <p className="text-xs text-gray-500 truncate">{''}</p>
-                            </div>
-                          </button>
-                        ))}
+                    <Label className="text-sm font-medium">Derivar a (dentista de la clínica)</Label>
+                    {searching ? (
+                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 italic">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Cargando dentistas...
                       </div>
+                    ) : searchResults.length === 0 ? (
+                      <p className="mt-1 text-xs text-gray-500 italic">
+                        No hay otros dentistas activos en esta clínica.
+                      </p>
+                    ) : (
+                      <Select
+                        value={selectedProfessional?.therapist_id || ''}
+                        onValueChange={(id) => {
+                          const found = searchResults.find((p) => p.therapist_id === id);
+                          setSelectedProfessional(found || null);
+                        }}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Elegí un dentista..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {searchResults.map((pro) => (
+                            <SelectItem key={pro.therapist_id} value={pro.therapist_id}>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">Dr. {pro.full_name}</span>
+                                <span className="text-xs text-purple-600 bg-purple-50 border border-purple-200 rounded px-1.5 py-0.5">
+                                  {pro.specialty}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
 
                     {selectedProfessional && (
                       <div className="mt-2 flex items-center gap-2 p-2 bg-teal-50 rounded-lg border border-teal-200">
                         <UserPlus className="h-4 w-4 text-teal-600 flex-shrink-0" />
-                        <span className="text-sm font-medium text-teal-800 truncate">{selectedProfessional.full_name}</span>
-                        <a href={`/profesionales/${selectedProfessional.therapist_id}`} target="_blank" rel="noopener noreferrer" className="ml-auto">
-                          <ExternalLink className="h-3.5 w-3.5 text-teal-500" />
-                        </a>
-                        <button type="button" onClick={() => { setSelectedProfessional(null); setSearchTerm(''); }} className="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                        <span className="text-sm font-medium text-teal-800 truncate">
+                          Dr. {selectedProfessional.full_name}
+                        </span>
+                        <span className="text-xs text-purple-600 bg-purple-50 border border-purple-200 rounded px-1.5 py-0.5 flex-shrink-0">
+                          {selectedProfessional.specialty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedProfessional(null)}
+                          className="ml-auto text-gray-400 hover:text-red-500 text-xs"
+                        >
+                          ✕
+                        </button>
                       </div>
                     )}
                   </div>
@@ -528,6 +676,57 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
           </div>
         )}
 
+        {/* ═══ Step 1.5: Items del presupuesto (Spec 030) ═══ */}
+        {step === 'items' && !showSkipWarning && (
+          <BudgetItemsChecklistStep
+            patientId={patientId}
+            appointmentId={appointment?.id}
+            patientFullName={patientName}
+            therapistId={therapistId}
+            clinicId={appointment?.clinic_id}
+            organizationId={
+              appointment?.organization_id ||
+              appointment?.patient?.organization_id ||
+              null
+            }
+            onComplete={handleItemsComplete}
+            onSkip={handleItemsSkip}
+          />
+        )}
+
+        {step === 'items' && showSkipWarning && (
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 flex gap-3">
+              <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-amber-900">
+                  No marcaste ninguna intervención completada
+                </p>
+                <p className="text-sm text-amber-700 mt-1">
+                  ¿Querés volver a tildar los items que hiciste, o continuar igual al pago?
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSkipWarning(false)}
+              >
+                Volver a tildar
+              </Button>
+              <Button
+                onClick={confirmSkipItems}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                Continuar igual
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* ═══ Step 2: Payment ═══ */}
         {step === 'payment' && (
           <div className="space-y-4 py-2">
@@ -544,31 +743,91 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
 
             {registerPayment && (
               <div className="space-y-3 pl-6">
-                <div>
-                  <Label className="text-xs text-gray-500">Monto (CLP)</Label>
-                  <Input
-                    type="number"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder="35000"
-                    className="mt-1"
+                {suggestedAmount > 0 && (
+                  <div className="text-xs text-teal-700 bg-teal-50 border border-teal-200 rounded p-2">
+                    Monto sugerido por intervenciones tildadas: <strong>{formatCurrency(suggestedAmount)}</strong>
+                  </div>
+                )}
+
+                {/* Pago 1 */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs text-gray-500">Monto (CLP)</Label>
+                    <Input
+                      type="number"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      placeholder="35000"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Método</Label>
+                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Spec 030: toggle pago combinado */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox
+                    id="split-payment"
+                    checked={splitPayment}
+                    onCheckedChange={setSplitPayment}
                   />
+                  <Label htmlFor="split-payment" className="text-xs cursor-pointer text-gray-600">
+                    Combinar con un segundo método de pago
+                  </Label>
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-500">Método de pago</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_METHODS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {/* Pago 2 (solo si split) */}
+                {splitPayment && (
+                  <div className="grid grid-cols-2 gap-2 rounded-md border border-dashed border-teal-300 bg-teal-50/40 p-2">
+                    <div>
+                      <Label className="text-xs text-gray-500">Monto 2 (CLP)</Label>
+                      <Input
+                        type="number"
+                        value={paymentAmount2}
+                        onChange={(e) => setPaymentAmount2(e.target.value)}
+                        placeholder="15000"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Método 2</Label>
+                      <Select value={paymentMethod2} onValueChange={setPaymentMethod2}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PAYMENT_METHODS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>
+                              {m.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {paymentAmount && paymentAmount2 && (
+                      <div className="col-span-2 text-xs text-teal-700 font-medium">
+                        Total: {formatCurrency(
+                          (parseInt(paymentAmount, 10) || 0) +
+                            (parseInt(paymentAmount2, 10) || 0)
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -662,6 +921,11 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
               {completed.document && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-medium border border-teal-200">
                   <CheckCircle2 className="h-3.5 w-3.5" /> Nota clínica
+                </span>
+              )}
+              {completed.items && itemsMarkedCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-sm font-medium border border-teal-200">
+                  <ListChecks className="h-3.5 w-3.5" /> Intervenciones tildadas
                 </span>
               )}
               {completed.payment && (

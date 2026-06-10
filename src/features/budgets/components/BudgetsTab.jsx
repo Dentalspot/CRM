@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Loader2, FileText, X, Pencil, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Loader2, FileText, X, Pencil, DollarSign, ChevronDown, ChevronUp, Stethoscope, FileDown } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { generateBudgetPdf } from '../lib/budgetPdfGenerator';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,14 +26,37 @@ const STATUS_LABELS = {
 
 const formatCLP = (n) => new Intl.NumberFormat('es-CL').format(Math.round(n || 0));
 
-const BudgetsTab = ({ patientId }) => {
+const BudgetsTab = ({ patientId, onSwitchToOdontogram }) => {
   const { budgets, loading, error, refresh } = useBudgets(patientId);
+  const { user } = useAuth();
   const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBudgetId, setEditingBudgetId] = useState(null);
   const [paymentBudget, setPaymentBudget] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [expandedBudgetId, setExpandedBudgetId] = useState(null);
+  const [downloadingPdfId, setDownloadingPdfId] = useState(null);
+
+  const handleDownloadPdf = async (budget) => {
+    setDownloadingPdfId(budget.budget_id);
+    try {
+      await generateBudgetPdf({
+        budgetId: budget.budget_id,
+        patientId: budget.patient_id,
+        dentistId: budget.therapist_id || user?.id,
+        clinicId: budget.clinic_id || null,
+      });
+    } catch (err) {
+      logger.error('[BudgetsTab] PDF generation failed:', err);
+      toast({
+        variant: 'destructive',
+        title: 'No se pudo generar el PDF',
+        description: err.message,
+      });
+    } finally {
+      setDownloadingPdfId(null);
+    }
+  };
 
   const openPayment = (budget) => {
     setPaymentBudget(budget);
@@ -89,9 +114,24 @@ const BudgetsTab = ({ patientId }) => {
             Cotizaciones de tratamiento para este paciente.
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" /> Nuevo presupuesto
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Spec 030 followup: shortcut a Odontograma para crear plan a partir
+              del diagnóstico visual. Solo se muestra si el caller cableó el
+              callback (en la ficha standalone, no en lugares donde no hay tab). */}
+          {onSwitchToOdontogram && (
+            <Button
+              variant="outline"
+              onClick={onSwitchToOdontogram}
+              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+            >
+              <Stethoscope className="h-4 w-4 mr-2" />
+              Crear desde diagnóstico
+            </Button>
+          )}
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-2" /> Nuevo presupuesto
+          </Button>
+        </div>
       </div>
 
       {loading && (
@@ -145,6 +185,43 @@ const BudgetsTab = ({ patientId }) => {
                           <span>Descuento: {b.discount_percentage}%</span>
                         )}
                       </div>
+
+                      {/* Spec 030 followup: progreso clínico (items ejecutados) */}
+                      {b.items_total > 0 && (
+                        <div className="mt-3 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Avance clínico</span>
+                            <span className="font-medium text-gray-700">
+                              {b.progress_percent}% · {b.items_completed} de {b.items_total} intervenciones
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-gray-100 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
+                              style={{ width: `${b.progress_percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Chips de dientes incluidos en el presupuesto */}
+                      {b.teeth && b.teeth.length > 0 && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">Incluye:</span>
+                          {b.teeth.map((t) => (
+                            <span
+                              key={t}
+                              className={
+                                t === 'General'
+                                  ? 'inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-medium'
+                                  : 'inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-xs font-medium'
+                              }
+                            >
+                              {t === 'General' ? 'General' : `Diente ${t}`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-2">
@@ -162,6 +239,24 @@ const BudgetsTab = ({ patientId }) => {
                             Enviar
                           </Button>
                         </>
+                      )}
+                      {/* Spec 030 followup: descargar PDF para budgets no borrador */}
+                      {b.status !== 'borrador' && b.status !== 'cancelado' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDownloadPdf(b)}
+                          disabled={downloadingPdfId === b.budget_id}
+                          className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                          title="Descargar PDF del presupuesto"
+                        >
+                          {downloadingPdfId === b.budget_id ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <FileDown className="h-4 w-4 mr-1" />
+                          )}
+                          PDF
+                        </Button>
                       )}
                       {canRegisterPayment && (
                         <Button size="sm" onClick={() => openPayment(b)}>
