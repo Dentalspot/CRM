@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Comparación tamaños logo RolePicker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f8fa; }
+  .label { padding: 12px 20px; background: #0f172a; color: white; font-weight: 600; font-size: 13px; }
+  .stage {
+    min-height: 600px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    border-bottom: 4px solid #e2e8f0;
+  }
+  /* Aurora blobs */
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; pointer-events: none; }
+  .blob-1 { width: 400px; height: 400px; background: #14B8A6; top: -100px; left: -80px; }
+  .blob-2 { width: 500px; height: 500px; background: #45b5c4; bottom: -150px; right: -100px; opacity: 0.35; }
+  .blob-3 { width: 300px; height: 300px; background: #99f6e4; bottom: 10%; left: 30%; opacity: 0.35; }
+  /* Marker container width (max-w-3xl = 768px) */
+  .container-marker {
+    position: absolute;
+    width: 768px;
+    max-width: calc(100% - 32px);
+    top: 0; bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 2px dashed rgba(220, 38, 38, 0.5);
+    border-right: 2px dashed rgba(220, 38, 38, 0.5);
+    pointer-events: none;
+  }
+  .container-label {
+    position: absolute;
+    top: 10px;
+    left: 8px;
+    font-size: 10px;
+    color: rgba(220, 38, 38, 0.7);
+    font-weight: 600;
+    background: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  /* Content */
+  .logo { position: relative; z-index: 10; margin-bottom: 24px; }
+  .content { position: relative; z-index: 10; width: 100%; max-width: 768px; text-align: center; }
+  h1 { font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .card { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border: 1px solid rgba(20,184,166,0.15); border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(20,184,166,0.06); }
+  .card .icon { font-size: 26px; }
+  .card .body { text-align: left; flex: 1; }
+  .card .title { font-weight: 600; color: #0d9488; font-size: 15px; margin-bottom: 2px; }
+  .card .desc { font-size: 12px; color: #64748b; }
+</style>
+</head>
+<body>
+
+<div class="label">A — Compacto (h-20 sm:h-28 = 80-112px) — width ~320-448px</div>
+<div class="stage">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="container-marker"><span class="container-label">max-w-3xl (768px)</span></div>
+  <img src="http://localhost:3000/logo-dentalspot-full.png" class="logo" style="height: 112px; width: auto;" alt="DentalSpot">
+  <div class="content">
+    <h1>¿Cómo quieres ingresar?</h1>
+    <p class="subtitle">Elige el tipo que mejor te describe</p>
+    <div class="grid">
+      <div class="card"><div class="icon">👤</div><div class="body"><div class="title">Paciente</div><div class="desc">Busco atención dental para mí</div></div></div>
+      <div class="card"><div class="icon">🦷</div><div class="body"><div class="title">Dentista</div><div class="desc">Quiero gestionar mis pacientes</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="label">B — Medio (h-28 sm:h-36 = 112-144px) — width ~448-576px</div>
+<div class="stage">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="container-marker"><span class="container-label">max-w-3xl (768px)</span></div>
+  <img src="http://localhost:3000/logo-dentalspot-full.png" class="logo" style="height: 144px; width: auto;" alt="DentalSpot">
+  <div class="content">
+    <h1>¿Cómo quieres ingresar?</h1>
+    <p class="subtitle">Elige el tipo que mejor te describe</p>
+    <div class="grid">
+      <div class="card"><div class="icon">👤</div><div class="body"><div class="title">Paciente</div><div class="desc">Busco atención dental para mí</div></div></div>
+      <div class="card"><div class="icon">🦷</div><div class="body"><div class="title">Dentista</div><div class="desc">Quiero gestionar mis pacientes</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="label">C — Grande pero contenido (h-32 sm:h-44 = 128-176px max-w-2xl = 672px) — NO desborda</div>
+<div class="stage">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="container-marker"><span class="container-label">max-w-3xl (768px)</span></div>
+  <img src="http://localhost:3000/logo-dentalspot-full.png" class="logo" style="max-width: 672px; max-height: 176px; height: auto; width: 100%; object-fit: contain;" alt="DentalSpot">
+  <div class="content">
+    <h1>¿Cómo quieres ingresar?</h1>
+    <p class="subtitle">Elige el tipo que mejor te describe</p>
+    <div class="grid">
+      <div class="card"><div class="icon">👤</div><div class="body"><div class="title">Paciente</div><div class="desc">Busco atención dental para mí</div></div></div>
+      <div class="card"><div class="icon">🦷</div><div class="body"><div class="title">Dentista</div><div class="desc">Quiero gestionar mis pacientes</div></div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
