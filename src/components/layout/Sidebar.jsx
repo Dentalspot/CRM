@@ -219,6 +219,9 @@ const Sidebar = ({ isOpen, onClose }) => {
             items: [
               { name: 'Dashboard', icon: Home, path: '/dashboard/patient' },
               { name: 'Mi Agenda', icon: Calendar, path: '/dashboard/my-agenda' },
+              // Spec 030 Bloque 3: vista del paciente con su plan de tratamiento
+              // (presupuesto + progreso + balance + indicaciones).
+              { name: 'Mi Tratamiento', icon: Wallet, path: '/dashboard/patient/my-treatment' },
               { name: 'Mi Progreso', icon: TrendingUp, path: '/dashboard/patient/my-progress' },
               { name: 'Mis Preguntas', icon: MessageCircleQuestion, path: '/dashboard/questions' },
               { name: 'Mi Ficha Clínica', icon: FileText, path: '/dashboard/patient/clinical-file' },
@@ -245,15 +248,24 @@ const Sidebar = ({ isOpen, onClose }) => {
             section: 'General',
             items: [
               { name: 'Tablero principal', icon: Home, path: '/dashboard/clinic' },
-              { name: 'Mi clínica', icon: Building2, path: '/dashboard/profile' },
               { name: 'Agendas', icon: Calendar, path: '/dashboard/clinic/agendas' },
-              { name: 'Pacientes', icon: Users, path: '/dashboard/clinic/patients' },
-              { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
-              { name: 'Horarios del Equipo', icon: Clock, path: '/dashboard/clinic/schedules' },
-              { name: 'Gestión de Clínicas', icon: Building2, path: '/dashboard/clinic/locations' },
-              { name: 'Reportes', icon: BarChart, path: '/dashboard/clinic/reports' },
-              { name: 'Ingresos', icon: TrendingUp, path: '/dashboard/income-reports' },
-              { name: 'Membresía', icon: DollarSign, path: '/dashboard/membership' },
+              // Mi Clínica como hub desplegable. path='#mi-clinica' es placeholder:
+              // hasSubItems intercepta el click con e.preventDefault() y solo despliega.
+              {
+                name: 'Mi Clínica',
+                icon: Building2,
+                path: '#mi-clinica',
+                subItems: [
+                  { name: 'Pacientes', icon: Users, path: '/dashboard/clinic/patients' },
+                  { name: 'Gestión de Personal', icon: Users, path: '/dashboard/clinic/therapists' },
+                  { name: 'Horarios del Equipo', icon: Clock, path: '/dashboard/clinic/schedules' },
+                  { name: 'Box y Sucursales', icon: Building2, path: '/dashboard/clinic/locations' },
+                  { name: 'Servicios', icon: Briefcase, path: '/dashboard/clinic/services' },
+                  { name: 'Ingresos', icon: TrendingUp, path: '/dashboard/income-reports' },
+                  { name: 'Reportes', icon: BarChart, path: '/dashboard/clinic/reports' },
+                  { name: 'Configuración', icon: Settings, path: '/dashboard/profile' },
+                ],
+              },
               { name: 'Asistente Virtual', icon: MessageSquare, path: '/dashboard/chatbot' },
               { name: 'Reportar problema', icon: AlertCircle, path: '#support', isAction: true },
             ],

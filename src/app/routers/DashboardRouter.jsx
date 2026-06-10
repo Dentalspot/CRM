@@ -79,6 +79,8 @@ const IncomeReportsPage = lazy(() => import('@/features/income-reports/pages/Inc
 const NotificationsPage = lazy(() => import('@/features/notifications/pages/NotificationsPage.jsx'));
 const PatientAccessHistoryPage = lazy(() => import('@/features/patient-dashboard/pages/PatientAccessHistoryPage.jsx'));
 const PatientAccountPage = lazy(() => import('@/features/patient-dashboard/pages/PatientAccountPage.jsx'));
+// Spec 030 Bloque 3: vista paciente "Mi tratamiento" (presupuesto + progreso + indicaciones)
+const MyTreatmentPage = lazy(() => import('@/features/patient-dashboard/pages/MyTreatmentPage.jsx'));
 const PatientQuestionsPage = lazy(() => import('@/features/patient-questions/pages/PatientQuestionsPage.jsx'));
 const PatientAgendaPage = lazy(() => import('@/features/patient-agenda/pages/PatientAgendaPage.jsx'));
 const MarketplaceListingDetailPage = lazy(() => import('@/features/marketplace/pages/MarketplaceListingDetailPage.jsx'));
@@ -103,6 +105,7 @@ const ClinicReportsPage = lazy(() => import('@/pages/clinic/ClinicReportsPage.js
 const ClinicAdminCalendarPage = lazy(() => import('@/features/clinic-dashboard/ClinicAdminCalendarPage.jsx'));
 const ClinicPatientsPage = lazy(() => import('@/pages/clinic/ClinicPatientsPage.jsx'));
 const ClinicLocationsPage = lazy(() => import('@/pages/clinic/ClinicLocationsPage.jsx'));
+const ClinicServicesPage = lazy(() => import('@/features/clinic-services/pages/ClinicServicesPage.jsx'));
 
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage.jsx'));
 
@@ -215,7 +218,10 @@ const DashboardRouter = () => {
           <Route path="income-reports" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST, USER_ROLES.CLINIC, USER_ROLES.ASSISTANT]}><IncomeReportsPage /></RoleGuard>} />
           <Route path="notifications" element={<AuthGuard><NotificationsPage /></AuthGuard>} />
           <Route path="patients/import" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST, USER_ROLES.CLINIC]}><ImportPatientsPage /></RoleGuard>} />
-          <Route path="patients/:id/*" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><PatientFilePage /></RoleGuard>} />
+          {/* Spec 030 fix: clinic_admin Y assistant tambien necesitan abrir la ficha
+              del paciente desde el calendario / modal de cita. La RLS sigue siendo
+              la barrera real (RoleGuard es UX). */}
+          <Route path="patients/:id/*" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST, USER_ROLES.CLINIC, USER_ROLES.ASSISTANT]}><PatientFilePage /></RoleGuard>} />
           <Route path="calendar" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><CalendarPage /></RoleGuard>} />
           <Route path="confirm-appointment/:id" element={<RoleGuard allowedRoles={[USER_ROLES.THERAPIST]}><ConfirmAppointmentPage /></RoleGuard>} />
           
@@ -231,6 +237,7 @@ const DashboardRouter = () => {
             <Route path="clinical-file" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientClinicalFilePage /></RoleGuard>} />
             <Route path="access-history" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientAccessHistoryPage /></RoleGuard>} />
             <Route path="account" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><PatientAccountPage /></RoleGuard>} />
+            <Route path="my-treatment" element={<RoleGuard allowedRoles={[USER_ROLES.PATIENT]}><MyTreatmentPage /></RoleGuard>} />
             <Route path="my-passport" element={<Navigate to="/dashboard/patient/clinical-file" replace />} />
           </Route>
           <Route path="my-activities" element={<Navigate to="/dashboard/patient/my-progress" replace />} />
@@ -261,6 +268,7 @@ const DashboardRouter = () => {
             <Route path="agendas" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicAdminCalendarPage /></RoleGuard>} />
             <Route path="patients" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicPatientsPage /></RoleGuard>} />
             <Route path="locations" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicLocationsPage /></RoleGuard>} />
+            <Route path="services" element={<RoleGuard allowedRoles={[USER_ROLES.CLINIC]}><ClinicServicesPage /></RoleGuard>} />
           </Route>
 
           {/* Shared Marketplace */}
