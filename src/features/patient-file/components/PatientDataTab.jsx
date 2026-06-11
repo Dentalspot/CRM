@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// Spec 030 followup: botón "Enviar invitación" debajo del campo Email
+import InvitePatientButton from '@/features/patient-file/components/InvitePatientButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,7 +128,11 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
       toast({ variant: 'destructive', title: 'Motivo de consulta es obligatorio', description: 'Complete el motivo de consulta antes de guardar.' });
       return;
     }
-    await handleSubmit({ preventDefault: () => {} }, { skipRefresh: true });
+    // Spec 030 followup fix: skipRefresh=false para que el callback onSave() del
+    // padre se dispare y `patient` se re-fetcha desde DB. Sin esto, el RUT/email/
+    // teléfono recién guardados no se propagan al InvitePatientButton (sigue
+    // mostrando "Sin RUT" hasta que el user recarga la página manualmente).
+    await handleSubmit({ preventDefault: () => {} }, { skipRefresh: false });
     setEditingSection(null);
   };
 
@@ -267,6 +273,27 @@ const PatientDataTab = ({ patient, templates = [], onSave }) => {
                   className="h-10"
                   readOnly={editingSection !== 'identification'}
                 />
+                {/* Spec 030 followup: botón invitar paciente.
+                    USA SOLO valores guardados en DB (patient.*), NUNCA el state
+                    local (displayRut, profileData.email). El RPC valida contra
+                    DB, así que si el dentista cargó RUT pero no guardó, el
+                    botón debe mantenerse disabled hasta que persista. */}
+                {editingSection !== 'identification' && (
+                  <div className="pt-1">
+                    <InvitePatientButton
+                      patientId={patient?.id}
+                      patientRut={patient?.rut || null}
+                      patientEmail={patient?.email || null}
+                      patientProfileId={patient?.profile_id}
+                      organizationId={patient?.organization_id}
+                      patientFullName={
+                        patient?.profile?.full_name ||
+                        patient?.full_name ||
+                        null
+                      }
+                    />
+                  </div>
+                )}
               </div>
 
               {/* 7. Previsión */}

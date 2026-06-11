@@ -171,10 +171,10 @@ export default function TherapistProfileDashboardPage() {
     { key: 'personal-info', label: 'Sobre Mí', icon: <User className="h-4 w-4" /> },
   ];
 
-  // Professional tabs (Therapists & Clinics)
+  // Professional tabs (Therapists & Clinics).
+  // Tabs 'Formación' y 'DentalLevel' eliminados (eran de fonoaudiología/gamificación
+  // que no aplica a odontología). Si en futuro vuelven, restaurar acá.
   const professionalTabs = [
-    { key: 'academic', label: 'Formación', icon: <GraduationCap className="h-4 w-4" /> },
-    { key: 'dentallevel', label: 'DentalLevel', icon: <Award className="h-4 w-4" />, highlight: true },
     { key: 'clinics-availability', label: 'Agenda', icon: <MapPin className="h-4 w-4" /> },
     { key: 'membership', label: 'Mi Plan', icon: <CreditCard className="h-4 w-4" /> },
   ];
@@ -183,7 +183,7 @@ export default function TherapistProfileDashboardPage() {
   const clinicTabs = [
     { key: 'clinic-info', label: 'Datos de la Clínica', icon: <Building2 className="h-4 w-4" /> },
     { key: 'clinic-team', label: 'Nuestro Equipo', icon: <Users className="h-4 w-4" /> },
-    { key: 'services', label: 'Servicios y Aranceles', icon: <DollarSign className="h-4 w-4" /> },
+    // Tab 'Servicios y Aranceles' eliminado — el catalogo vive en /dashboard/clinic/services.
     { key: 'billing', label: 'Facturación', icon: <Landmark className="h-4 w-4" /> },
     { key: 'customization', label: 'Personalización Visual', icon: <Palette className="h-4 w-4" /> },
     { key: 'membership', label: 'Mi Plan', icon: <CreditCard className="h-4 w-4" /> },

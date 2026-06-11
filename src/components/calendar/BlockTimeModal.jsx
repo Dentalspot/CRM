@@ -44,7 +44,8 @@ import {
   AlertTriangle,
   Trash2,
   MapPin,
-  Repeat
+  Repeat,
+  Box as BoxIcon,
 } from 'lucide-react';
 import { format, set, parseISO, addDays, startOfMonth, endOfMonth, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -80,6 +81,16 @@ const BlockTimeModal = ({
   clinics = [],
   selectedClinic = 'all',
   selectedBoxId = null,
+  // Spec 030 followup: lista de boxes activos de la clinica seleccionada.
+  // Si la clinica tiene boxes configurados, el modal MUESTRA el selector y
+  // empuja al dentista a elegir conscientemente (default = box heredado del
+  // calendario, o el primero). "Todos los boxes" sigue valido pero explicito.
+  availableBoxes = [],
+  // Spec 030 followup: dentista al que aplica el bloqueo. Default = user.id
+  // (caso vista dentista pura). En vista admin, el caller pasa el dentista
+  // filtrado del sidebar (para que el bloqueo aplique al dentista correcto,
+  // no al admin logueado).
+  therapistIdOverride = null,
   slotInfo = null,
   blockedTime = null,
   onSuccess
@@ -97,12 +108,17 @@ const BlockTimeModal = ({
   const [reason, setReason] = useState('otro');
   const [customReason, setCustomReason] = useState('');
   const [clinicId, setClinicId] = useState('all');
+  // Spec 030 followup: 'all' = todos los boxes (box_id NULL en DB), uuid = box especifico
+  const [boxIdSelection, setBoxIdSelection] = useState('all');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Recurring block state
   const [isRecurring, setIsRecurring] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
   const [repeatWeeks, setRepeatWeeks] = useState('4');
+
+  // Dentista al que aplica el bloqueo: override si caller lo pasa, sino user logueado
+  const effectiveTherapistId = therapistIdOverride || user?.id;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -121,6 +137,7 @@ const BlockTimeModal = ({
       setStartTime(format(blockStart, 'HH:mm'));
       setEndTime(format(blockEnd, 'HH:mm'));
       setClinicId(blockedTime.clinic_id || 'all');
+      setBoxIdSelection(blockedTime.box_id || 'all');
 
       const existingReason = blockedTime.reason?.toLowerCase() || '';
       const matchedReason = BLOCK_REASONS.find(r =>
@@ -141,6 +158,9 @@ const BlockTimeModal = ({
       setStartTime(slotInfo.startTime || '09:00');
       setEndTime(slotInfo.endTime || '10:00');
       setClinicId(slotInfo.clinicId || selectedClinic || 'all');
+      // Default = box heredado del calendario. Si vino del click en un box
+      // especifico → ese box. Si vino de la vista "Todos los boxes" → 'all'.
+      setBoxIdSelection(slotInfo.boxId || selectedBoxId || 'all');
       setReason('otro');
       setCustomReason('');
 
@@ -153,10 +173,11 @@ const BlockTimeModal = ({
       setStartTime('09:00');
       setEndTime('18:00');
       setClinicId(selectedClinic || 'all');
+      setBoxIdSelection(selectedBoxId || 'all');
       setReason('vacaciones');
       setCustomReason('');
     }
-  }, [isOpen, blockedTime, slotInfo, selectedClinic, isUnblockMode]);
+  }, [isOpen, blockedTime, slotInfo, selectedClinic, selectedBoxId, isUnblockMode]);
 
   const toggleDay = (day) => {
     setSelectedDays(prev =>
@@ -249,9 +270,9 @@ const BlockTimeModal = ({
 
         if (clinicsToBlock.length === 0) {
           blocksToInsert.push({
-            therapist_id: user.id,
+            therapist_id: effectiveTherapistId,
             clinic_id: null,
-            box_id: selectedBoxId,
+            box_id: boxIdSelection === 'all' ? null : boxIdSelection,
             start_time: startDateTime.toISOString(),
             end_time: endDateTime.toISOString(),
             reason: finalReason,
@@ -259,9 +280,9 @@ const BlockTimeModal = ({
         } else {
           for (const cId of clinicsToBlock) {
             blocksToInsert.push({
-              therapist_id: user.id,
+              therapist_id: effectiveTherapistId,
               clinic_id: cId === 'all' ? null : cId,
-              box_id: selectedBoxId,
+              box_id: boxIdSelection === 'all' ? null : boxIdSelection,
               start_time: startDateTime.toISOString(),
               end_time: endDateTime.toISOString(),
               reason: finalReason,
@@ -308,9 +329,9 @@ const BlockTimeModal = ({
 
         if (clinicsToBlock.length === 0) {
           blocksToInsert.push({
-            therapist_id: user.id,
+            therapist_id: effectiveTherapistId,
             clinic_id: null,
-            box_id: selectedBoxId,
+            box_id: boxIdSelection === 'all' ? null : boxIdSelection,
             start_time: blockStartTime,
             end_time: blockEndTime,
             reason: finalReason,
@@ -318,9 +339,9 @@ const BlockTimeModal = ({
         } else {
           for (const cId of clinicsToBlock) {
             blocksToInsert.push({
-              therapist_id: user.id,
+              therapist_id: effectiveTherapistId,
               clinic_id: cId === 'all' ? null : cId,
-              box_id: selectedBoxId,
+              box_id: boxIdSelection === 'all' ? null : boxIdSelection,
               start_time: blockStartTime,
               end_time: blockEndTime,
               reason: finalReason,
@@ -418,6 +439,7 @@ const BlockTimeModal = ({
           end_time: endDateTime.toISOString(),
           reason: finalReason,
           clinic_id: clinicId === 'all' ? null : clinicId,
+          box_id: boxIdSelection === 'all' ? null : boxIdSelection,
         })
         .eq('id', blockedTime.id);
 
@@ -571,6 +593,35 @@ const BlockTimeModal = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Spec 030 followup: Selector de box.
+              Solo aparece si la clinica tiene boxes configurados. Empuja al
+              dentista a elegir conscientemente: un box especifico O "todos
+              los boxes". Default = box heredado del slot/calendario. */}
+          {availableBoxes.length > 0 && (
+            <div className="space-y-2">
+              <Label>Box *</Label>
+              <Select value={boxIdSelection} onValueChange={setBoxIdSelection}>
+                <SelectTrigger>
+                  <BoxIcon className="h-4 w-4 mr-2 text-gray-400" />
+                  <SelectValue placeholder="Seleccionar box" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los boxes</SelectItem>
+                  {availableBoxes.map((box) => (
+                    <SelectItem key={box.id} value={box.id}>
+                      {box.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                {boxIdSelection === 'all'
+                  ? 'El bloqueo aplica a todos los boxes (no podrás atender en ninguno).'
+                  : 'El bloqueo aplica solo al box seleccionado.'}
+              </p>
             </div>
           )}
 

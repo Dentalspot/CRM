@@ -8,6 +8,7 @@ const emptyItem = () => ({
   description: '',
   quantity: 1,
   unit_price: 0,
+  discount_percentage: 0,
 });
 
 /**
@@ -42,6 +43,7 @@ export const useBudgetForm = (therapistId) => {
             description: it.description,
             quantity: it.quantity,
             unit_price: Number(it.unit_price),
+            discount_percentage: Number(it.discount_percentage) || 0,
           }))
     );
   }, []);
@@ -49,33 +51,53 @@ export const useBudgetForm = (therapistId) => {
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
 
-  // Cargar catálogo de servicios del dentista
+  // Cargar catálogo de servicios del dentista.
+  // Spec 030 followup fix: la tabla canónica es `therapist_services` con
+  // columnas service_name + price_clp (lo que usa Odontogram y suggestions).
+  // Antes este hook leía de `services` que no existe en el schema actual.
   useEffect(() => {
     if (!therapistId) return;
     let mounted = true;
     setLoadingServices(true);
     supabase
-      .from('services')
-      .select('id, name, price, duration_minutes')
+      .from('therapist_services')
+      .select('id, service_name, price_clp, duration_minutes')
       .eq('therapist_id', therapistId)
       .eq('is_active', true)
-      .order('name', { ascending: true })
+      .order('service_name', { ascending: true })
       .then(({ data, error }) => {
         if (!mounted) return;
         if (error) {
           logger.warn('[useBudgetForm] error fetching services:', error);
           setServices([]);
         } else {
-          setServices(data || []);
+          // Normalizar al shape esperado por el componente (name, price)
+          setServices(
+            (data || []).map((s) => ({
+              id: s.id,
+              name: s.service_name,
+              price: Number(s.price_clp) || 0,
+              duration_minutes: s.duration_minutes,
+            }))
+          );
         }
         setLoadingServices(false);
       });
     return () => { mounted = false; };
   }, [therapistId]);
 
-  // Cálculos derivados
+  // Cálculos derivados.
+  // El subtotal de cada item ya considera su descuento individual.
+  // unit_price_net = unit_price * (1 - discount/100)
   const subtotal = useMemo(
-    () => items.reduce((acc, it) => acc + (Number(it.quantity) || 0) * (Number(it.unit_price) || 0), 0),
+    () =>
+      items.reduce((acc, it) => {
+        const qty = Number(it.quantity) || 0;
+        const price = Number(it.unit_price) || 0;
+        const itemDisc = Number(it.discount_percentage) || 0;
+        const netPrice = price * (1 - itemDisc / 100);
+        return acc + qty * netPrice;
+      }, 0),
     [items]
   );
   const discountAmount = useMemo(
@@ -140,6 +162,7 @@ export const useBudgetForm = (therapistId) => {
       description: it.description.trim(),
       quantity: Number(it.quantity),
       unit_price: Number(it.unit_price),
+      discount_percentage: Number(it.discount_percentage) || 0,
     })),
   }), [title, description, discountPct, clinicId, items]);
 

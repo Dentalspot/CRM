@@ -779,6 +779,7 @@ const CalendarPage = () => {
         clinics={clinics}
         selectedClinic={selectedClinic}
         selectedBoxId={selectedBoxId}
+        availableBoxes={boxesForClinic}
         blockedTime={selectedBlockedTime}
         slotInfo={selectedSlot}
         onSuccess={handleBlockActionComplete}

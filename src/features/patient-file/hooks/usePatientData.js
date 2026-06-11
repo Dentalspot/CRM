@@ -293,9 +293,20 @@ const usePatientData = ({ patient, templates = [], onSave }) => {
         }
       }
 
+      // Spec 030 followup fix: SIEMPRE guardamos rut/full_name/email/phone como
+      // campos denorm en `patients`. Antes solo iban a `profiles` y SI existía
+      // profile_id — los pacientes sin cuenta (caso típico para invitar) perdían
+      // ese dato al guardar. El consumidor (Sidebar, InvitePatientButton, etc.)
+      // lee `patient.rut` directo de la tabla.
       const { error: patientError } = await supabase
         .from('patients')
         .update({
+          // Datos personales denorm (también en profiles si hay profile_id)
+          full_name: profileData.full_name || null,
+          rut: profileData.rut || null,
+          email: profileData.email || null,
+          phone: profileData.phone || null,
+          // Datos clínicos / administrativos
           patient_type: patientData.patient_type,
           responsible_name: patientData.responsible_name || null,
           responsible_rut: patientData.responsible_rut || null,

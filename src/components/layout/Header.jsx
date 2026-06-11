@@ -19,7 +19,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Logo from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { USER_ROLES } from '@/constants/roles';
+import useEffectiveDashboardRoute from '@/hooks/useEffectiveDashboardRoute';
 import { LogOut, LayoutDashboard, Calendar, Menu } from 'lucide-react';
 import ProfileAvatar from '@/components/shared/ProfileAvatar';
 
@@ -36,6 +36,10 @@ import ProfileAvatar from '@/components/shared/ProfileAvatar';
  */
 const Header = () => {
   const { user, signOut } = useAuth();
+  // Spec 028 priority swap: si el user es admin+dentista en una org, debe ir al
+  // dashboard admin, NO al dashboard dentista invitado. Hook propio porque este
+  // Header vive FUERA del OrganizationProvider (que solo envuelve /dashboard/*).
+  const { dashboardPath, agendaPath } = useEffectiveDashboardRoute();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,16 +53,9 @@ const Header = () => {
     setIsMobileMenuOpen(false);
   };
 
-  const userRole = user?.role;
   const getBlogRoute = () => '/blog';
-  const getDashboardRoute = () => {
-    if (!user) return '/';
-    if (userRole === USER_ROLES.THERAPIST) return '/dashboard/therapist';
-    if (userRole === USER_ROLES.PATIENT) return '/dashboard/patient';
-    if (userRole === USER_ROLES.ADMIN) return '/admin';
-    if (userRole === USER_ROLES.CLINIC) return '/dashboard/clinic';
-    return '/dashboard';
-  };
+  const getDashboardRoute = () => (user ? dashboardPath : '/');
+  const getAgendaRoute = () => agendaPath;
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -215,7 +212,7 @@ const Header = () => {
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   <span>Panel Principal</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/dashboard/calendar')}>
+                <DropdownMenuItem onClick={() => navigate(getAgendaRoute())}>
                   <Calendar className="mr-2 h-4 w-4" />
                   <span>Agenda</span>
                 </DropdownMenuItem>

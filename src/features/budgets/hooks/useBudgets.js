@@ -24,7 +24,63 @@ export const useBudgets = (patientId) => {
         .order('budget_number', { ascending: false });
 
       if (fetchError) throw fetchError;
-      setBudgets(data || []);
+
+      // Spec 030 followup: cargar items para calcular % completado + chips dientes.
+      // Una sola query para todos los budgets, mapeamos en cliente.
+      const budgetIds = (data || []).map((b) => b.budget_id);
+      let itemsByBudget = {};
+      if (budgetIds.length > 0) {
+        const { data: items } = await supabase
+          .from('treatment_budget_items')
+          .select('budget_id, description, unit_price, quantity, status')
+          .in('budget_id', budgetIds);
+
+        itemsByBudget = (items || []).reduce((acc, item) => {
+          if (!acc[item.budget_id]) acc[item.budget_id] = [];
+          acc[item.budget_id].push(item);
+          return acc;
+        }, {});
+      }
+
+      const enriched = (data || []).map((b) => {
+        const items = itemsByBudget[b.budget_id] || [];
+        const completedSubtotal = items
+          .filter((i) => i.status === 'completed')
+          .reduce((sum, i) => sum + Number(i.unit_price) * (Number(i.quantity) || 1), 0);
+        const totalSubtotal = items.reduce(
+          (sum, i) => sum + Number(i.unit_price) * (Number(i.quantity) || 1),
+          0
+        );
+        const progressPercent =
+          totalSubtotal > 0
+            ? Math.min(100, Math.round((completedSubtotal / totalSubtotal) * 100))
+            : 0;
+
+        // Extraer dientes de las descripciones "Tratamiento diente NN"
+        const teethSet = new Set();
+        let hasGeneral = false;
+        items.forEach((i) => {
+          const match = (i.description || '').match(/\bdiente\s+(\d{1,2})\b/i);
+          if (match) {
+            teethSet.add(match[1]);
+          } else {
+            hasGeneral = true;
+          }
+        });
+        const teeth = Array.from(teethSet).sort((a, b) => Number(a) - Number(b));
+        if (hasGeneral) teeth.push('General');
+
+        return {
+          ...b,
+          items_total: items.length,
+          items_completed: items.filter((i) => i.status === 'completed').length,
+          items_pending: items.filter((i) => i.status === 'pending').length,
+          progress_percent: progressPercent,
+          teeth,
+        };
+      });
+
+      setBudgets(enriched);
     } catch (err) {
       logger.error('[useBudgets] error fetching:', err);
       setError(err);
@@ -107,15 +163,20 @@ export const createBudget = async (payload) => {
 
   // 2) Insertar items (si hay)
   if (items.length > 0) {
-    const itemsPayload = items.map((it, idx) => ({
-      budget_id: budget.id,
-      service_id: it.service_id || null,
-      description: it.description,
-      quantity: it.quantity,
-      unit_price: it.unit_price,
-      subtotal: Number(it.quantity) * Number(it.unit_price),
-      sort_order: idx,
-    }));
+    const itemsPayload = items.map((it, idx) => {
+      const itemDisc = Number(it.discount_percentage) || 0;
+      const netPrice = Number(it.unit_price) * (1 - itemDisc / 100);
+      return {
+        budget_id: budget.id,
+        service_id: it.service_id || null,
+        description: it.description,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        discount_percentage: itemDisc,
+        subtotal: Number(it.quantity) * netPrice,
+        sort_order: idx,
+      };
+    });
 
     const { error: itemsError } = await supabase
       .from('treatment_budget_items')
@@ -197,15 +258,20 @@ export const updateBudget = async (budgetId, payload) => {
   if (delErr) throw delErr;
 
   if (items.length > 0) {
-    const itemsPayload = items.map((it, idx) => ({
-      budget_id: budgetId,
-      service_id: it.service_id || null,
-      description: it.description,
-      quantity: it.quantity,
-      unit_price: it.unit_price,
-      subtotal: Number(it.quantity) * Number(it.unit_price),
-      sort_order: idx,
-    }));
+    const itemsPayload = items.map((it, idx) => {
+      const itemDisc = Number(it.discount_percentage) || 0;
+      const netPrice = Number(it.unit_price) * (1 - itemDisc / 100);
+      return {
+        budget_id: budgetId,
+        service_id: it.service_id || null,
+        description: it.description,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        discount_percentage: itemDisc,
+        subtotal: Number(it.quantity) * netPrice,
+        sort_order: idx,
+      };
+    });
     const { error: insErr } = await supabase
       .from('treatment_budget_items')
       .insert(itemsPayload);
