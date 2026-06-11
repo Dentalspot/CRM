@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabaseClient';
 import PatientSidebar from '@/features/patient-file/components/PatientSidebar';
 import Odontogram from '@/features/odontogram/components/Odontogram';
 import ConsentRequiredBanner from '@/components/shared/ConsentRequiredBanner';
+import PatientSummaryTab from '@/features/patient-file/components/PatientSummaryTab';
 import PatientDataTab from '@/features/patient-file/components/PatientDataTab';
 import ClinicalHistoryTab from '@/features/patient-file/components/ClinicalHistoryTab';
 import PaymentStatusTab from '@/features/patient-file/components/PaymentStatusTab';
@@ -37,7 +38,7 @@ const PatientFilePage = () => {
   const [templates, setTemplates] = useState([]);
   const [treatmentTemplates, setTreatmentTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('datos');
+  const [activeTab, setActiveTab] = useState('resumen');
   const [odontogramMode, setOdontogramMode] = useState('diagnostico');
 
   // Payments are core feature available to all paid plans
@@ -282,6 +283,9 @@ const PatientFilePage = () => {
                       'Planificar' eliminado (concepto fonoaudiologico legacy). */}
                   <div className="overflow-x-auto scrollbar-hide -mx-2 px-2 mb-6">
                     <TabsList className="inline-flex w-auto sm:w-full justify-start bg-gray-100 p-1 rounded-lg min-w-max sm:min-w-0">
+                      <TabsTrigger value="resumen" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
+                        Resumen
+                      </TabsTrigger>
                       <TabsTrigger value="datos" className="flex-none sm:flex-1 px-3 sm:px-4 py-2 text-xs sm:text-sm data-[state=active]:bg-teal-500 data-[state=active]:text-white rounded-md transition-all whitespace-nowrap">
                         Datos del paciente
                       </TabsTrigger>
@@ -299,6 +303,14 @@ const PatientFilePage = () => {
                       </TabsTrigger>
                     </TabsList>
                   </div>
+
+                  <TabsContent value="resumen" className="mt-0">
+                    <PatientSummaryTab
+                      patient={patient}
+                      appointments={appointments}
+                      onSwitchTab={setActiveTab}
+                    />
+                  </TabsContent>
 
                   <TabsContent value="datos" className="mt-0">
                     <PatientDataTab patient={patient} templates={templates} onSave={handleRefresh} />
