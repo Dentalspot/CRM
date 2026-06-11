@@ -154,6 +154,9 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
   const [sessionNotes, setSessionNotes] = useState('');
   const [objectives, setObjectives] = useState('');
   const [nextSteps, setNextSteps] = useState('');
+  // Bloque 4: nota privada profesional. Si no esta vacia, se guarda en una row
+  // separada con is_professional_only=true. La policy RLS la oculta al paciente.
+  const [privateNotes, setPrivateNotes] = useState('');
 
   // Referral state
   const [showReferral, setShowReferral] = useState(false);
@@ -286,6 +289,7 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
     setSessionNotes('');
     setObjectives('');
     setNextSteps('');
+    setPrivateNotes('');
     setShowReferral(false);
     setReferralType('odontologo');
     setReferralReason('');
@@ -326,6 +330,7 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
         sessionNotes,
         objectives,
         nextSteps,
+        privateNotes, // Bloque 4: row separada con is_professional_only=true si no vacio
       });
 
       // Save referral as PENDING (patient must accept)
@@ -554,9 +559,27 @@ const PostSessionModal = ({ isOpen, onClose, appointment, therapistId }) => {
                 placeholder="Ej: Evitar masticar de ese lado 24h, ibuprofeno 400mg c/8h si hay dolor"
                 className="mt-1"
               />
-              {/* TODO spec 030 Bloque 3 (futuro): exponer este campo al
-                  paciente en su vista (/dashboard/patient/my-treatment). Hoy
-                  queda solo en clinical_history (visible al dentista). */}
+            </div>
+
+            {/* Bloque 4: nota privada — solo dentista/admin la ve (RLS la oculta al paciente) */}
+            <div className="rounded-md border border-amber-200 bg-amber-50/40 p-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-200 text-amber-900 text-[10px] font-bold">
+                  🔒
+                </span>
+                Notas privadas
+                <span className="text-xs font-normal text-amber-700">— no se comparten con el paciente</span>
+              </Label>
+              <Textarea
+                value={privateNotes}
+                onChange={(e) => setPrivateNotes(e.target.value)}
+                placeholder="Ej: paciente refirió ansiedad, conducto 21mm, alergia a lidocaína descartada."
+                rows={2}
+                className="mt-1 resize-none bg-white"
+              />
+              <p className="text-xs text-amber-700 mt-1.5">
+                Solo vos y los admins de la clínica ven este campo. Quedan ocultas a nivel base de datos.
+              </p>
             </div>
 
             {FEATURE_FLAGS.NOTIZ && (
