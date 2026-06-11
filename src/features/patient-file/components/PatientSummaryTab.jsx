@@ -60,20 +60,29 @@ export default function PatientSummaryTab({ patient, appointments = [], onSwitch
     (async () => {
       setLoading(true);
       try {
-        // Budget activo (más reciente en estado borrador/enviado/aceptado/en_progreso)
-        const { data: budgets, error: bErr } = await supabase
+        // Budget "primario" del paciente. Si tiene varios activos, priorizamos por
+        // estado clinico: en_progreso > aceptado > enviado > borrador.
+        // Dentro del mismo estado, ganamos el mas reciente.
+        // Esto evita que un borrador nuevo "pise" un plan real ya en ejecucion.
+        const STATUS_PRIORITY = { en_progreso: 4, aceptado: 3, enviado: 2, borrador: 1 };
+        const { data: budgetsRaw, error: bErr } = await supabase
           .from('treatment_budgets')
           .select(`
-            id, title, status, total,
+            id, title, status, total, created_at,
             items:treatment_budget_items(id, status)
           `)
           .eq('patient_id', patient.id)
           .in('status', ['borrador', 'enviado', 'aceptado', 'en_progreso'])
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .order('created_at', { ascending: false });
 
         if (bErr) throw bErr;
+
+        const budgets = (budgetsRaw || []).slice().sort((a, b) => {
+          const pa = STATUS_PRIORITY[a.status] || 0;
+          const pb = STATUS_PRIORITY[b.status] || 0;
+          if (pa !== pb) return pb - pa;
+          return (b.created_at || '').localeCompare(a.created_at || '');
+        })[0] || null;
 
         let balanceDue = 0;
         let totalPaid = 0;
